@@ -7,11 +7,15 @@
   function weekdayLabel(n){ return weekdayNames[Clinic.lang][Number(n)-1] || n; }
 
   async function renderScheduleRows(doctorId, editable=false){
-    const { data, error } = await Clinic.sb.from('doctor_working_hours').select('*').eq('doctor_id',doctorId).order('weekday').order('start_time');
+    const { data, error } = await Clinic.sb
+      .from('doctor_working_hours')
+      .select('*')
+      .eq('doctor_id',doctorId)
+      .order('start_time');
     if (error) return `<div class="empty-state">${Clinic.escape(error.message)}</div>`;
     if (!data?.length) return `<div class="empty-state">${Clinic.lang==='ar'?'لا توجد ساعات عمل مسجلة بعد.':'No working hours saved yet.'}</div>`;
     return `<div class="table-wrap"><table class="data-table"><thead><tr><th>${Clinic.lang==='ar'?'اليوم':'Day'}</th><th>${Clinic.lang==='ar'?'من':'From'}</th><th>${Clinic.lang==='ar'?'إلى':'To'}</th><th>${Clinic.lang==='ar'?'مدة الحجز':'Slot'}</th><th>${Clinic.lang==='ar'?'ساري من':'Effective'}</th><th>${Clinic.lang==='ar'?'الحالة':'Status'}</th>${editable?'<th></th>':''}</tr></thead><tbody>
-      ${data.map(r=>`<tr><td><strong>${weekdayLabel(r.weekday)}</strong></td><td>${r.start_time?.slice(0,5)||'—'}</td><td>${r.end_time?.slice(0,5)||'—'}</td><td>${r.slot_minutes||'—'} min</td><td>${r.effective_from||'—'}${r.effective_until?` → ${r.effective_until}`:''}</td><td>${r.is_active===false?Clinic.statusPill('inactive'):Clinic.statusPill('active')}</td>${editable?`<td><button class="table-action danger-outline" data-disable-schedule="${r.id}" data-active="${r.is_active!==false}">${r.is_active===false?(Clinic.lang==='ar'?'تفعيل':'Activate'):(Clinic.lang==='ar'?'تعطيل':'Disable')}</button></td>`:''}</tr>`).join('')}
+      ${sortClinicWeek(data).map(r=>`<tr><td><strong>${weekdayLabel(r.weekday)}</strong></td><td>${r.start_time?.slice(0,5)||'—'}</td><td>${r.end_time?.slice(0,5)||'—'}</td><td>${r.slot_minutes||'—'} min</td><td>${Clinic.formatDate(r.effective_from)}${r.effective_until?` → ${Clinic.formatDate(r.effective_until)}`:''}</td><td>${r.is_active===false?Clinic.statusPill('inactive'):Clinic.statusPill('active')}</td>${editable?`<td><button class="table-action danger-outline" data-disable-schedule="${r.id}" data-active="${r.is_active!==false}">${r.is_active===false?(Clinic.lang==='ar'?'تفعيل':'Activate'):(Clinic.lang==='ar'?'تعطيل':'Disable')}</button></td>`:''}</tr>`).join('')}
     </tbody></table></div>`;
   }
 
@@ -19,7 +23,7 @@
     const { data, error } = await Clinic.sb.from('doctor_schedule_exceptions').select('*').eq('doctor_id',doctorId).gte('exception_date',Clinic.cairoDate()).order('exception_date').limit(30);
     if (error) return `<div class="empty-state">${Clinic.escape(error.message)}</div>`;
     if (!data?.length) return `<div class="empty-state">${Clinic.lang==='ar'?'لا توجد تغييرات قادمة.':'No upcoming schedule exceptions.'}</div>`;
-    return `<div class="stack-list">${data.map(x=>`<article class="list-card"><div><div class="list-title">${Clinic.escape((x.exception_type||'').replaceAll('_',' '))}</div><div class="muted">${x.exception_date} ${x.is_all_day?'• all day':`${x.start_time?.slice(0,5)||''} ${x.end_time?`→ ${x.end_time.slice(0,5)}`:''}`}</div>${x.note?`<div class="small-note">${Clinic.escape(x.note)}</div>`:''}</div><div class="list-actions">${Clinic.statusPill(x.status)}${management&&x.status==='pending'?`<button class="table-action success-outline" data-review-exception="${x.id}" data-action="approved">✓</button><button class="table-action danger-outline" data-review-exception="${x.id}" data-action="rejected">✕</button>`:''}</div></article>`).join('')}</div>`;
+    return `<div class="stack-list">${data.map(x=>`<article class="list-card"><div><div class="list-title">${Clinic.escape((x.exception_type||'').replaceAll('_',' '))}</div><div class="muted">${Clinic.formatDate(x.exception_date)} ${x.is_all_day?'• all day':`${x.start_time?.slice(0,5)||''} ${x.end_time?`→ ${x.end_time.slice(0,5)}`:''}`}</div>${x.note?`<div class="small-note">${Clinic.escape(x.note)}</div>`:''}</div><div class="list-actions">${Clinic.statusPill(x.status)}${management&&x.status==='pending'?`<button class="table-action success-outline" data-review-exception="${x.id}" data-action="approved">✓</button><button class="table-action danger-outline" data-review-exception="${x.id}" data-action="rejected">✕</button>`:''}</div></article>`).join('')}</div>`;
   }
 
   window.ClinicPages['schedules'] = async function(){
@@ -52,7 +56,7 @@
     doctorSelect.onchange=refresh;
     document.getElementById('addWorkingHours').onclick=()=>C.showModal({title:C.lang==='ar'?'إضافة ساعات عمل':'Add working hours',body:`
       <form id="workingHoursForm" class="form-grid">
-        <label>${C.lang==='ar'?'اليوم':'Weekday'}<select name="weekday" class="control">${weekdayNames[C.lang].map((n,i)=>`<option value="${i+1}">${n}</option>`).join('')}</select></label>
+        <label>${C.lang==='ar'?'اليوم':'Weekday'}<select name="weekday" class="control">${weekdayOptions()}</select></label>
         <label>${C.lang==='ar'?'من':'Start'}<input name="start_time" type="time" class="control" required></label>
         <label>${C.lang==='ar'?'إلى':'End'}<input name="end_time" type="time" class="control" required></label>
         <label>${C.lang==='ar'?'مدة الموعد':'Slot minutes'}<select name="slot_minutes" class="control">${[10,15,20,30,45,60].map(v=>`<option value="${v}" ${v===20?'selected':''}>${v}</option>`).join('')}</select></label>

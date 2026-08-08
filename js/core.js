@@ -16,14 +16,14 @@ const Clinic = window.Clinic = {
       schedules: "Doctors' Schedules", finance: 'Finance', logistics: 'Logistics', attendance: 'Attendance', reports: 'Reports',
       users: 'Users', audit: 'Audit Log', settings: 'Settings', todayClinic: "Today's Clinic", queue: 'My Queue',
       referrals: 'Referrals', mySchedule: 'My Schedule', profile: 'My Profile', technical: 'Technical Administration',
-      reception: 'Reception Desk', notifications: 'Notifications', loading: 'Loading...', noData: 'No data found'
+      reception: 'Reception Desk', notifications: 'Notifications', clinicManagement: 'Clinic Management', loading: 'Loading...', noData: 'No data found'
     },
     ar: {
       clinic: 'عيادة العمليات', logout: 'تسجيل الخروج', dashboard: 'الرئيسية', patients: 'المرضى', appointments: 'الحجوزات',
       schedules: 'جداول الأطباء', finance: 'المالية', logistics: 'احتياجات العيادة', attendance: 'الحضور والانصراف', reports: 'التقارير',
       users: 'المستخدمون', audit: 'سجل النشاط', settings: 'الإعدادات', todayClinic: 'عيادة اليوم', queue: 'قائمة الانتظار',
       referrals: 'التحويلات', mySchedule: 'جدولي', profile: 'ملفي الشخصي', technical: 'الإدارة التقنية',
-      reception: 'الاستقبال', notifications: 'الإشعارات', loading: 'جاري التحميل...', noData: 'لا توجد بيانات'
+      reception: 'الاستقبال', notifications: 'الإشعارات', clinicManagement: 'إدارة العيادة', loading: 'جاري التحميل...', noData: 'لا توجد بيانات'
     }
   },
 
@@ -45,10 +45,24 @@ const Clinic = window.Clinic = {
 
   formatDate(value, options={}) {
     if (!value) return '—';
+
+    // Clinic-wide display rule:
+    // DD/MM/YYYY, while preserving optional time fields.
+    // We intentionally use en-GB for the numeric date so both
+    // Arabic and English screens show the same 08/08/2026 format.
     const d = new Date(value);
-    return new Intl.DateTimeFormat(this.lang === 'ar' ? 'ar-EG' : 'en-GB', {
-      timeZone: 'Africa/Cairo', year: 'numeric', month: 'short', day: 'numeric', ...options
+
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Africa/Cairo',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      ...options
     }).format(d);
+  },
+
+  formatDateOnly(value) {
+    return this.formatDate(value);
   },
 
   formatTime(value) {
@@ -205,8 +219,15 @@ const Clinic = window.Clinic = {
     document.querySelectorAll('[data-i18n]').forEach(el => { const k = el.dataset.i18n; if (this.labels[this.lang]?.[k]) el.textContent = this.labels[this.lang][k]; });
     document.querySelectorAll('.app-lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === this.lang));
     document.getElementById('notificationTitle').textContent = this.t('notifications');
-    const formatter = new Intl.DateTimeFormat(this.lang === 'ar' ? 'ar-EG' : 'en-GB', { timeZone:'Africa/Cairo', weekday:'long', year:'numeric', month:'long', day:'numeric' });
-    document.getElementById('todayDate').textContent = formatter.format(new Date());
+    const now = new Date();
+    const weekday = new Intl.DateTimeFormat(
+      this.lang === 'ar' ? 'ar-EG' : 'en-GB',
+      { timeZone:'Africa/Cairo', weekday:'long' }
+    ).format(now);
+
+    // Example: Saturday, 08/08/2026
+    document.getElementById('todayDate').textContent =
+      `${weekday}, ${this.formatDate(now)}`;
     this.buildNavigation();
   },
 
