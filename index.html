@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>Operation Clinic</title>
+
+  <link
+    rel="stylesheet"
+    href="css/style.css"
+  />
+</head>
+
+<body class="login-body">
+
+  <div class="language-floating">
+    <button
+      class="lang-btn"
+      data-lang="en"
+    >
+      EN
+    </button>
+
+    <button
+      class="lang-btn"
+      data-lang="ar"
+    >
+      عربي
+    </button>
+  </div>
+
+
+  <main class="login-layout">
+
+    <section class="login-brand-panel">
+
+      <div class="brand-mark">
+        OC
+      </div>
+
+      <h1 data-i18n="clinicName">
+        Operation Clinic
+      </h1>
+
+      <p data-i18n="clinicSubtitle">
+        Secure Clinic Management System
+      </p>
+
+      <div class="brand-team">
+
+        <span data-i18n="doctor1">
+          Dr. Ahmed Alaa
+        </span>
+
+        <span class="separator">•</span>
+
+        <span data-i18n="doctor2">
+          Dr. Mohamed Alaa
+        </span>
+
+      </div>
+
+    </section>
+
+
+    <section class="login-card">
+
+      <div class="login-card-header">
+
+        <h2 data-i18n="welcome">
+          Welcome back
+        </h2>
+
+        <p data-i18n="signInText">
+          Sign in to continue
+        </p>
+
+      </div>
+
+
+      <form id="loginForm">
+
+        <div class="form-group">
+
+          <label
+            for="email"
+            data-i18n="email"
+          >
+            Email
+          </label>
+
+          <input
+            id="email"
+            type="email"
+            autocomplete="email"
+            required
+          />
+
+        </div>
+
+
+        <div class="form-group">
+
+          <label
+            for="password"
+            data-i18n="password"
+          >
+            Password
+          </label>
+
+          <div class="password-wrap">
+
+            <input
+              id="password"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
+
+            <button
+              type="button"
+              id="togglePassword"
+              class="password-toggle"
+              aria-label="Show password"
+            >
+              👁
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <div
+          id="loginError"
+          class="form-error hidden"
+        ></div>
+
+
+        <button
+          id="loginButton"
+          class="primary-button"
+          type="submit"
+        >
+          <span data-i18n="login">
+            Sign In
+          </span>
+        </button>
+
+      </form>
+
+
+      <div class="security-note">
+
+        🔒
+
+        <span data-i18n="secure">
+          Authorized clinic staff only
+        </span>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+  ></script>
+
+  <script src="js/supabase-client.js"></script>
+
+  <script src="js/auth.js"></script>
+
+</body>
+
+</html>

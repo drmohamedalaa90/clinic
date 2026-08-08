@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>
+    Operation Clinic
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="css/style.css"
+  />
+
+</head>
+
+
+<body class="app-body">
+
+
+  <div
+    id="appLoading"
+    class="app-loading"
+  >
+    <div class="loader"></div>
+    <span>Loading...</span>
+  </div>
+
+
+  <div
+    id="appRoot"
+    class="app-shell hidden"
+  >
+
+
+    <!-- SIDEBAR -->
+
+    <aside
+      id="sidebar"
+      class="sidebar"
+    >
+
+      <div class="sidebar-header">
+
+        <div class="mini-logo">
+          OC
+        </div>
+
+        <div>
+
+          <div
+            class="sidebar-clinic-name"
+            data-i18n="clinic"
+          >
+            Operation Clinic
+          </div>
+
+          <div class="sidebar-subtitle">
+            Clinic Management
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <nav
+        id="navigation"
+        class="navigation"
+      ></nav>
+
+
+      <div class="sidebar-footer">
+
+        <button
+          id="logoutButton"
+          class="logout-button"
+        >
+          <span>↪</span>
+
+          <span data-i18n="logout">
+            Logout
+          </span>
+        </button>
+
+      </div>
+
+    </aside>
+
+
+
+    <!-- MAIN -->
+
+    <section class="main-area">
+
+
+      <header class="topbar">
+
+        <div class="topbar-start">
+
+          <button
+            id="menuButton"
+            class="menu-button"
+          >
+            ☰
+          </button>
+
+
+          <div>
+
+            <h1
+              id="pageTitle"
+              class="page-title"
+            >
+              Dashboard
+            </h1>
+
+            <div
+              id="todayDate"
+              class="today-date"
+            ></div>
+
+          </div>
+
+        </div>
+
+
+
+        <div class="topbar-actions">
+
+
+          <div class="top-language">
+
+            <button
+              class="app-lang-btn"
+              data-lang="en"
+            >
+              EN
+            </button>
+
+            <button
+              class="app-lang-btn"
+              data-lang="ar"
+            >
+              عربي
+            </button>
+
+          </div>
+
+
+          <button class="notification-button">
+            🔔
+            <span class="notification-dot"></span>
+          </button>
+
+
+          <div class="profile-menu">
+
+            <div
+              id="profileAvatar"
+              class="profile-avatar"
+            >
+              U
+            </div>
+
+            <div class="profile-info">
+
+              <strong
+                id="profileName"
+              >
+                User
+              </strong>
+
+              <span
+                id="profileRole"
+              ></span>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </header>
+
+
+
+      <main
+        id="mainContent"
+        class="main-content"
+      >
+
+        <section
+          class="dashboard-welcome"
+        >
+
+          <div>
+
+            <span
+              class="eyebrow"
+              data-i18n="welcome"
+            >
+              Welcome
+            </span>
+
+            <h2 id="welcomeName"></h2>
+
+            <p
+              id="welcomeDescription"
+            ></p>
+
+          </div>
+
+        </section>
+
+
+        <section
+          id="dashboardCards"
+          class="dashboard-grid"
+        ></section>
+
+
+        <section class="content-card">
+
+          <div class="card-heading">
+
+            <div>
+
+              <span
+                class="eyebrow"
+                data-i18n="system"
+              >
+                System
+              </span>
+
+              <h3
+                data-i18n="ready"
+              >
+                Clinic system connected
+              </h3>
+
+            </div>
+
+
+            <span class="status-pill success">
+              ● Connected
+            </span>
+
+          </div>
+
+
+          <p
+            class="muted"
+            data-i18n="foundation"
+          >
+            Your account, role and secure database connection are working.
+          </p>
+
+        </section>
+
+      </main>
+
+    </section>
+
+  </div>
+
+
+  <div
+    id="sidebarOverlay"
+    class="sidebar-overlay"
+  ></div>
+
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+  ></script>
+
+  <script src="js/supabase-client.js"></script>
+
+  <script src="js/app.js"></script>
+
+</body>
+
+</html>
