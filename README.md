@@ -1,82 +1,66 @@
-# Operation Clinic — Fees + Finance Income + Missing Pages Fix
+# Operation Clinic — Fees on Patient Arrival
 
-This patch fixes two separate issues.
+This corrects the previous fee workflow.
 
-## 1. Fees inside booking
+## Correct process
 
-The booking window now contains:
+Booking:
+- patient details
+- doctor
+- hour
+- appointment type
+- notes
+- **NO FEE**
+
+When the patient physically arrives:
+
+Reception clicks:
+
+**Confirm arrival**
+
+A second window appears:
 
 - Fees (EGP)
-- Payment method:
-  - Cash
-  - InstaPay
-  - Card
-  - Bank transfer
-  - Other
+- Payment method
+- Optional finance note
 
-If Fees > 0, the booking and income record are saved together in one
-database transaction.
+After pressing Confirm arrival:
 
-The amount appears automatically in:
+1. appointment becomes `arrived`
+2. the fee is saved
+3. Finance -> Income updates
 
-Finance → Income
+This is done in one database transaction.
 
-with patient, doctor, date, amount and payment method.
+## Finance and Logistics
 
-## 2. Why Finance and Logistics were still placeholders
+This package keeps the corrected `app.html` that actually loads:
 
-The pages were already written, but `app.html` never loaded these JavaScript
-modules:
+- finance.js
+- logistics.js
+- attendance.js
+- reports.js
+- admin.js
+- pwa.js
 
-- `finance.js`
-- `logistics.js`
-- `attendance.js`
-- `reports.js`
-- `admin.js`
-- `pwa.js`
-
-So the sidebar existed, but ClinicPages had no renderer for those entries and
-the app fell back to the placeholder page.
-
-This patch fixes the wiring.
-
-Finance, Logistics, Attendance, Reports, Profile / Users / Technical pages
-will now actually load their existing frontend modules.
+That was the reason those sidebar pages previously stayed as placeholders.
 
 ## Install
 
-### Step 1 — Supabase
-Run the FULL CONTENTS of:
+1. Run:
+   `sql/fees-on-arrival.sql`
 
-`sql/booking-fees-income.sql`
+2. Replace in GitHub:
+   - app.html
+   - js/appointments.js
+   - js/finance.js
+   - js/logistics.js
+   - js/attendance.js
+   - js/reports.js
+   - js/admin.js
+   - js/pwa.js
+   - css/style.css
+   - sw.js
 
-Expected verification:
-- table: `booking_income`
-- four functions:
-  - frontend_book_existing_patient_with_fee
-  - frontend_create_patient_and_book_with_fee
-  - frontend_booking_income_summary
-  - void_booking_income
-
-### Step 2 — GitHub
-Replace:
-
-- `app.html`
-- `js/appointments.js`
-- `js/finance.js`
-- `js/logistics.js`
-- `js/attendance.js`
-- `js/reports.js`
-- `js/admin.js`
-- `js/pwa.js`
-- `css/style.css`
-- `sw.js`
-
-### Step 3 — Refresh
-Wait for GitHub Pages deployment and press:
-
-Ctrl + Shift + R
-
-## Important
-A fee of 0 creates the booking without an income entry.
-Any fee above 0 is recorded under Finance → Income.
+3. Commit and, after GitHub Pages redeploys, press:
+   `Ctrl + Shift + R`

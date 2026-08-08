@@ -49,6 +49,45 @@
     ).format(d);
   }
 
+  function receptionActionLabel(kind){
+    const C=Clinic;
+
+    const labels={
+      confirm:
+        C.lang==='ar'
+          ?'تأكيد الحجز'
+          :'Confirm booking',
+
+      checkin:
+        C.lang==='ar'
+          ?'تأكيد الحضور'
+          :'Confirm arrival',
+
+      send:
+        C.lang==='ar'
+          ?'إرسال للطبيب'
+          :'Send to doctor',
+
+      noshow:
+        C.lang==='ar'
+          ?'لم يحضر'
+          :'No-show',
+
+      cancel:
+        C.lang==='ar'
+          ?'إلغاء'
+          :'Cancel',
+
+      reschedule:
+        C.lang==='ar'
+          ?'تغيير الموعد'
+          :'Reschedule'
+    };
+
+    return labels[kind]||kind;
+  }
+
+
   function appointmentStatusLabel(status){
     const C=Clinic;
     const map={
@@ -240,46 +279,6 @@
               </label>
 
               <label>
-                ${C.lang==='ar'?'الرسوم (جنيه)':'Fees (EGP)'}
-                <input
-                  id="bookingFee"
-                  type="number"
-                  min="0"
-                  step="1"
-                  value="0"
-                  class="control"
-                >
-              </label>
-
-              <label>
-                ${C.lang==='ar'?'طريقة الدفع':'Payment method'}
-                <select
-                  id="bookingPaymentMethod"
-                  class="control"
-                >
-                  <option value="cash">
-                    ${C.lang==='ar'?'نقدي':'Cash'}
-                  </option>
-
-                  <option value="instapay">
-                    InstaPay
-                  </option>
-
-                  <option value="card">
-                    ${C.lang==='ar'?'بطاقة':'Card'}
-                  </option>
-
-                  <option value="bank_transfer">
-                    ${C.lang==='ar'?'تحويل بنكي':'Bank transfer'}
-                  </option>
-
-                  <option value="other">
-                    ${C.lang==='ar'?'أخرى':'Other'}
-                  </option>
-                </select>
-              </label>
-
-              <label>
                 ${C.lang==='ar'?'الفترة الزمنية':'Time interval'}
                 <select
                   id="bookingSlot"
@@ -311,12 +310,6 @@
               class="small-note"
             ></div>
 
-            <div class="booking-income-note">
-              💰
-              ${C.lang==='ar'
-                ?'أي رسوم أكبر من صفر تُسجل تلقائياً في المالية ← الدخل.'
-                :'Any fee above zero is recorded automatically in Finance → Income.'}
-            </div>
           </section>
 
 
@@ -658,23 +651,6 @@
           const note=
             root.querySelector('#bookingNotes').value.trim()||null;
 
-          const fee=
-            Number(
-              root.querySelector('#bookingFee').value||0
-            );
-
-          const paymentMethod=
-            root.querySelector('#bookingPaymentMethod').value;
-
-          if(fee < 0){
-            return C.toast(
-              C.lang==='ar'
-                ?'الرسوم لا يمكن أن تكون سالبة.'
-                :'Fees cannot be negative.',
-              'error'
-            );
-          }
-
           let result;
 
           if(patientMode==='existing'){
@@ -691,16 +667,14 @@
             }
 
             result=await C.sb.rpc(
-              'frontend_book_existing_patient_with_fee',
+              'frontend_book_appointment',
               {
                 p_patient:patientId,
                 p_doctor:doctor.value,
                 p_start:parts[0],
                 p_end:parts[1],
                 p_type:appointmentType,
-                p_note:note,
-                p_fee:fee,
-                p_payment_method:paymentMethod
+                p_note:note
               }
             );
           }
@@ -725,7 +699,7 @@
               root.querySelector('#bookingBirthYear').value.trim();
 
             result=await C.sb.rpc(
-              'frontend_create_patient_and_book_with_fee',
+              'frontend_create_patient_and_book',
               {
                 p_doctor:doctor.value,
                 p_start:parts[0],
@@ -742,13 +716,7 @@
                 p_mobile:
                   root.querySelector('#bookingMobile').value.trim()||null,
                 p_address:
-                  root.querySelector('#bookingAddress').value.trim()||null,
-
-                p_fee:
-                  fee,
-
-                p_payment_method:
-                  paymentMethod
+                  root.querySelector('#bookingAddress').value.trim()||null
               }
             );
           }
@@ -1260,6 +1228,184 @@
   }
 
 
+  async function confirmArrivalWithFee(id){
+    const C=Clinic;
+
+    C.showModal({
+      title:
+        C.lang==='ar'
+          ?'تأكيد حضور المريض'
+          :'Confirm patient arrival',
+
+      body:`
+        <form
+          id="arrivalFeeForm"
+          class="form-grid"
+        >
+          <div class="arrival-fee-message full-span">
+            <span>✓</span>
+
+            <div>
+              <strong>
+                ${C.lang==='ar'
+                  ?'المريض حضر للعيادة'
+                  :'Patient has arrived'}
+              </strong>
+
+              <small>
+                ${C.lang==='ar'
+                  ?'سجل رسوم الكشف الآن. ستظهر مباشرة في المالية ← الدخل.'
+                  :'Enter the consultation fee now. It will appear immediately in Finance → Income.'}
+              </small>
+            </div>
+          </div>
+
+          <label>
+            ${C.lang==='ar'
+              ?'الرسوم (جنيه)'
+              :'Fees (EGP)'}
+
+            <input
+              id="arrivalFee"
+              class="control"
+              type="number"
+              min="0"
+              step="1"
+              value="0"
+              required
+            >
+          </label>
+
+          <label>
+            ${C.lang==='ar'
+              ?'طريقة الدفع'
+              :'Payment method'}
+
+            <select
+              id="arrivalPayment"
+              class="control"
+            >
+              <option value="cash">
+                ${C.lang==='ar'?'نقدي':'Cash'}
+              </option>
+
+              <option value="instapay">
+                InstaPay
+              </option>
+
+              <option value="card">
+                ${C.lang==='ar'?'بطاقة':'Card'}
+              </option>
+
+              <option value="bank_transfer">
+                ${C.lang==='ar'
+                  ?'تحويل بنكي'
+                  :'Bank transfer'}
+              </option>
+
+              <option value="other">
+                ${C.lang==='ar'?'أخرى':'Other'}
+              </option>
+            </select>
+          </label>
+
+          <label class="full-span">
+            ${C.lang==='ar'
+              ?'ملاحظة مالية (اختياري)'
+              :'Finance note (optional)'}
+
+            <textarea
+              id="arrivalFeeNote"
+              class="control"
+            ></textarea>
+          </label>
+
+          <div class="form-actions full-span">
+            <button
+              class="primary-button compact"
+              type="submit"
+            >
+              ${C.lang==='ar'
+                ?'تأكيد الحضور'
+                :'Confirm arrival'}
+            </button>
+          </div>
+        </form>
+      `,
+
+      onOpen:(root)=>{
+        root
+          .querySelector('#arrivalFeeForm')
+          .onsubmit=async event=>{
+            event.preventDefault();
+
+            const fee=
+              Number(
+                root
+                  .querySelector('#arrivalFee')
+                  .value||0
+              );
+
+            if(fee < 0){
+              return C.toast(
+                C.lang==='ar'
+                  ?'الرسوم لا يمكن أن تكون سالبة.'
+                  :'Fees cannot be negative.',
+                'error'
+              );
+            }
+
+            const {error}=await C.sb.rpc(
+              'frontend_check_in_with_fee',
+              {
+                p_id:id,
+                p_fee:fee,
+                p_payment_method:
+                  root
+                    .querySelector('#arrivalPayment')
+                    .value,
+                p_note:
+                  root
+                    .querySelector('#arrivalFeeNote')
+                    .value
+                    .trim()||
+                  null
+              }
+            );
+
+            if(error){
+              return C.toast(
+                error.message,
+                'error'
+              );
+            }
+
+            C.closeModal();
+
+            C.toast(
+              fee>0
+                ? (
+                    C.lang==='ar'
+                      ?'تم تأكيد الحضور وتسجيل الدخل.'
+                      :'Arrival confirmed and income recorded.'
+                  )
+                : (
+                    C.lang==='ar'
+                      ?'تم تأكيد حضور المريض.'
+                      :'Patient arrival confirmed.'
+                  )
+            );
+
+            window.ClinicNotifications
+              ?.refresh?.();
+
+            C.route(C.currentPage);
+          };
+      }
+    });
+  }
+
+
   async function action(id,kind){
     const C=Clinic;
     let result;
@@ -1272,10 +1418,8 @@
     }
 
     if(kind==='checkin'){
-      result=await C.sb.rpc(
-        'frontend_check_in_appointment',
-        {p_id:id}
-      );
+      await confirmArrivalWithFee(id);
+      return;
     }
 
     if(kind==='send'){
@@ -2049,7 +2193,7 @@
                           data-action="${kind}"
                           data-id="${a.id}"
                         >
-                          ${kind}
+                          ${receptionActionLabel(kind)}
                         </button>
                       `).join('')}
 
