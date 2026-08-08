@@ -1,0 +1,18 @@
+/* Public patient self-bookings: light violet, not blue */
+.hour-patient-seat.occupied.public-form-booking {
+  background: #f3edff !important;
+  color: #6d3bbd !important;
+}
+
+.hour-patient-seat.occupied.public-form-booking:hover {
+  background: #ece2ff !important;
+}
+
+.hour-patient-seat.occupied.public-form-booking .seat-number {
+  background: #e7d9ff !important;
+  color: #6d3bbd !important;
+}
+
+.hour-patient-seat.occupied.public-form-booking .seat-copy small {
+  color: #7b57b4 !important;
+}
