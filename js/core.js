@@ -87,6 +87,38 @@ const Clinic = window.Clinic = {
     return age;
   },
 
+  ageFromBirthYear(birthYear, fallbackDob=null) {
+    const year = Number(birthYear);
+
+    if (Number.isInteger(year) && year >= 1900 && year <= 2100) {
+      const currentYear = Number(
+        new Intl.DateTimeFormat('en-GB', {
+          timeZone: 'Africa/Cairo',
+          year: 'numeric'
+        }).format(new Date())
+      );
+
+      return Math.max(0, currentYear - year);
+    }
+
+    return fallbackDob ? this.ageFromDob(fallbackDob) : '—';
+  },
+
+  birthYearFromPatient(patient={}) {
+    const year = Number(patient.birth_year);
+
+    if (Number.isInteger(year) && year >= 1900 && year <= 2100) {
+      return year;
+    }
+
+    if (patient.date_of_birth) {
+      const match = String(patient.date_of_birth).match(/^(\d{4})/);
+      if (match) return Number(match[1]);
+    }
+
+    return null;
+  },
+
   statusPill(status) {
     const safe = this.escape(status || 'unknown');
     return `<span class="status-pill status-${safe.replaceAll('_','-')}">${safe.replaceAll('_',' ')}</span>`;

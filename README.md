@@ -1,38 +1,63 @@
-# Operation Clinic — Saturday Week + DD/MM/YYYY Patch
+# Operation Clinic — Patient Demographics Fix
 
-Requested changes:
+This patch fixes the patient registration and booking errors you showed.
 
-1. Arabic translation of `Clinic Management` is now:
-   `إدارة العيادة`
+## Changes
 
-2. Clinic week display now begins:
-   Saturday → Sunday → Monday → Tuesday → Wednesday → Thursday → Friday
+### Patient registration
+The form is now:
 
-3. Displayed dates use:
-   `DD/MM/YYYY`
+- Arabic name
+- English name
+- **Year of birth** — not full date of birth
+- Gender
+- **Mobile**
+- Address
 
-Examples:
-- `08/08/2026`
-- `08/08/2026 → 31/12/2026`
-- Top bar: `Saturday, 08/08/2026`
-- Arabic top bar: `السبت، 08/08/2026`
+Removed from the UI:
 
-## Replace these files in GitHub
+- Alternative phone
+- Emergency contact
 
-- `app.html`
+Existing historical values in old database columns are **not deleted**.
+
+### Booking
+The booking patient dropdown no longer requests a non-existent `patients.mobile`
+column just to display the patient list.
+
+### Clinical screens
+Age is calculated from `birth_year`.
+For old patients, the system can still fall back to the old `date_of_birth`
+value if one exists.
+
+## Installation order
+
+### 1. Supabase
+Run the full contents of:
+
+`sql/patient-demographics-fix.sql`
+
+It adds:
+
+- `patients.mobile`
+- `patients.birth_year`
+
+and migrates compatible old values if available.
+
+### 2. GitHub
+Replace these files:
+
 - `js/core.js`
-- `js/schedules.js`
-- `js/attendance.js`
-- `js/finance.js`
 - `js/patients.js`
-- `js/notifications.js`
+- `js/appointments.js`
+- `js/clinical.js`
 - `sw.js`
 
-No SQL is required for this patch.
+### 3. Refresh
+After GitHub Pages redeploys:
 
-After committing:
-1. wait for GitHub Pages deployment;
-2. open the clinic;
-3. press `Ctrl + Shift + R`.
+`Ctrl + Shift + R`
 
-Note: HTML date-picker fields still use the browser's native date input internally. Saved values remain ISO dates in Supabase, while all normal displayed dates are formatted as DD/MM/YYYY.
+## Important
+Do not paste the SQL filename into Supabase.
+Open the `.sql` file and paste its actual contents.

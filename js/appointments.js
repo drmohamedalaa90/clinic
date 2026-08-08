@@ -12,7 +12,7 @@
   };
 
   async function patientOptions(selected){
-    const {data,error}=await Clinic.sb.from('patients').select('id,medical_record_number,english_name,arabic_name,mobile').eq('is_active',true).order('created_at',{ascending:false}).limit(150);
+    const {data,error}=await Clinic.sb.from('patients').select('id,medical_record_number,english_name,arabic_name').eq('is_active',true).order('created_at',{ascending:false}).limit(150);
     if(error) return `<option value="">${Clinic.escape(error.message)}</option>`;
     return `<option value="">${Clinic.lang==='ar'?'اختر المريض':'Select patient'}</option>${(data||[]).map(p=>`<option value="${p.id}" ${p.id===selected?'selected':''}>${Clinic.escape(p.medical_record_number)} — ${Clinic.escape(p.english_name||p.arabic_name||'Patient')}</option>`).join('')}`;
   }
@@ -56,7 +56,7 @@
 
   async function attachPatientNames(appts){
     const ids=[...new Set(appts.map(a=>a.patient_id).filter(Boolean))];if(!ids.length)return new Map();
-    const {data}=await Clinic.sb.from('patients').select('id,medical_record_number,english_name,arabic_name,mobile').in('id',ids);
+    const {data}=await Clinic.sb.from('patients').select('id,medical_record_number,english_name,arabic_name').in('id',ids);
     return new Map((data||[]).map(p=>[p.id,p]));
   }
 
