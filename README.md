@@ -1,81 +1,86 @@
-# Operation Clinic — Direct Check-in + Owner Test Reset
+# Operation Clinic — Patient Reset + Doctor Today/Tomorrow Home
 
-This patch applies the corrected appointment flow.
+## 1. Owner can reset ALL patients
 
-## After booking
+Patients now has an Owner-only:
 
-There is NO confirmation step.
+**Reset all patients**
 
-A booked appointment immediately shows these actions in this order:
+It requires typing:
 
-1. Check in
-2. Reschedule
-3. No-show
-4. Cancel
+`RESET PATIENTS`
 
-When reception clicks **Check in**, the fee window opens:
+It clears all test patient-linked data first, then patients, and restarts the
+patient MRN sequence.
 
-- Fees (EGP)
-- Payment method
-- Optional finance note
+The NEXT patient will be:
 
-After saving:
-- appointment becomes Arrived
-- fee appears in Finance -> Income
+`OPC-000001`
 
-## Owner-only test reset
+Preserved:
+- users / roles
+- doctor working schedules
+- schedule exceptions
+- service price list
+- logistics
+- attendance
 
-The Owner account gets two destructive test-period tools.
+Because appointments, visits, referrals and patient invoices depend on patient
+records, those patient-linked test records are removed too.
 
-### Appointments -> Reset appointments
+## 2. Doctor home page = Today's Clinic
 
-Requires typing:
+After a Doctor logs in, the app now opens:
 
-`RESET APPOINTMENTS`
+**Today's Clinic**
 
-It clears test appointment data and appointment-linked workflow records while preserving:
+instead of Appointments.
 
-- Patients
-- Doctor working-hours schedules
+Doctor sidebar starts with:
+1. Today's Clinic
+2. Appointments
+3. My Queue
+4. Patients
+5. Referrals
+6. My Schedule
+7. Dashboard
+8. My Profile
 
-Because booking income is attached to appointments, appointment reset also clears those linked booking-income entries.
+## 3. Today's Clinic stays active until 2 hours after clinic end
 
-### Finance -> Reset finance
+Example:
+- clinic ends 18:00
+- Today's Clinic remains the active doctor home through 20:00
 
-Requires typing:
+After the 2-hour period, the same home page moves the focus to tomorrow.
 
-`RESET FINANCE`
+## 4. Tomorrow's Clinic is always inside the doctor home page
 
-It clears:
+The doctor can see:
+- today's booked patients by hour
+- status
+- booked / waiting / completed counts
+- tomorrow's clinic
+- tomorrow's booked patients by hour
 
-- Booking income
-- Invoice payments
-- Invoice items
-- Invoices
-- Cash closings
-- Clinic expenses
-
-It preserves:
-
-- Patients
-- Appointments
-- Service / price list
-- Logistics requests
-
-Both reset functions are enforced as **Owner-only in Supabase**, not merely hidden in the frontend.
+If today's clinic has already ended plus two hours, the page shows a brief
+"Today's clinic has ended" card and puts Tomorrow's Clinic in focus.
 
 ## Install
 
-1. Run the full contents of:
-   `sql/owner-test-reset.sql`
+### Supabase
+Run the full contents of:
 
-2. Replace in GitHub:
-   - `js/appointments.js`
-   - `js/finance.js`
-   - `css/style.css`
-   - `sw.js`
+`sql/owner-reset-all-patients.sql`
 
-The included `app.html` and supporting modules are unchanged copies of the current working package, so you do not need to replace them unless you want to upload the whole patch folder.
+### GitHub
+Replace:
+- `js/core.js`
+- `js/patients.js`
+- `js/appointments.js`
+- `css/style.css`
+- `sw.js`
 
-3. Wait for GitHub Pages deployment and press:
-   `Ctrl + Shift + R`
+Then wait for GitHub Pages and press:
+
+`Ctrl + Shift + R`

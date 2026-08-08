@@ -2567,3 +2567,257 @@ html[dir="rtl"] .dashboard-notification-row.unread {
     width: 100%;
   }
 }
+
+
+/* ========================================================
+   DOCTOR HOME — TODAY + TOMORROW CLINIC
+======================================================== */
+
+.doctor-home-toolbar {
+  align-items: flex-end;
+}
+
+.doctor-clinic-day-card {
+  margin-bottom: 20px;
+}
+
+.tomorrow-clinic-card {
+  border-top: 3px solid #0f766e;
+}
+
+.doctor-clinic-section-head {
+  align-items: flex-start;
+}
+
+.doctor-clinic-section-head h3 {
+  margin: 0;
+}
+
+.doctor-clinic-section-head p {
+  margin: 5px 0 0;
+}
+
+.doctor-clinic-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.doctor-clinic-stats span {
+  min-width: 74px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface-soft);
+  display: grid;
+  gap: 1px;
+  color: var(--muted);
+  font-size: 9px;
+  text-align: center;
+}
+
+.doctor-clinic-stats b {
+  color: var(--text);
+  font-size: 16px;
+}
+
+.doctor-clinic-hours {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit,minmax(235px,1fr));
+  gap: 12px;
+}
+
+.doctor-clinic-hour {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: white;
+}
+
+.doctor-clinic-hour > header {
+  padding: 11px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  background: #f8fafc;
+}
+
+.doctor-clinic-hour > header > div {
+  display: grid;
+  gap: 2px;
+}
+
+.doctor-clinic-hour > header strong {
+  font-size: 13px;
+}
+
+.doctor-clinic-hour > header small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.clinic-capacity {
+  border-radius: 999px;
+  padding: 5px 8px;
+  font-size: 8px;
+  font-weight: 850;
+}
+
+.clinic-capacity.open {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.clinic-capacity.full {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.doctor-clinic-patients {
+  display: grid;
+}
+
+.doctor-clinic-patient {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: white;
+  padding: 10px 11px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 9px;
+  text-align: start;
+}
+
+.doctor-clinic-patient:last-child {
+  border-bottom: 0;
+}
+
+.doctor-clinic-patient:hover {
+  background: #f8fafc;
+}
+
+.doctor-clinic-patient-main {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.doctor-clinic-patient-main strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.doctor-clinic-patient-main small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.doctor-clinic-empty-hour {
+  min-height: 56px;
+  padding: 12px;
+  display: grid;
+  place-items: center;
+  color: #94a3b8;
+  font-size: 9px;
+  text-align: center;
+}
+
+.legacy-clinic-appointments {
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid var(--border);
+  display: grid;
+  gap: 5px;
+}
+
+.legacy-clinic-appointments > strong {
+  margin-bottom: 3px;
+  font-size: 11px;
+}
+
+.clinic-ended-card {
+  margin-bottom: 20px;
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.clinic-ended-card > div {
+  display: grid;
+  grid-template-columns: 38px minmax(0,1fr);
+  gap: 11px;
+  align-items: center;
+}
+
+.clinic-ended-card > div > span {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #475569;
+  font-weight: 900;
+}
+
+.clinic-ended-card > div > div {
+  display: grid;
+  gap: 4px;
+}
+
+.clinic-ended-card strong {
+  font-size: 13px;
+}
+
+.clinic-ended-card small {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+
+/* ========================================================
+   OWNER PATIENT RESET
+======================================================== */
+
+#resetPatientsTest {
+  white-space: nowrap;
+}
+
+
+@media (max-width: 700px) {
+  .doctor-home-toolbar {
+    align-items: stretch;
+  }
+
+  .doctor-home-toolbar .toolbar-actions {
+    width: 100%;
+  }
+
+  .doctor-home-toolbar .toolbar-actions > * {
+    flex: 1 1 140px;
+  }
+
+  .doctor-clinic-section-head {
+    display: grid;
+  }
+
+  .doctor-clinic-stats {
+    margin-top: 10px;
+  }
+
+  .doctor-clinic-hours {
+    grid-template-columns: 1fr;
+  }
+
+  #resetPatientsTest {
+    width: 100%;
+  }
+}

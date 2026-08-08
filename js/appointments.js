@@ -2066,6 +2066,606 @@
     });
 
 
+  function doctorClinicStatusCounts(appts=[]){
+    return {
+      total:
+        appts.filter(x=>
+          !['cancelled','rescheduled'].includes(x.status)
+        ).length,
+
+      arrived:
+        appts.filter(x=>x.status==='arrived').length,
+
+      waiting:
+        appts.filter(x=>x.status==='waiting').length,
+
+      withDoctor:
+        appts.filter(x=>x.status==='with_doctor').length,
+
+      completed:
+        appts.filter(x=>x.status==='completed').length
+    };
+  }
+
+
+  function renderDoctorClinicDay({
+    date,
+    slots,
+    appointments,
+    patients,
+    isTomorrow=false
+  }){
+    const C=Clinic;
+
+    const activeAppointments=
+      (appointments||[])
+        .filter(x=>
+          !['cancelled','rescheduled'].includes(x.status)
+        );
+
+    const counts=
+      doctorClinicStatusCounts(
+        activeAppointments
+      );
+
+    const matchedIds=
+      new Set();
+
+    const slotCards=(slots||[]).map(slot=>{
+
+      const hourPatients=
+        activeAppointments
+          .filter(a=>
+            new Date(a.scheduled_start)
+              < new Date(slot.slot_end)
+            &&
+            new Date(a.scheduled_end)
+              > new Date(slot.slot_start)
+          )
+          .sort(
+            (a,b)=>
+              new Date(a.created_at||a.scheduled_start)
+              -
+              new Date(b.created_at||b.scheduled_start)
+          );
+
+      hourPatients.forEach(
+        a=>matchedIds.add(a.id)
+      );
+
+      return `
+        <article class="doctor-clinic-hour">
+          <header>
+            <div>
+              <strong>
+                ${C.formatTime(slot.slot_start)}
+                –
+                ${C.formatTime(slot.slot_end)}
+              </strong>
+
+              <small>
+                ${hourPatients.length}/4
+                ${C.lang==='ar'
+                  ?'مرضى'
+                  :'patients'}
+              </small>
+            </div>
+
+            <span class="clinic-capacity ${
+              hourPatients.length>=4
+                ? 'full'
+                : 'open'
+            }">
+              ${hourPatients.length>=4
+                ? (
+                    C.lang==='ar'
+                      ?'ممتلئ'
+                      :'Full'
+                  )
+                : `${4-hourPatients.length} ${
+                    C.lang==='ar'
+                      ?'متبقي'
+                      :'left'
+                  }`
+              }
+            </span>
+          </header>
+
+          <div class="doctor-clinic-patients">
+            ${hourPatients.length
+              ? hourPatients.map(a=>{
+                  const p=
+                    patients.get(a.patient_id)||{};
+
+                  return `
+                    <button
+                      class="doctor-clinic-patient"
+                      data-doctor-home-patient="${a.patient_id}"
+                      type="button"
+                    >
+                      <span class="doctor-clinic-patient-main">
+                        <strong>
+                          ${C.escape(
+                            p.english_name||
+                            p.arabic_name||
+                            'Patient'
+                          )}
+                        </strong>
+
+                        <small>
+                          ${C.escape(
+                            p.medical_record_number||
+                            ''
+                          )}
+                        </small>
+                      </span>
+
+                      ${C.statusPill(a.status)}
+                    </button>
+                  `;
+                }).join('')
+
+              : `<div class="doctor-clinic-empty-hour">
+                   ${C.lang==='ar'
+                     ?'لا يوجد مرضى محجوزون في هذه الساعة.'
+                     :'No patients booked in this hour.'}
+                 </div>`
+            }
+          </div>
+        </article>
+      `;
+    });
+
+
+    const legacyAppointments=
+      activeAppointments
+        .filter(a=>!matchedIds.has(a.id));
+
+
+    return `
+      <section class="content-card doctor-clinic-day-card ${
+        isTomorrow
+          ? 'tomorrow-clinic-card'
+          : 'today-clinic-card'
+      }">
+        <div class="section-head doctor-clinic-section-head">
+          <div>
+            <span class="eyebrow">
+              ${isTomorrow
+                ? (
+                    C.lang==='ar'
+                      ?'غداً'
+                      :'TOMORROW'
+                  )
+                : (
+                    C.lang==='ar'
+                      ?'اليوم'
+                      :'TODAY'
+                  )
+              }
+            </span>
+
+            <h3>
+              ${isTomorrow
+                ? (
+                    C.lang==='ar'
+                      ?'عيادة الغد'
+                      :"Tomorrow's clinic"
+                  )
+                : (
+                    C.lang==='ar'
+                      ?'عيادة اليوم'
+                      :"Today's clinic"
+                  )
+              }
+            </h3>
+
+            <p class="muted">
+              ${weekdayName(date)}
+              •
+              ${C.formatDate(date)}
+            </p>
+          </div>
+
+          <div class="doctor-clinic-stats">
+            <span>
+              <b>${counts.total}</b>
+              ${C.lang==='ar'
+                ?'حجز'
+                :'booked'}
+            </span>
+
+            ${!isTomorrow
+              ? `
+                  <span>
+                    <b>${counts.waiting}</b>
+                    ${C.lang==='ar'
+                      ?'انتظار'
+                      :'waiting'}
+                  </span>
+
+                  <span>
+                    <b>${counts.completed}</b>
+                    ${C.lang==='ar'
+                      ?'مكتمل'
+                      :'completed'}
+                  </span>
+                `
+              : ''
+            }
+          </div>
+        </div>
+
+        ${(slots||[]).length
+          ? `<div class="doctor-clinic-hours">
+               ${slotCards.join('')}
+             </div>`
+
+          : activeAppointments.length
+            ? ''
+            : `<div class="empty-state">
+                 ${isTomorrow
+                   ? (
+                       C.lang==='ar'
+                         ?'لا توجد عيادة مجدولة غداً.'
+                         :'No clinic is scheduled tomorrow.'
+                     )
+                   : (
+                       C.lang==='ar'
+                         ?'لا توجد عيادة مجدولة اليوم.'
+                         :'No clinic is scheduled today.'
+                     )
+                 }
+               </div>`
+        }
+
+        ${legacyAppointments.length
+          ? `
+              <div class="legacy-clinic-appointments">
+                <strong>
+                  ${C.lang==='ar'
+                    ?'حجوزات إضافية'
+                    :'Other appointments'}
+                </strong>
+
+                ${legacyAppointments.map(a=>{
+                  const p=
+                    patients.get(a.patient_id)||{};
+
+                  return `
+                    <button
+                      class="doctor-clinic-patient"
+                      data-doctor-home-patient="${a.patient_id}"
+                    >
+                      <span class="doctor-clinic-patient-main">
+                        <strong>
+                          ${C.escape(
+                            p.english_name||
+                            p.arabic_name||
+                            'Patient'
+                          )}
+                        </strong>
+
+                        <small>
+                          ${C.formatTime(a.scheduled_start)}
+                          •
+                          ${C.escape(
+                            p.medical_record_number||
+                            ''
+                          )}
+                        </small>
+                      </span>
+
+                      ${C.statusPill(a.status)}
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            `
+          : ''
+        }
+      </section>
+    `;
+  }
+
+
+  window.ClinicPages['today-clinic']=async function(){
+    const C=Clinic;
+
+    if(!C.isDoctor()){
+      return C.route('dashboard');
+    }
+
+    C.setTitle(
+      C.lang==='ar'
+        ?'عيادة اليوم'
+        :"Today's Clinic"
+    );
+
+    const today=
+      C.cairoDate();
+
+    const tomorrow=
+      addDays(
+        today,
+        1
+      );
+
+
+    const [
+      todaySlotResult,
+      tomorrowSlotResult,
+      todayAppointments,
+      tomorrowAppointments
+    ] = await Promise.all([
+
+      C.sb.rpc(
+        'frontend_get_hourly_slots',
+        {
+          p_doctor:
+            C.user.id,
+
+          p_day:
+            today
+        }
+      ),
+
+      C.sb.rpc(
+        'frontend_get_hourly_slots',
+        {
+          p_doctor:
+            C.user.id,
+
+          p_day:
+            tomorrow
+        }
+      ),
+
+      fetchRangeAppointments({
+        doctorId:
+          C.user.id,
+
+        from:
+          today,
+
+        to:
+          today
+      }),
+
+      fetchRangeAppointments({
+        doctorId:
+          C.user.id,
+
+        from:
+          tomorrow,
+
+        to:
+          tomorrow
+      })
+    ]);
+
+
+    const todaySlots=
+      todaySlotResult.error
+        ? []
+        : (todaySlotResult.data||[]);
+
+    const tomorrowSlots=
+      tomorrowSlotResult.error
+        ? []
+        : (tomorrowSlotResult.data||[]);
+
+
+    const patients=
+      await attachPatientNames([
+        ...(todayAppointments||[]),
+        ...(tomorrowAppointments||[])
+      ]);
+
+
+    // The "Today's clinic" part remains the doctor's active home
+    // until TWO HOURS after the last clinic hour / appointment.
+    const activeTodayAppointments=
+      (todayAppointments||[])
+        .filter(a=>
+          !['cancelled','rescheduled'].includes(a.status)
+        );
+
+    const endCandidates=[
+      ...todaySlots.map(x=>x.slot_end),
+      ...activeTodayAppointments.map(x=>x.scheduled_end)
+    ]
+      .filter(Boolean)
+      .map(x=>new Date(x).getTime())
+      .filter(Number.isFinite);
+
+
+    const clinicEndMs=
+      endCandidates.length
+        ? Math.max(...endCandidates)
+        : null;
+
+    const graceEndMs=
+      clinicEndMs
+        ? clinicEndMs + (2*60*60*1000)
+        : null;
+
+    const nowMs=
+      Date.now();
+
+    const showTodayAsActive=
+      graceEndMs!==null
+        ? nowMs <= graceEndMs
+        : false;
+
+
+    document.getElementById('mainContent').innerHTML=`
+      <section class="page-toolbar doctor-home-toolbar">
+        <div>
+          <span class="eyebrow">
+            ${showTodayAsActive
+              ? (
+                  C.lang==='ar'
+                    ?'العيادة الحالية'
+                    :'DOCTOR HOME'
+                )
+              : (
+                  C.lang==='ar'
+                    ?'العيادة القادمة'
+                    :'NEXT CLINIC'
+                )
+            }
+          </span>
+
+          <h2>
+            ${showTodayAsActive
+              ? (
+                  C.lang==='ar'
+                    ?'عيادة اليوم'
+                    :"Today's clinic"
+                )
+              : (
+                  C.lang==='ar'
+                    ?'عيادة الغد'
+                    :"Tomorrow's clinic"
+                )
+            }
+          </h2>
+
+          <p class="muted">
+            ${showTodayAsActive && clinicEndMs
+              ? (
+                  C.lang==='ar'
+                    ? `تظل عيادة اليوم الصفحة الرئيسية حتى ساعتين بعد نهاية العيادة (${C.formatTime(new Date(clinicEndMs))}).`
+                    : `Today's clinic remains your home until 2 hours after clinic end (${C.formatTime(new Date(clinicEndMs))}).`
+                )
+              : (
+                  C.lang==='ar'
+                    ?'انتهت نافذة عيادة اليوم؛ عيادة الغد معروضة الآن.'
+                    :"Today's clinic window has ended; tomorrow's clinic is now in focus."
+                )
+            }
+          </p>
+        </div>
+
+        <div class="toolbar-actions">
+          <button
+            id="doctorHomeQueue"
+            class="primary-button compact"
+          >
+            ${C.lang==='ar'
+              ?'قائمة الانتظار'
+              :'My Queue'}
+          </button>
+
+          <button
+            id="doctorHomeAppointments"
+            class="secondary-button"
+          >
+            ${C.lang==='ar'
+              ?'كل المواعيد'
+              :'Appointments'}
+          </button>
+        </div>
+      </section>
+
+
+      ${showTodayAsActive
+        ? renderDoctorClinicDay({
+            date:
+              today,
+
+            slots:
+              todaySlots,
+
+            appointments:
+              todayAppointments||[],
+
+            patients,
+            isTomorrow:
+              false
+          })
+
+        : `
+            <section class="content-card clinic-ended-card">
+              <div>
+                <span>✓</span>
+
+                <div>
+                  <strong>
+                    ${C.lang==='ar'
+                      ?'انتهت عيادة اليوم'
+                      :"Today's clinic has ended"}
+                  </strong>
+
+                  <small>
+                    ${clinicEndMs
+                      ? (
+                          C.lang==='ar'
+                            ? `انتهت في ${C.formatTime(new Date(clinicEndMs))}، وانتهت فترة الساعتين الإضافيتين.`
+                            : `Clinic ended at ${C.formatTime(new Date(clinicEndMs))}; the 2-hour grace period has also ended.`
+                        )
+                      : (
+                          C.lang==='ar'
+                            ?'لا توجد عيادة مسجلة اليوم.'
+                            :'No clinic was scheduled today.'
+                        )
+                    }
+                  </small>
+                </div>
+              </div>
+            </section>
+          `
+      }
+
+
+      ${renderDoctorClinicDay({
+        date:
+          tomorrow,
+
+        slots:
+          tomorrowSlots,
+
+        appointments:
+          tomorrowAppointments||[],
+
+        patients,
+        isTomorrow:
+          true
+      })}
+    `;
+
+
+    document
+      .getElementById('doctorHomeQueue')
+      .onclick=
+        ()=>C.route('queue');
+
+
+    document
+      .getElementById('doctorHomeAppointments')
+      .onclick=
+        ()=>C.route('doctor-appointments');
+
+
+    document
+      .querySelectorAll(
+        '[data-doctor-home-patient]'
+      )
+      .forEach(button=>{
+
+        button.onclick=()=>C.route(
+          'patient-detail',
+          {
+            patientId:
+              button.dataset.doctorHomePatient
+          }
+        );
+
+      });
+  };
+
+
   window.ClinicPages['reception']=async function(){
     const C=Clinic;
 

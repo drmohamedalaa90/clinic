@@ -152,15 +152,29 @@
           </p>
         </div>
 
-        ${C.isReception()
-          ? `<button
-               id="newPatientBtn"
-               class="primary-button compact"
-             >
-               + ${C.lang==='ar'?'مريض جديد':'New Patient'}
-             </button>`
-          : ''
-        }
+        <div class="toolbar-actions">
+          ${C.isReception()
+            ? `<button
+                 id="newPatientBtn"
+                 class="primary-button compact"
+               >
+                 + ${C.lang==='ar'?'مريض جديد':'New Patient'}
+               </button>`
+            : ''
+          }
+
+          ${C.hasRole('owner')
+            ? `<button
+                 id="resetPatientsTest"
+                 class="danger-button compact"
+               >
+                 ${C.lang==='ar'
+                   ?'إعادة ضبط كل المرضى'
+                   :'Reset all patients'}
+               </button>`
+            : ''
+          }
+        </div>
       </section>
 
       <section class="content-card">
@@ -199,6 +213,48 @@
       .addEventListener('keydown',e=>{
         if(e.key==='Enter') search();
       });
+
+
+    document
+      .getElementById('resetPatientsTest')
+      ?.addEventListener(
+        'click',
+        async()=>{
+          const phrase=prompt(
+            C.lang==='ar'
+              ?'هذا سيحذف كل المرضى التجريبيين وكل المواعيد والزيارات والتحويلات والفواتير المرتبطة بهم. جداول الأطباء والمستخدمون سيبقون. سيبدأ رقم المريض التالي من OPC-000001. اكتب RESET PATIENTS للمتابعة.'
+              :'This deletes ALL test patients and their appointments, visits, referrals and patient-linked finance records. Users and doctor schedules are preserved. The next patient will start again at OPC-000001. Type RESET PATIENTS to continue.'
+          );
+
+          if(phrase!=='RESET PATIENTS'){
+            return;
+          }
+
+          const {data,error}=await C.sb.rpc(
+            'owner_reset_all_patients_test_data',
+            {
+              p_confirmation:
+                phrase
+            }
+          );
+
+          if(error){
+            return C.toast(
+              error.message,
+              'error'
+            );
+          }
+
+          C.toast(
+            C.lang==='ar'
+              ?'تمت إعادة ضبط كل المرضى. المريض التالي سيبدأ من رقم 1.'
+              :'All patients reset. The next patient starts from number 1.'
+          );
+
+          window.ClinicNotifications?.refresh?.();
+          C.route('patients');
+        }
+      );
 
 
     if(C.isReception()){

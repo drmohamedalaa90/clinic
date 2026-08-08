@@ -197,48 +197,64 @@ const Clinic = window.Clinic = {
   buildNavigation() {
     let menu = '';
 
-    if (this.isDoctor() && !this.hasRole('owner')) {
-      menu += this.navItem('📅','appointments','doctor-appointments');
-      menu += this.navItem('⌂','dashboard','dashboard');
-    } else {
-      menu += this.navItem('⌂','dashboard','dashboard');
-    }
-
-    if (this.isManagement()) {
-      menu += this.navItem('📅','appointments','appointments');
-      menu += this.navItem('👥','patients','patients');
-      menu += this.navItem('🛎','reception','reception');
-      menu += this.navItem('🕒','schedules','schedules');
-      menu += this.navItem('💳','finance','finance');
-      menu += this.navItem('📦','logistics','logistics');
-      menu += this.navItem('✓','attendance','attendance');
-      menu += this.navItem('📊','reports','reports');
-      menu += this.navItem('👤','profile','profile');
-      if (this.hasRole('owner')) {
-        menu += this.navItem('👥','users','users');
-        menu += this.navItem('◷','audit','audit');
-        menu += this.navItem('⚙','settings','settings');
-      }
-    } else if (this.hasRole('secretary')) {
-      menu += this.navItem('📅','appointments','appointments');
-      menu += this.navItem('👥','patients','patients');
-      menu += this.navItem('🛎','reception','reception');
-      menu += this.navItem('💳','finance','finance');
-      menu += this.navItem('📦','logistics','logistics');
-      menu += this.navItem('✓','attendance','attendance');
-      menu += this.navItem('👤','profile','profile');
-    }
+    // Doctors start from TODAY'S CLINIC.
     if (this.isDoctor() && !this.hasRole('owner')) {
       menu += this.navItem('☀','todayClinic','today-clinic');
+      menu += this.navItem('📅','appointments','doctor-appointments');
       menu += this.navItem('⌛','queue','queue');
       menu += this.navItem('👥','patients','patients');
       menu += this.navItem('⇄','referrals','referrals');
       menu += this.navItem('🕒','mySchedule','my-schedule');
+      menu += this.navItem('⌂','dashboard','dashboard');
       menu += this.navItem('👤','profile','profile');
     }
-    if (this.hasRole('technical_admin')) menu += this.navItem('⚙','technical','technical');
+
+    else {
+      menu += this.navItem('⌂','dashboard','dashboard');
+
+      if (this.isManagement()) {
+        menu += this.navItem('📅','appointments','appointments');
+        menu += this.navItem('👥','patients','patients');
+        menu += this.navItem('🛎','reception','reception');
+        menu += this.navItem('🕒','schedules','schedules');
+        menu += this.navItem('💳','finance','finance');
+        menu += this.navItem('📦','logistics','logistics');
+        menu += this.navItem('✓','attendance','attendance');
+        menu += this.navItem('📊','reports','reports');
+        menu += this.navItem('👤','profile','profile');
+
+        if (this.hasRole('owner')) {
+          menu += this.navItem('👥','users','users');
+          menu += this.navItem('◷','audit','audit');
+          menu += this.navItem('⚙','settings','settings');
+        }
+      }
+
+      else if (this.hasRole('secretary')) {
+        menu += this.navItem('📅','appointments','appointments');
+        menu += this.navItem('👥','patients','patients');
+        menu += this.navItem('🛎','reception','reception');
+        menu += this.navItem('💳','finance','finance');
+        menu += this.navItem('📦','logistics','logistics');
+        menu += this.navItem('✓','attendance','attendance');
+        menu += this.navItem('👤','profile','profile');
+      }
+    }
+
+    if (this.hasRole('technical_admin')) {
+      menu += this.navItem('⚙','technical','technical');
+    }
+
     document.getElementById('navigation').innerHTML = menu;
-    document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('click', () => this.route(btn.dataset.page)));
+
+    document
+      .querySelectorAll('.nav-item')
+      .forEach(btn =>
+        btn.addEventListener(
+          'click',
+          () => this.route(btn.dataset.page)
+        )
+      );
   },
 
   primaryRoleLabel() {
@@ -336,7 +352,7 @@ const Clinic = window.Clinic = {
 
     await this.route(
       this.isDoctor() && !this.hasRole('owner')
-        ? 'doctor-appointments'
+        ? 'today-clinic'
         : 'dashboard'
     );
 
