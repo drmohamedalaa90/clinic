@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#10263f">
 
-  <title>حجز موعد | Operation Clinic</title>
+  <title>حجز موعد | عيادة د. أحمد علاء</title>
 
   <style>
     :root {
@@ -88,7 +88,8 @@
 
     .brand-copy span {
       color: var(--muted);
-      font-size: 12px;
+      font-size: 11px;
+      line-height: 1.65;
     }
 
     .card {
@@ -429,8 +430,8 @@
       <div class="brand-logo">OC</div>
 
       <div class="brand-copy">
-        <strong>Operation Clinic</strong>
-        <span>حجز موعد بالعيادة</span>
+        <strong>عيادة د. أحمد علاء</strong>
+        <span>استشارى ومدرس الغدد الصماء و السكر بجامعة الاسكندرية</span>
       </div>
     </header>
 
@@ -438,7 +439,7 @@
     <section class="card">
 
       <div class="hero">
-        <small>حجز موعد</small>
+        <small>عيادة د. أحمد علاء</small>
 
         <h1>احجز موعدك بسهولة</h1>
 
@@ -548,15 +549,7 @@
             <span class="step-number">2</span>
             اختر الموعد
           </div>
-
-          <div id="doctorArea">
-            <div class="availability-message">
-              جاري تحميل الأطباء...
-            </div>
-          </div>
-
-
-          <label>
+<label>
             اليوم والتاريخ
 
             <select
@@ -566,7 +559,7 @@
               required
             >
               <option value="">
-                اختر الطبيب أولاً
+                جاري تحميل الأيام المتاحة...
               </option>
             </select>
           </label>
@@ -680,11 +673,6 @@
         'bookingForm'
       );
 
-    const doctorArea =
-      document.getElementById(
-        'doctorArea'
-      );
-
     const dateSelect =
       document.getElementById(
         'clinicDate'
@@ -721,9 +709,10 @@
       );
 
 
-    let doctors = [];
+    const FIXED_DOCTOR_USERNAME = 'ahmed.alaa';
+
     let selectedDoctorId = null;
-    let selectedDoctorName = null;
+    let selectedDoctorName = 'Dr Ahmed Alaa';
 
 
     const dayNames = [
@@ -905,7 +894,7 @@
     }
 
 
-    async function loadDoctors() {
+    async function loadDoctor() {
       clearError();
 
       const { data, error } =
@@ -915,127 +904,46 @@
 
 
       if(error) {
-        doctorArea.innerHTML =
-          '<div class="availability-message">تعذر تحميل الأطباء حالياً.</div>';
-
         showError(
           error.message
         );
 
-        return;
-      }
-
-
-      doctors =
-        data || [];
-
-
-      if(!doctors.length) {
-        doctorArea.innerHTML =
-          '<div class="availability-message">لا يوجد حجز متاح حالياً.</div>';
+        availabilityMessage.textContent =
+          'تعذر تحميل مواعيد العيادة حالياً.';
 
         return;
       }
 
 
-      doctorArea.innerHTML = `
-        <div
-          style="
-            margin-bottom:7px;
-            font-size:12px;
-            font-weight:700;
-          "
-        >
-          الطبيب
-        </div>
-
-        <div class="doctor-grid">
-          ${doctors.map(
-            (doctor,index)=>`
-              <label class="doctor-option">
-                <input
-                  type="radio"
-                  name="doctor"
-                  value="${doctor.id}"
-                  data-name="${escapeHtml(doctor.display_name)}"
-                  ${doctors.length===1 ? 'checked' : ''}
-                  required
-                >
-
-                <span>
-                  ${escapeHtml(doctor.display_name)}
-                </span>
-              </label>
-            `
-          ).join('')}
-        </div>
-      `;
+      const doctor =
+        (data || []).find(
+          d =>
+            d.username ===
+            FIXED_DOCTOR_USERNAME
+        );
 
 
-      doctorArea
-        .querySelectorAll(
-          'input[name="doctor"]'
-        )
-        .forEach(input=>{
-          input.addEventListener(
-            'change',
-            async()=>{
-              selectedDoctorId =
-                input.value;
+      if(!doctor) {
+        showError(
+          'Dr Ahmed Alaa is unavailable'
+        );
 
-              selectedDoctorName =
-                input.dataset.name;
+        availabilityMessage.textContent =
+          'الحجز غير متاح حالياً.';
 
-              await loadDays();
-            }
-          );
-        });
-
-
-      const queryDoctor =
-        new URLSearchParams(
-          window.location.search
-        )
-        .get('doctor');
-
-
-      if(queryDoctor) {
-        const match =
-          doctors.find(
-            d=>
-              d.id===queryDoctor
-              ||
-              d.username===queryDoctor
-          );
-
-        if(match) {
-          const input =
-            doctorArea.querySelector(
-              `input[value="${match.id}"]`
-            );
-
-          if(input) {
-            input.checked = true;
-            selectedDoctorId =
-              match.id;
-            selectedDoctorName =
-              match.display_name;
-            await loadDays();
-            return;
-          }
-        }
+        return;
       }
 
 
-      if(doctors.length===1) {
-        selectedDoctorId =
-          doctors[0].id;
+      selectedDoctorId =
+        doctor.id;
 
-        selectedDoctorName =
-          doctors[0].display_name;
+      selectedDoctorName =
+        doctor.display_name ||
+        'Dr Ahmed Alaa';
 
-        await loadDays();
-      }
+
+      await loadDays();
     }
 
 
@@ -1221,14 +1129,6 @@
             .getElementById('website')
             .value
         ) {
-          return;
-        }
-
-
-        if(!selectedDoctorId) {
-          showError(
-            'اختر الطبيب.'
-          );
           return;
         }
 
@@ -1445,7 +1345,7 @@
         new Date().getFullYear();
 
 
-    loadDoctors();
+    loadDoctor();
   </script>
 </body>
 </html>
