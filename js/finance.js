@@ -149,6 +149,18 @@
               :'Invoice'}
           </button>
 
+          ${c.hasRole('owner')
+            ? `<button
+                 id="resetFinanceTest"
+                 class="danger-button compact"
+               >
+                 ${c.lang==='ar'
+                   ?'إعادة ضبط المالية'
+                   :'Reset finance'}
+               </button>`
+            : ''
+          }
+
         </div>
 
       </section>
@@ -1176,6 +1188,47 @@
     document
       .getElementById('newInvoice')
       .onclick=newInvoiceModal;
+
+
+    document
+      .getElementById('resetFinanceTest')
+      ?.addEventListener(
+        'click',
+        async()=>{
+          const phrase=prompt(
+            c.lang==='ar'
+              ?'هذا سيحذف كل معاملات المالية التجريبية: الدخل، الفواتير، المدفوعات، الإغلاق النقدي والمصروفات. قائمة أسعار الخدمات ستبقى. اكتب RESET FINANCE للمتابعة.'
+              :'This deletes all test finance transactions: income, invoices, payments, cash closings and expenses. The service price list is preserved. Type RESET FINANCE to continue.'
+          );
+
+          if(phrase!=='RESET FINANCE'){
+            return;
+          }
+
+          const {data,error}=await c.sb.rpc(
+            'owner_reset_finance_test_data',
+            {
+              p_confirmation:
+                phrase
+            }
+          );
+
+          if(error){
+            return c.toast(
+              error.message,
+              'error'
+            );
+          }
+
+          c.toast(
+            c.lang==='ar'
+              ?'تمت إعادة ضبط البيانات المالية التجريبية.'
+              :'Test finance data reset.'
+          );
+
+          c.route('finance');
+        }
+      );
 
 
     showIncome();

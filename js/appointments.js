@@ -1,7 +1,7 @@
 (function(){
   const statusActions = {
-    booked: ['confirm','cancel','reschedule'],
-    confirmed: ['checkin','cancel','reschedule','noshow'],
+    booked: ['checkin','reschedule','noshow','cancel'],
+    confirmed: ['checkin','reschedule','noshow','cancel'],
     arrived: ['send','cancel'],
     waiting: [],
     with_doctor: [],
@@ -60,8 +60,8 @@
 
       checkin:
         C.lang==='ar'
-          ?'تأكيد الحضور'
-          :'Confirm arrival',
+          ?'تسجيل الوصول'
+          :'Check in',
 
       send:
         C.lang==='ar'
@@ -1386,13 +1386,13 @@
               fee>0
                 ? (
                     C.lang==='ar'
-                      ?'تم تأكيد الحضور وتسجيل الدخل.'
-                      :'Arrival confirmed and income recorded.'
+                      ?'تم تسجيل الوصول والدخل.'
+                      :'Checked in and income recorded.'
                   )
                 : (
                     C.lang==='ar'
-                      ?'تم تأكيد حضور المريض.'
-                      :'Patient arrival confirmed.'
+                      ?'تم تسجيل وصول المريض.'
+                      :'Patient checked in.'
                   )
             );
 
@@ -1410,12 +1410,6 @@
     const C=Clinic;
     let result;
 
-    if(kind==='confirm'){
-      result=await C.sb.rpc(
-        'frontend_confirm_appointment',
-        {p_id:id}
-      );
-    }
 
     if(kind==='checkin'){
       await confirmArrivalWithFee(id);
@@ -1663,26 +1657,21 @@
 
           ${C.isReception() && !doctorOnly
             ? `<div class="appointment-detail-actions">
-                 ${actions.map(kind=>`
-                   <button
-                     class="secondary-button compact"
-                     data-appt-action="${kind}"
-                   >
-                     ${kind}
-                   </button>
-                 `).join('')}
-
-                 ${actions.includes('reschedule')
-                   ? `<button
-                        class="secondary-button compact"
-                        data-reschedule="1"
-                      >
-                        ${C.lang==='ar'
-                          ?'تغيير الموعد'
-                          :'Reschedule'}
-                      </button>`
-                   : ''
-                 }
+                 ${actions.map(kind=>
+                   kind==='reschedule'
+                     ? `<button
+                          class="secondary-button compact"
+                          data-reschedule="1"
+                        >
+                          ${receptionActionLabel('reschedule')}
+                        </button>`
+                     : `<button
+                          class="secondary-button compact"
+                          data-appt-action="${kind}"
+                        >
+                          ${receptionActionLabel(kind)}
+                        </button>`
+                 ).join('')}
                </div>`
             : ''
           }
@@ -1693,10 +1682,6 @@
         root
           .querySelectorAll('[data-appt-action]')
           .forEach(button=>{
-            if(button.dataset.apptAction==='reschedule'){
-              return;
-            }
-
             button.onclick=async()=>{
               C.closeModal();
               await action(
@@ -1817,6 +1802,18 @@
                  + ${C.lang==='ar'
                    ?'حجز جديد'
                    :'New booking'}
+               </button>`
+            : ''
+          }
+
+          ${C.hasRole('owner') && !doctorOnly
+            ? `<button
+                 id="resetAppointmentsTest"
+                 class="danger-button compact"
+               >
+                 ${C.lang==='ar'
+                   ?'إعادة ضبط المواعيد'
+                   :'Reset appointments'}
                </button>`
             : ''
           }
@@ -1976,6 +1973,48 @@
       anchor=C.cairoDate();
       refresh();
     };
+
+    document
+      .getElementById('resetAppointmentsTest')
+      ?.addEventListener(
+        'click',
+        async()=>{
+          const phrase=prompt(
+            C.lang==='ar'
+              ?'هذا سيحذف كل بيانات المواعيد التجريبية مع سجل حالاتها والزيارات المرتبطة بها. لن يتم حذف المرضى أو جداول عمل الأطباء. اكتب RESET APPOINTMENTS للمتابعة.'
+              :'This deletes all test appointment data, status history and appointment-linked clinical visits. Patients and doctor working schedules are preserved. Type RESET APPOINTMENTS to continue.'
+          );
+
+          if(phrase!=='RESET APPOINTMENTS'){
+            return;
+          }
+
+          const {data,error}=await C.sb.rpc(
+            'owner_reset_appointments_test_data',
+            {
+              p_confirmation:
+                phrase
+            }
+          );
+
+          if(error){
+            return C.toast(
+              error.message,
+              'error'
+            );
+          }
+
+          C.toast(
+            C.lang==='ar'
+              ?'تمت إعادة ضبط بيانات المواعيد التجريبية.'
+              :'Test appointment data reset.'
+          );
+
+          window.ClinicNotifications?.refresh?.();
+          refresh();
+        }
+      );
+
 
     document
       .getElementById('newBooking')
@@ -2185,28 +2224,23 @@
                   </div>
 
                   <div class="reception-actions">
-                    ${acts
-                      .filter(x=>x!=='reschedule')
-                      .map(kind=>`
-                        <button
-                          class="table-action"
-                          data-action="${kind}"
-                          data-id="${a.id}"
-                        >
-                          ${receptionActionLabel(kind)}
-                        </button>
-                      `).join('')}
-
-                    ${acts.includes('reschedule')
-                      ? `<button
-                           class="table-action"
-                           data-reschedule="${a.id}"
-                           data-doctor="${a.doctor_id}"
-                         >
-                           reschedule
-                         </button>`
-                      : ''
-                    }
+                    ${acts.map(kind=>
+                      kind==='reschedule'
+                        ? `<button
+                             class="table-action"
+                             data-reschedule="${a.id}"
+                             data-doctor="${a.doctor_id}"
+                           >
+                             ${receptionActionLabel('reschedule')}
+                           </button>`
+                        : `<button
+                             class="table-action"
+                             data-action="${kind}"
+                             data-id="${a.id}"
+                           >
+                             ${receptionActionLabel(kind)}
+                           </button>`
+                    ).join('')}
                   </div>
                 </article>
               `;

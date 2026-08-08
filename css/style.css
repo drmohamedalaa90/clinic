@@ -2544,3 +2544,26 @@ html[dir="rtl"] .dashboard-notification-row.unread {
   font-size: 10px;
   line-height: 1.45;
 }
+
+
+/* ========================================================
+   TEST RESET CONTROLS — OWNER ONLY
+======================================================== */
+
+.danger-button.compact {
+  white-space: nowrap;
+}
+
+.appointment-detail-actions,
+.reception-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+@media (max-width: 700px) {
+  #resetAppointmentsTest,
+  #resetFinanceTest {
+    width: 100%;
+  }
+}

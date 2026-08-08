@@ -1,66 +1,81 @@
-# Operation Clinic — Fees on Patient Arrival
+# Operation Clinic — Direct Check-in + Owner Test Reset
 
-This corrects the previous fee workflow.
+This patch applies the corrected appointment flow.
 
-## Correct process
+## After booking
 
-Booking:
-- patient details
-- doctor
-- hour
-- appointment type
-- notes
-- **NO FEE**
+There is NO confirmation step.
 
-When the patient physically arrives:
+A booked appointment immediately shows these actions in this order:
 
-Reception clicks:
+1. Check in
+2. Reschedule
+3. No-show
+4. Cancel
 
-**Confirm arrival**
-
-A second window appears:
+When reception clicks **Check in**, the fee window opens:
 
 - Fees (EGP)
 - Payment method
 - Optional finance note
 
-After pressing Confirm arrival:
+After saving:
+- appointment becomes Arrived
+- fee appears in Finance -> Income
 
-1. appointment becomes `arrived`
-2. the fee is saved
-3. Finance -> Income updates
+## Owner-only test reset
 
-This is done in one database transaction.
+The Owner account gets two destructive test-period tools.
 
-## Finance and Logistics
+### Appointments -> Reset appointments
 
-This package keeps the corrected `app.html` that actually loads:
+Requires typing:
 
-- finance.js
-- logistics.js
-- attendance.js
-- reports.js
-- admin.js
-- pwa.js
+`RESET APPOINTMENTS`
 
-That was the reason those sidebar pages previously stayed as placeholders.
+It clears test appointment data and appointment-linked workflow records while preserving:
+
+- Patients
+- Doctor working-hours schedules
+
+Because booking income is attached to appointments, appointment reset also clears those linked booking-income entries.
+
+### Finance -> Reset finance
+
+Requires typing:
+
+`RESET FINANCE`
+
+It clears:
+
+- Booking income
+- Invoice payments
+- Invoice items
+- Invoices
+- Cash closings
+- Clinic expenses
+
+It preserves:
+
+- Patients
+- Appointments
+- Service / price list
+- Logistics requests
+
+Both reset functions are enforced as **Owner-only in Supabase**, not merely hidden in the frontend.
 
 ## Install
 
-1. Run:
-   `sql/fees-on-arrival.sql`
+1. Run the full contents of:
+   `sql/owner-test-reset.sql`
 
 2. Replace in GitHub:
-   - app.html
-   - js/appointments.js
-   - js/finance.js
-   - js/logistics.js
-   - js/attendance.js
-   - js/reports.js
-   - js/admin.js
-   - js/pwa.js
-   - css/style.css
-   - sw.js
+   - `js/appointments.js`
+   - `js/finance.js`
+   - `css/style.css`
+   - `sw.js`
 
-3. Commit and, after GitHub Pages redeploys, press:
+The included `app.html` and supporting modules are unchanged copies of the current working package, so you do not need to replace them unless you want to upload the whole patch folder.
+
+3. Wait for GitHub Pages deployment and press:
    `Ctrl + Shift + R`
