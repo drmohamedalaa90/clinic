@@ -1,0 +1,1451 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10263f">
+
+  <title>حجز موعد | Operation Clinic</title>
+
+  <style>
+    :root {
+      --navy: #10263f;
+      --navy-2: #173858;
+      --green: #0e8a78;
+      --green-soft: #e9f7f3;
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --text: #10233c;
+      --muted: #6e7c91;
+      --border: #dce4ed;
+      --danger: #b4232d;
+      --radius: 20px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      background: var(--bg);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top right, rgba(14,138,120,.08), transparent 32rem),
+        var(--bg);
+      color: var(--text);
+      font-family:
+        Tahoma,
+        Arial,
+        system-ui,
+        -apple-system,
+        sans-serif;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .page {
+      width: min(100%, 620px);
+      margin: 0 auto;
+      padding: 22px 14px 36px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .brand-logo {
+      width: 54px;
+      height: 54px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      background: var(--navy);
+      color: white;
+      font-weight: 900;
+      letter-spacing: .04em;
+      box-shadow: 0 8px 24px rgba(16,38,63,.14);
+    }
+
+    .brand-copy {
+      display: grid;
+      gap: 2px;
+    }
+
+    .brand-copy strong {
+      font-size: 18px;
+    }
+
+    .brand-copy span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .card {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 14px 40px rgba(26,47,72,.07);
+    }
+
+    .hero {
+      padding: 23px 20px 18px;
+      background:
+        linear-gradient(135deg, #fff, #f7fbfa);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero small {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .hero h1 {
+      margin: 0 0 7px;
+      font-size: clamp(25px, 7vw, 34px);
+      line-height: 1.2;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    form {
+      padding: 20px;
+    }
+
+    .step {
+      margin-bottom: 22px;
+    }
+
+    .step-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .step-number {
+      width: 26px;
+      height: 26px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--green-soft);
+      color: var(--green);
+      font-size: 11px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      margin-bottom: 13px;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .control {
+      width: 100%;
+      min-height: 52px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      outline: 0;
+      background: white;
+      color: var(--text);
+      padding: 0 13px;
+      transition: .15s ease;
+    }
+
+    .control:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 4px rgba(14,138,120,.08);
+    }
+
+    .control:disabled {
+      background: #f7f8fa;
+      color: #98a3b3;
+    }
+
+    .gender-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      margin-bottom: 13px;
+    }
+
+    .gender-option {
+      position: relative;
+    }
+
+    .gender-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .gender-option span {
+      min-height: 52px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: white;
+      cursor: pointer;
+      font-weight: 800;
+      transition: .15s ease;
+    }
+
+    .gender-option input:checked + span {
+      border-color: var(--green);
+      background: var(--green-soft);
+      color: #087161;
+      box-shadow: 0 0 0 3px rgba(14,138,120,.06);
+    }
+
+    .doctor-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .doctor-option {
+      position: relative;
+    }
+
+    .doctor-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .doctor-option span {
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 10px 12px;
+      background: white;
+      cursor: pointer;
+      transition: .15s ease;
+    }
+
+    .doctor-option span::before {
+      content: "د";
+      width: 32px;
+      height: 32px;
+      flex: 0 0 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #eef4f8;
+      color: var(--navy);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .doctor-option input:checked + span {
+      border-color: var(--green);
+      background: var(--green-soft);
+      color: #087161;
+    }
+
+    .availability-message {
+      padding: 10px 12px;
+      margin: -2px 0 13px;
+      border-radius: 11px;
+      background: #f7f9fc;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.6;
+    }
+
+    .submit {
+      width: 100%;
+      min-height: 56px;
+      border: 0;
+      border-radius: 14px;
+      background: var(--navy);
+      color: white;
+      cursor: pointer;
+      font-weight: 900;
+      font-size: 15px;
+      transition: .15s ease;
+    }
+
+    .submit:hover {
+      background: var(--navy-2);
+    }
+
+    .submit:disabled {
+      cursor: wait;
+      opacity: .7;
+    }
+
+    .message {
+      display: none;
+      margin: 0 20px 20px;
+      padding: 12px 13px;
+      border-radius: 12px;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.error {
+      background: #fff0f1;
+      color: var(--danger);
+      border: 1px solid #ffd1d5;
+    }
+
+    .success {
+      display: none;
+      padding: 28px 20px 26px;
+      text-align: center;
+    }
+
+    .success.show {
+      display: block;
+    }
+
+    .success-icon {
+      width: 66px;
+      height: 66px;
+      margin: 0 auto 14px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--green-soft);
+      color: var(--green);
+      font-size: 30px;
+      font-weight: 900;
+    }
+
+    .success h2 {
+      margin: 0 0 8px;
+      font-size: 25px;
+    }
+
+    .success > p {
+      margin: 0 auto 19px;
+      max-width: 390px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .booking-summary {
+      display: grid;
+      gap: 8px;
+      margin: 0 auto 18px;
+      max-width: 430px;
+      text-align: right;
+    }
+
+    .booking-summary div {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 10px 12px;
+      background: #fafcfd;
+      font-size: 12px;
+    }
+
+    .booking-summary span {
+      color: var(--muted);
+    }
+
+    .book-another {
+      min-height: 48px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0 18px;
+      background: white;
+      color: var(--navy);
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .footer-note {
+      margin-top: 14px;
+      text-align: center;
+      color: #8c98a8;
+      font-size: 10px;
+      line-height: 1.7;
+    }
+
+    .honeypot {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      overflow: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    @media (min-width: 580px) {
+      .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 11px;
+      }
+
+      .two-col label {
+        margin-bottom: 13px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+
+    <header class="brand">
+      <div class="brand-logo">OC</div>
+
+      <div class="brand-copy">
+        <strong>Operation Clinic</strong>
+        <span>حجز موعد بالعيادة</span>
+      </div>
+    </header>
+
+
+    <section class="card">
+
+      <div class="hero">
+        <small>حجز موعد</small>
+
+        <h1>احجز موعدك بسهولة</h1>
+
+        <p>
+          اكتب بياناتك، اختر اليوم والساعة المناسبة، ثم اضغط تأكيد الحجز.
+        </p>
+      </div>
+
+
+      <form id="bookingForm" autocomplete="on">
+
+        <div class="step">
+          <div class="step-title">
+            <span class="step-number">1</span>
+            بياناتك
+          </div>
+
+          <label>
+            الاسم بالعربي
+
+            <input
+              id="arabicName"
+              class="control"
+              type="text"
+              maxlength="120"
+              autocomplete="name"
+              placeholder="مثال: أحمد محمد علي"
+              required
+            >
+          </label>
+
+
+          <div class="two-col">
+
+            <label>
+              سنة الميلاد
+
+              <input
+                id="birthYear"
+                class="control"
+                type="number"
+                inputmode="numeric"
+                min="1900"
+                max="2100"
+                placeholder="مثال: 1985"
+                required
+              >
+            </label>
+
+
+            <div>
+              <div style="margin-bottom:7px;font-size:12px;font-weight:700;">
+                النوع
+              </div>
+
+              <div class="gender-grid">
+
+                <label class="gender-option">
+                  <input
+                    type="radio"
+                    name="gender"
+                    value="male"
+                    required
+                  >
+                  <span>ذكر</span>
+                </label>
+
+                <label class="gender-option">
+                  <input
+                    type="radio"
+                    name="gender"
+                    value="female"
+                    required
+                  >
+                  <span>أنثى</span>
+                </label>
+
+              </div>
+            </div>
+
+          </div>
+
+
+          <label>
+            منطقة السكن
+
+            <input
+              id="residencyArea"
+              class="control"
+              type="text"
+              maxlength="150"
+              autocomplete="address-level2"
+              placeholder="مثال: سموحة"
+              required
+            >
+          </label>
+
+          <label class="honeypot" aria-hidden="true">
+            Website
+            <input id="website" tabindex="-1" autocomplete="off">
+          </label>
+        </div>
+
+
+        <div class="step">
+          <div class="step-title">
+            <span class="step-number">2</span>
+            اختر الموعد
+          </div>
+
+          <div id="doctorArea">
+            <div class="availability-message">
+              جاري تحميل الأطباء...
+            </div>
+          </div>
+
+
+          <label>
+            اليوم والتاريخ
+
+            <select
+              id="clinicDate"
+              class="control"
+              disabled
+              required
+            >
+              <option value="">
+                اختر الطبيب أولاً
+              </option>
+            </select>
+          </label>
+
+
+          <label>
+            الساعة
+
+            <select
+              id="clinicSlot"
+              class="control"
+              disabled
+              required
+            >
+              <option value="">
+                اختر اليوم أولاً
+              </option>
+            </select>
+          </label>
+
+
+          <div
+            id="availabilityMessage"
+            class="availability-message"
+          >
+            ستظهر هنا المواعيد المتاحة فقط.
+          </div>
+        </div>
+
+
+        <button
+          id="submitButton"
+          class="submit"
+          type="submit"
+        >
+          تأكيد الحجز
+        </button>
+
+      </form>
+
+
+      <div
+        id="errorMessage"
+        class="message error"
+        role="alert"
+      ></div>
+
+
+      <section
+        id="successPanel"
+        class="success"
+      >
+        <div class="success-icon">✓</div>
+
+        <h2>تم الحجز بنجاح</h2>
+
+        <p>
+          تم تسجيل موعدك في العيادة.
+        </p>
+
+        <div
+          id="bookingSummary"
+          class="booking-summary"
+        ></div>
+
+        <button
+          id="bookAnother"
+          class="book-another"
+          type="button"
+        >
+          حجز موعد آخر
+        </button>
+      </section>
+
+    </section>
+
+
+    <div class="footer-note">
+      هذه الصفحة مخصصة لحجز المرضى فقط.
+    </div>
+
+  </main>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+    const SUPABASE_URL =
+      "https://hxwnooejcqjfzsujsaqo.supabase.co";
+
+    const SUPABASE_PUBLISHABLE_KEY =
+      "sb_publishable_8MOxj_DGt_E3PYQuzjvH2A_GWqB5ivF";
+
+
+    const sb =
+      window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY,
+        {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false
+          }
+        }
+      );
+
+
+    const form =
+      document.getElementById(
+        'bookingForm'
+      );
+
+    const doctorArea =
+      document.getElementById(
+        'doctorArea'
+      );
+
+    const dateSelect =
+      document.getElementById(
+        'clinicDate'
+      );
+
+    const slotSelect =
+      document.getElementById(
+        'clinicSlot'
+      );
+
+    const availabilityMessage =
+      document.getElementById(
+        'availabilityMessage'
+      );
+
+    const errorMessage =
+      document.getElementById(
+        'errorMessage'
+      );
+
+    const submitButton =
+      document.getElementById(
+        'submitButton'
+      );
+
+    const successPanel =
+      document.getElementById(
+        'successPanel'
+      );
+
+    const bookingSummary =
+      document.getElementById(
+        'bookingSummary'
+      );
+
+
+    let doctors = [];
+    let selectedDoctorId = null;
+    let selectedDoctorName = null;
+
+
+    const dayNames = [
+      'الأحد',
+      'الاثنين',
+      'الثلاثاء',
+      'الأربعاء',
+      'الخميس',
+      'الجمعة',
+      'السبت'
+    ];
+
+
+    function showError(message) {
+      errorMessage.textContent =
+        friendlyError(message);
+
+      errorMessage.classList.add(
+        'show'
+      );
+    }
+
+
+    function clearError() {
+      errorMessage.textContent = '';
+      errorMessage.classList.remove(
+        'show'
+      );
+    }
+
+
+    function friendlyError(message='') {
+      const m =
+        String(message).toLowerCase();
+
+      if(
+        m.includes('slot is full')
+        ||
+        m.includes('no longer available')
+      ) {
+        return 'عذراً، هذا الموعد امتلأ الآن. اختر موعداً آخر.';
+      }
+
+      if(
+        m.includes('already submitted')
+      ) {
+        return 'يبدو أن هذا الحجز تم إرساله بالفعل.';
+      }
+
+      if(
+        m.includes('year of birth')
+      ) {
+        return 'من فضلك أدخل سنة ميلاد صحيحة.';
+      }
+
+      if(
+        m.includes('doctor is unavailable')
+      ) {
+        return 'الطبيب غير متاح للحجز حالياً.';
+      }
+
+      if(
+        m.includes('outside the booking window')
+      ) {
+        return 'اختر موعداً من المواعيد المتاحة.';
+      }
+
+      return 'حدث خطأ أثناء الحجز. حاول مرة أخرى.';
+    }
+
+
+    function ymdToDisplay(value) {
+      const parts =
+        String(value)
+          .split('-')
+          .map(Number);
+
+      if(parts.length !== 3) {
+        return value;
+      }
+
+      const [y,m,d] = parts;
+
+      const date =
+        new Date(
+          Date.UTC(
+            y,
+            m - 1,
+            d,
+            12,
+            0,
+            0
+          )
+        );
+
+      return (
+        dayNames[date.getUTCDay()]
+        +
+        ' — '
+        +
+        String(d).padStart(2,'0')
+        +
+        '/'
+        +
+        String(m).padStart(2,'0')
+        +
+        '/'
+        +
+        y
+      );
+    }
+
+
+    function cairoTimeLabel(iso) {
+      const parts =
+        new Intl.DateTimeFormat(
+          'en-GB',
+          {
+            timeZone:
+              'Africa/Cairo',
+
+            hour:
+              'numeric',
+
+            minute:
+              '2-digit',
+
+            hour12:
+              true
+          }
+        )
+        .formatToParts(
+          new Date(iso)
+        );
+
+
+      const hour =
+        parts.find(
+          x=>x.type==='hour'
+        )?.value || '';
+
+      const minute =
+        parts.find(
+          x=>x.type==='minute'
+        )?.value || '00';
+
+      const period =
+        parts.find(
+          x=>x.type==='dayPeriod'
+        )?.value?.toUpperCase() || '';
+
+
+      const arPeriod =
+        period === 'PM'
+          ? 'م'
+          : 'ص';
+
+
+      return (
+        Number(hour)
+        +
+        ':'
+        +
+        minute
+        +
+        ' '
+        +
+        arPeriod
+      );
+    }
+
+
+    function selectedGender() {
+      return document
+        .querySelector(
+          'input[name="gender"]:checked'
+        )
+        ?.value || null;
+    }
+
+
+    async function loadDoctors() {
+      clearError();
+
+      const { data, error } =
+        await sb.rpc(
+          'public_booking_doctors'
+        );
+
+
+      if(error) {
+        doctorArea.innerHTML =
+          '<div class="availability-message">تعذر تحميل الأطباء حالياً.</div>';
+
+        showError(
+          error.message
+        );
+
+        return;
+      }
+
+
+      doctors =
+        data || [];
+
+
+      if(!doctors.length) {
+        doctorArea.innerHTML =
+          '<div class="availability-message">لا يوجد حجز متاح حالياً.</div>';
+
+        return;
+      }
+
+
+      doctorArea.innerHTML = `
+        <div
+          style="
+            margin-bottom:7px;
+            font-size:12px;
+            font-weight:700;
+          "
+        >
+          الطبيب
+        </div>
+
+        <div class="doctor-grid">
+          ${doctors.map(
+            (doctor,index)=>`
+              <label class="doctor-option">
+                <input
+                  type="radio"
+                  name="doctor"
+                  value="${doctor.id}"
+                  data-name="${escapeHtml(doctor.display_name)}"
+                  ${doctors.length===1 ? 'checked' : ''}
+                  required
+                >
+
+                <span>
+                  ${escapeHtml(doctor.display_name)}
+                </span>
+              </label>
+            `
+          ).join('')}
+        </div>
+      `;
+
+
+      doctorArea
+        .querySelectorAll(
+          'input[name="doctor"]'
+        )
+        .forEach(input=>{
+          input.addEventListener(
+            'change',
+            async()=>{
+              selectedDoctorId =
+                input.value;
+
+              selectedDoctorName =
+                input.dataset.name;
+
+              await loadDays();
+            }
+          );
+        });
+
+
+      const queryDoctor =
+        new URLSearchParams(
+          window.location.search
+        )
+        .get('doctor');
+
+
+      if(queryDoctor) {
+        const match =
+          doctors.find(
+            d=>
+              d.id===queryDoctor
+              ||
+              d.username===queryDoctor
+          );
+
+        if(match) {
+          const input =
+            doctorArea.querySelector(
+              `input[value="${match.id}"]`
+            );
+
+          if(input) {
+            input.checked = true;
+            selectedDoctorId =
+              match.id;
+            selectedDoctorName =
+              match.display_name;
+            await loadDays();
+            return;
+          }
+        }
+      }
+
+
+      if(doctors.length===1) {
+        selectedDoctorId =
+          doctors[0].id;
+
+        selectedDoctorName =
+          doctors[0].display_name;
+
+        await loadDays();
+      }
+    }
+
+
+    async function loadDays() {
+      clearError();
+
+      dateSelect.disabled = true;
+      slotSelect.disabled = true;
+
+      dateSelect.innerHTML =
+        '<option value="">جاري تحميل الأيام...</option>';
+
+      slotSelect.innerHTML =
+        '<option value="">اختر اليوم أولاً</option>';
+
+      availabilityMessage.textContent =
+        'جاري تحميل المواعيد المتاحة...';
+
+
+      const { data, error } =
+        await sb.rpc(
+          'public_booking_days',
+          {
+            p_doctor:
+              selectedDoctorId
+          }
+        );
+
+
+      if(error) {
+        dateSelect.innerHTML =
+          '<option value="">تعذر تحميل الأيام</option>';
+
+        availabilityMessage.textContent =
+          'تعذر تحميل المواعيد.';
+
+        showError(
+          error.message
+        );
+
+        return;
+      }
+
+
+      const days =
+        data || [];
+
+
+      if(!days.length) {
+        dateSelect.innerHTML =
+          '<option value="">لا توجد أيام متاحة</option>';
+
+        availabilityMessage.textContent =
+          'لا توجد مواعيد متاحة خلال الأسبوعين القادمين.';
+
+        return;
+      }
+
+
+      dateSelect.innerHTML =
+        '<option value="">اختر اليوم والتاريخ</option>'
+        +
+        days.map(
+          day=>`
+            <option value="${day.clinic_date}">
+              ${ymdToDisplay(day.clinic_date)}
+            </option>
+          `
+        ).join('');
+
+
+      dateSelect.disabled = false;
+
+      availabilityMessage.textContent =
+        'اختر اليوم المناسب لك.';
+    }
+
+
+    async function loadSlots() {
+      clearError();
+
+      slotSelect.disabled = true;
+
+      slotSelect.innerHTML =
+        '<option value="">جاري تحميل الساعات...</option>';
+
+      availabilityMessage.textContent =
+        'جاري تحميل الساعات المتاحة...';
+
+
+      if(
+        !selectedDoctorId
+        ||
+        !dateSelect.value
+      ) {
+        return;
+      }
+
+
+      const { data, error } =
+        await sb.rpc(
+          'public_booking_slots',
+          {
+            p_doctor:
+              selectedDoctorId,
+
+            p_day:
+              dateSelect.value
+          }
+        );
+
+
+      if(error) {
+        slotSelect.innerHTML =
+          '<option value="">تعذر تحميل الساعات</option>';
+
+        availabilityMessage.textContent =
+          'تعذر تحميل الساعات.';
+
+        showError(
+          error.message
+        );
+
+        return;
+      }
+
+
+      const slots =
+        data || [];
+
+
+      if(!slots.length) {
+        slotSelect.innerHTML =
+          '<option value="">لا توجد ساعات متاحة</option>';
+
+        availabilityMessage.textContent =
+          'هذا اليوم امتلأ. اختر يوماً آخر.';
+
+        return;
+      }
+
+
+      slotSelect.innerHTML =
+        '<option value="">اختر الساعة</option>'
+        +
+        slots.map(
+          slot=>`
+            <option
+              value="${slot.slot_start}|${slot.slot_end}"
+            >
+              ${cairoTimeLabel(slot.slot_start)}
+              -
+              ${cairoTimeLabel(slot.slot_end)}
+            </option>
+          `
+        ).join('');
+
+
+      slotSelect.disabled = false;
+
+      availabilityMessage.textContent =
+        'اختر الساعة المناسبة لك.';
+    }
+
+
+    dateSelect.addEventListener(
+      'change',
+      loadSlots
+    );
+
+
+    form.addEventListener(
+      'submit',
+      async event=>{
+        event.preventDefault();
+
+        clearError();
+
+
+        // Simple invisible bot-trap.
+        if(
+          document
+            .getElementById('website')
+            .value
+        ) {
+          return;
+        }
+
+
+        if(!selectedDoctorId) {
+          showError(
+            'اختر الطبيب.'
+          );
+          return;
+        }
+
+
+        const slotValue =
+          slotSelect.value;
+
+
+        if(!slotValue.includes('|')) {
+          showError(
+            'اختر موعداً متاحاً.'
+          );
+          return;
+        }
+
+
+        const [slotStart,slotEnd] =
+          slotValue.split('|');
+
+
+        const arabicName =
+          document
+            .getElementById(
+              'arabicName'
+            )
+            .value
+            .trim();
+
+
+        const birthYear =
+          Number(
+            document
+              .getElementById(
+                'birthYear'
+              )
+              .value
+          );
+
+
+        const gender =
+          selectedGender();
+
+
+        const residencyArea =
+          document
+            .getElementById(
+              'residencyArea'
+            )
+            .value
+            .trim();
+
+
+        if(
+          !arabicName
+          ||
+          !birthYear
+          ||
+          !gender
+          ||
+          !residencyArea
+        ) {
+          showError(
+            'من فضلك أكمل كل البيانات.'
+          );
+          return;
+        }
+
+
+        submitButton.disabled = true;
+        submitButton.textContent =
+          'جاري الحجز...';
+
+
+        const { data, error } =
+          await sb.rpc(
+            'submit_public_booking',
+            {
+              p_doctor:
+                selectedDoctorId,
+
+              p_start:
+                slotStart,
+
+              p_end:
+                slotEnd,
+
+              p_arabic_name:
+                arabicName,
+
+              p_birth_year:
+                birthYear,
+
+              p_gender:
+                gender,
+
+              p_residency_area:
+                residencyArea
+            }
+          );
+
+
+        submitButton.disabled = false;
+        submitButton.textContent =
+          'تأكيد الحجز';
+
+
+        if(error) {
+          showError(
+            error.message
+          );
+
+          // Refresh capacity in case another patient
+          // just occupied the final place.
+          await loadSlots();
+
+          return;
+        }
+
+
+        form.style.display =
+          'none';
+
+        errorMessage.classList.remove(
+          'show'
+        );
+
+
+        const displayDate =
+          ymdToDisplay(
+            dateSelect.value
+          );
+
+
+        bookingSummary.innerHTML = `
+          <div>
+            <span>الاسم</span>
+            <strong>${escapeHtml(arabicName)}</strong>
+          </div>
+
+          <div>
+            <span>الطبيب</span>
+            <strong>${escapeHtml(
+              data?.doctor_name ||
+              selectedDoctorName ||
+              ''
+            )}</strong>
+          </div>
+
+          <div>
+            <span>اليوم</span>
+            <strong>${displayDate}</strong>
+          </div>
+
+          <div>
+            <span>الساعة</span>
+            <strong>
+              ${cairoTimeLabel(slotStart)}
+              -
+              ${cairoTimeLabel(slotEnd)}
+            </strong>
+          </div>
+
+          <div>
+            <span>رقم الحجز</span>
+            <strong>${escapeHtml(
+              data?.appointment_number ||
+              '—'
+            )}</strong>
+          </div>
+        `;
+
+
+        successPanel.classList.add(
+          'show'
+        );
+
+
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+      }
+    );
+
+
+    document
+      .getElementById(
+        'bookAnother'
+      )
+      .addEventListener(
+        'click',
+        ()=>{
+          window.location.reload();
+        }
+      );
+
+
+    function escapeHtml(value='') {
+      return String(value)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'",'&#039;');
+    }
+
+
+    // Keep birth-year max correct automatically.
+    document
+      .getElementById(
+        'birthYear'
+      )
+      .max =
+        new Date().getFullYear();
+
+
+    loadDoctors();
+  </script>
+</body>
+</html>
