@@ -187,6 +187,11 @@
       color: #98a3b3;
     }
 
+    .whatsapp-control {
+      text-align: left;
+      direction: ltr;
+    }
+
     .gender-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -537,6 +542,23 @@
             >
           </label>
 
+
+          <label>
+            رقم واتساب
+
+            <input
+              id="whatsapp"
+              class="control whatsapp-control"
+              type="tel"
+              inputmode="tel"
+              maxlength="25"
+              autocomplete="tel"
+              placeholder="مثال: 01012345678"
+              dir="ltr"
+              required
+            >
+          </label>
+
           <label class="honeypot" aria-hidden="true">
             Website
             <input id="website" tabindex="-1" autocomplete="off">
@@ -788,6 +810,12 @@
         m.includes('year of birth')
       ) {
         return 'من فضلك أدخل سنة ميلاد صحيحة.';
+      }
+
+      if(
+        m.includes('whatsapp')
+      ) {
+        return 'من فضلك أدخل رقم واتساب صحيح.';
       }
 
       if(
@@ -1203,6 +1231,15 @@
             .trim();
 
 
+        const whatsapp =
+          document
+            .getElementById(
+              'whatsapp'
+            )
+            .value
+            .trim();
+
+
         if(
           !arabicName
           ||
@@ -1211,6 +1248,8 @@
           !gender
           ||
           !residencyArea
+          ||
+          !whatsapp
         ) {
           showError(
             'من فضلك أكمل كل البيانات.'
@@ -1247,7 +1286,10 @@
                 gender,
 
               p_residency_area:
-                residencyArea
+                residencyArea,
+
+              p_whatsapp:
+                whatsapp
             }
           );
 
@@ -1275,9 +1317,24 @@
             error
           );
 
-          // Refresh capacity in case another patient
-          // just occupied the final place.
-          await loadSlots();
+          // Do NOT reset the patient's selected hour for a normal
+          // database/validation error. The old page reloaded the
+          // slot list here, which looked like it was forcing the
+          // patient to choose the hour again.
+          //
+          // Only refresh if this specific hour genuinely became full
+          // or unavailable while the patient was submitting.
+          const msg =
+            String(error.message || '')
+              .toLowerCase();
+
+          if(
+            msg.includes('slot is full')
+            ||
+            msg.includes('no longer available')
+          ) {
+            await loadSlots();
+          }
 
           return;
         }
@@ -1330,6 +1387,14 @@
               data?.doctor_name ||
               selectedDoctorName ||
               ''
+            )}</strong>
+          </div>
+
+          <div>
+            <span>واتساب</span>
+            <strong dir="ltr">${escapeHtml(
+              data?.whatsapp ||
+              whatsapp
             )}</strong>
           </div>
 
