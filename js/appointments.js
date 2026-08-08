@@ -1030,7 +1030,7 @@
 
                 return `
                   <button
-                    class="hour-patient-seat occupied status-${C.escape(appointment.status)}"
+                    class="hour-patient-seat occupied status-${C.escape(appointment.status)} ${appointment.booking_source==='public' ? 'public-booking' : ''}"
                     data-appointment-id="${appointment.id}"
                     type="button"
                   >
