@@ -159,8 +159,9 @@ const Clinic = window.Clinic = {
       menu += this.navItem('📦','logistics','logistics');
       menu += this.navItem('✓','attendance','attendance');
       menu += this.navItem('📊','reports','reports');
+      menu += this.navItem('👤','profile','profile');
       if (this.hasRole('owner')) {
-        menu += this.navItem('👤','users','users');
+        menu += this.navItem('👥','users','users');
         menu += this.navItem('◷','audit','audit');
         menu += this.navItem('⚙','settings','settings');
       }
@@ -168,6 +169,7 @@ const Clinic = window.Clinic = {
       menu += this.navItem('👥','patients','patients');
       menu += this.navItem('📅','appointments','appointments');
       menu += this.navItem('🛎','reception','reception');
+      menu += this.navItem('💳','finance','finance');
       menu += this.navItem('📦','logistics','logistics');
       menu += this.navItem('✓','attendance','attendance');
       menu += this.navItem('👤','profile','profile');
@@ -180,13 +182,14 @@ const Clinic = window.Clinic = {
       menu += this.navItem('⇄','referrals','referrals');
       menu += this.navItem('🕒','mySchedule','my-schedule');
       menu += this.navItem('👤','profile','profile');
-      if (this.hasRole('technical_admin')) menu += this.navItem('⚙','technical','technical');
     }
+    if (this.hasRole('technical_admin')) menu += this.navItem('⚙','technical','technical');
     document.getElementById('navigation').innerHTML = menu;
     document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('click', () => this.route(btn.dataset.page)));
   },
 
   primaryRoleLabel() {
+    if (this.hasRole('owner') && this.hasRole('technical_admin')) return this.lang === 'ar' ? 'المالك / المستشار التقني' : 'Owner / Technical Advisor';
     if (this.hasRole('owner')) return this.lang === 'ar' ? 'المالك / مدير النظام' : 'Owner / Administrator';
     if (this.isDoctor() && this.hasRole('technical_admin')) return this.lang === 'ar' ? 'طبيب / مستشار تقني' : 'Doctor / Technical Advisor';
     if (this.isDoctor()) return this.lang === 'ar' ? 'طبيب' : 'Doctor';
@@ -226,13 +229,30 @@ const Clinic = window.Clinic = {
     document.getElementById('sidebarOverlay').classList.remove('show');
   },
 
+  async refreshAvatar() {
+    const el = document.getElementById('profileAvatar');
+    if (!el) return;
+    el.style.backgroundImage = '';
+    el.style.backgroundSize = '';
+    el.style.backgroundPosition = '';
+    el.textContent = (this.profile?.display_name || this.profile?.username || 'U').trim().charAt(0).toUpperCase();
+    if (!this.profile?.photo_url) return;
+    const { data, error } = await this.sb.storage.from('profile-photos').createSignedUrl(this.profile.photo_url, 3600);
+    if (!error && data?.signedUrl) {
+      el.textContent = '';
+      el.style.backgroundImage = `url("${data.signedUrl}")`;
+      el.style.backgroundSize = 'cover';
+      el.style.backgroundPosition = 'center';
+    }
+  },
+
   async init() {
     const { data: { user }, error } = await sb.auth.getUser();
     if (error || !user) { location.href = 'index.html'; return; }
     this.user = user;
 
     const { data: profile, error: profileError } = await sb.from('profiles')
-      .select('id,username,email,display_name,photo_url,preferred_language,is_active').eq('id', user.id).single();
+      .select('id,username,email,display_name,photo_url,whatsapp,preferred_language,is_active').eq('id', user.id).single();
     if (profileError || !profile || !profile.is_active) {
       await sb.auth.signOut(); location.href = 'index.html'; return;
     }
@@ -247,6 +267,7 @@ const Clinic = window.Clinic = {
     document.getElementById('profileName').textContent = profile.display_name || profile.username || profile.email;
     document.getElementById('profileRole').textContent = this.primaryRoleLabel();
     document.getElementById('profileAvatar').textContent = (profile.display_name || profile.username || 'U').trim().charAt(0).toUpperCase();
+    await this.refreshAvatar();
 
     await this.loadDoctors();
     this.applyLanguage();
