@@ -197,8 +197,8 @@ const Clinic = window.Clinic = {
   buildNavigation() {
     let menu = this.navItem('⌂', 'dashboard', 'dashboard');
     if (this.isManagement()) {
-      menu += this.navItem('👥','patients','patients');
       menu += this.navItem('📅','appointments','appointments');
+      menu += this.navItem('👥','patients','patients');
       menu += this.navItem('🛎','reception','reception');
       menu += this.navItem('🕒','schedules','schedules');
       menu += this.navItem('💳','finance','finance');
@@ -212,8 +212,8 @@ const Clinic = window.Clinic = {
         menu += this.navItem('⚙','settings','settings');
       }
     } else if (this.hasRole('secretary')) {
-      menu += this.navItem('👥','patients','patients');
       menu += this.navItem('📅','appointments','appointments');
+      menu += this.navItem('👥','patients','patients');
       menu += this.navItem('🛎','reception','reception');
       menu += this.navItem('💳','finance','finance');
       menu += this.navItem('📦','logistics','logistics');
@@ -223,8 +223,8 @@ const Clinic = window.Clinic = {
     if (this.isDoctor() && !this.hasRole('owner')) {
       menu += this.navItem('☀','todayClinic','today-clinic');
       menu += this.navItem('⌛','queue','queue');
-      menu += this.navItem('👥','patients','patients');
       menu += this.navItem('📅','appointments','doctor-appointments');
+      menu += this.navItem('👥','patients','patients');
       menu += this.navItem('⇄','referrals','referrals');
       menu += this.navItem('🕒','mySchedule','my-schedule');
       menu += this.navItem('👤','profile','profile');

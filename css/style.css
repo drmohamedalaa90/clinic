@@ -1808,3 +1808,504 @@ html[dir="rtl"] .dashboard-notification-row.unread {
     display: none;
   }
 }
+
+
+/* ========================================================
+   APPOINTMENT-FIRST TWO-WEEK SCHEDULER
+======================================================== */
+
+.appointment-first-toolbar {
+  align-items: flex-end;
+}
+
+.appointment-calendar-controls {
+  flex-wrap: wrap;
+}
+
+.appointment-calendar-controls > .control {
+  min-width: 220px;
+}
+
+.selected-doctor-chip {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: white;
+  font-weight: 750;
+}
+
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 0 2px 17px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.calendar-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legend-dot.available {
+  background: #16a085;
+}
+
+.legend-dot.booked {
+  background: #2563eb;
+}
+
+.legend-dot.apology {
+  background: #f59e0b;
+}
+
+.two-week-scheduler {
+  display: grid;
+  gap: 22px;
+}
+
+.scheduler-week-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow:
+    0 4px 18px
+    rgba(24, 42, 65, .035);
+}
+
+.scheduler-week-heading {
+  padding: 18px 20px 15px;
+  border-bottom: 1px solid var(--border);
+}
+
+.scheduler-week-heading h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.scheduler-week-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(7, minmax(155px, 1fr));
+  min-width: 1120px;
+}
+
+.scheduler-week-section {
+  overflow-x: auto;
+}
+
+.scheduler-day-card {
+  min-height: 290px;
+  padding: 13px 10px 15px;
+  border-inline-end:
+    1px solid var(--border);
+  background: white;
+}
+
+.scheduler-day-card:last-child {
+  border-inline-end: 0;
+}
+
+.scheduler-day-card.next-week-day {
+  background: #fcfdff;
+}
+
+.scheduler-day-header {
+  min-height: 52px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 0 2px 10px;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.scheduler-day-header > div {
+  display: grid;
+  gap: 3px;
+}
+
+.scheduler-day-header strong {
+  font-size: 13px;
+}
+
+.scheduler-day-header span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.today-chip {
+  border-radius: 999px;
+  padding: 4px 6px;
+  background: var(--primary-soft);
+  color: var(--primary) !important;
+  font-size: 8px !important;
+  font-weight: 850;
+}
+
+.day-exception-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 0 2px;
+}
+
+.day-exception-tag {
+  border-radius: 999px;
+  padding: 4px 6px;
+  background: #fff7ed;
+  color: #c2410c;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.exception-changed_hours,
+.exception-extra_clinic {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.scheduler-slot-stack {
+  display: grid;
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.calendar-slot {
+  width: 100%;
+  min-width: 0;
+  border-radius: 11px;
+  padding: 8px 9px;
+  display: grid;
+  gap: 2px;
+  text-align: start;
+}
+
+.calendar-slot strong {
+  font-size: 11px;
+  letter-spacing: -.01em;
+}
+
+.calendar-slot small {
+  font-size: 9px;
+}
+
+.calendar-slot em {
+  margin-top: 2px;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.available-slot {
+  border: 1px solid #a7f3d0;
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.available-slot:not(:disabled):hover {
+  border-color: #10b981;
+  background: #d1fae5;
+  transform: translateY(-1px);
+}
+
+.available-slot:disabled {
+  opacity: .58;
+  cursor: default;
+}
+
+.booked-slot {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.booked-slot.status-arrived {
+  border-color: #ddd6fe;
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.booked-slot.status-waiting {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.booked-slot.status-with_doctor {
+  border-color: #99f6e4;
+  background: #f0fdfa;
+  color: #0f766e;
+}
+
+.booked-slot.status-completed {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.clinic-closed-card {
+  padding: 13px 10px;
+  border: 1px solid #fde68a;
+  border-radius: 11px;
+  background: #fffbeb;
+  color: #92400e;
+  display: grid;
+  gap: 4px;
+}
+
+.clinic-closed-card strong {
+  font-size: 11px;
+}
+
+.clinic-closed-card small {
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.no-clinic-day {
+  min-height: 82px;
+  padding: 12px 8px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: 11px;
+  color: #94a3b8;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.calendar-loading {
+  min-height: 320px !important;
+}
+
+
+/* ========================================================
+   BOOKING MODAL — PATIENT DATA INSIDE APPOINTMENT
+======================================================== */
+
+.booking-form-v2 {
+  display: grid;
+  gap: 18px;
+}
+
+.booking-form-section {
+  padding: 17px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: #fff;
+}
+
+.booking-section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.booking-section-heading h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.booking-summary-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2,minmax(0,1fr));
+  gap: 13px;
+}
+
+.booking-summary-grid label,
+.booking-form-section > label {
+  display: grid;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.patient-mode-switch {
+  display: flex;
+  gap: 5px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface-soft);
+}
+
+.patient-mode-btn {
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  padding: 7px 10px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.patient-mode-btn.active {
+  background: white;
+  color: var(--navy);
+  box-shadow:
+    0 2px 8px
+    rgba(15, 23, 42, .07);
+}
+
+.patient-mode-panel {
+  min-height: 100px;
+}
+
+.existing-patient-search-row {
+  display: grid;
+  grid-template-columns:
+    minmax(0,1fr) auto;
+  gap: 9px;
+}
+
+.existing-patient-results {
+  display: grid;
+  gap: 6px;
+  max-height: 260px;
+  margin-top: 10px;
+  overflow-y: auto;
+}
+
+.existing-patient-choice {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: white;
+  padding: 10px 11px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  text-align: start;
+}
+
+.existing-patient-choice:hover,
+.existing-patient-choice.selected {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.existing-patient-choice > span:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.existing-patient-choice strong {
+  font-size: 12px;
+}
+
+.existing-patient-choice small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.booking-patient-search-loading {
+  padding: 22px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.compact-empty {
+  min-height: 80px !important;
+}
+
+.booking-submit-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+
+/* ========================================================
+   SCHEDULE RELIABILITY
+======================================================== */
+
+.schedule-empty-state,
+.scheduler-error {
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  text-align: center;
+}
+
+.schedule-empty-state strong,
+.scheduler-error strong {
+  font-size: 13px;
+}
+
+.schedule-empty-state span,
+.scheduler-error span,
+.scheduler-error small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+
+@media (max-width: 900px) {
+  .scheduler-week-grid {
+    grid-template-columns:
+      repeat(7, minmax(142px, 1fr));
+    min-width: 1000px;
+  }
+
+  .appointment-first-toolbar {
+    align-items: stretch;
+  }
+
+  .appointment-calendar-controls {
+    width: 100%;
+  }
+
+  .appointment-calendar-controls > * {
+    flex: 1 1 160px;
+  }
+}
+
+
+@media (max-width: 650px) {
+  .booking-summary-grid,
+  .booking-form-section .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-section-heading {
+    display: grid;
+  }
+
+  .patient-mode-switch {
+    width: 100%;
+  }
+
+  .patient-mode-btn {
+    flex: 1;
+  }
+
+  .existing-patient-search-row {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-submit-row .primary-button {
+    width: 100%;
+  }
+}
