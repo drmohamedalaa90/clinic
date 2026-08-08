@@ -1,162 +1,70 @@
-# Operation Clinic — Tasks 13B–13F Combined Package
+# Operation Clinic — Dashboard Notifications Patch (Task 13L)
 
-This package upgrades the starter frontend into the first operational clinic workflow.
+This patch adds the requested role-aware **Notifications** block to every member dashboard.
 
-## Included in this package
+## What changes
 
-### Task 13B — Live dashboards + schedules
-- Live owner/management dashboard counts
-- Live doctor dashboard counts
-- Doctor schedule management
-- Weekly working hours
-- Extra clinic / apology / vacation / blocked period / changed hours
-- Doctor My Schedule page
-- Doctor schedule-change requests and management approve/reject
+- Orange unread notification counter in the top bell.
+- Orange unread notification counter beside the **Notifications** title on the dashboard.
+- Persistent read/unread state per user (works across devices).
+- Dashboard notification classifications:
+  - Bookings
+  - Finance
+  - Logistics issue / deficiency
+  - Apology / doctor unavailability
+  - Referrals
+  - Attendance / leave
+- Approved doctor apologies/cancellations are visible to all active clinic members.
+- Logistics requests can be explicitly marked **DEFICIENCY**.
+- Active logistics deficiencies are visible to all active clinic members.
+- Booking, finance, referral and attendance notifications remain role-aware.
+- Opening the notification drawer no longer silently marks everything as read.
+- Individual notification click = read.
+- **Mark all as read** button available on dashboard.
 
-### Task 13C — Patients
-- Patient registry
-- Search by name / MRN / mobile
-- New patient form
-- Patient profile
-- Appointment history
-- Clinical visits for authorized doctors
-- Referrals for authorized doctors
-- Billing tab for finance/reception roles
-- Book directly from patient profile
+## Install
 
-### Task 13D — Booking + reception
-- Real available slots from Supabase
-- New/follow-up appointment booking
-- Appointment day view
-- Reception desk
-- Confirm
-- Check in
-- Send to doctor
-- No-show
-- Cancel
-- Reschedule
+1. In Supabase SQL Editor, run the full contents of:
 
-### Task 13E — Doctor queue + consultation
-- Live waiting queue
-- Start consultation
-- Clinical visit workspace
-- History / examination / diagnosis / plan / notes
-- Vitals
-- Structured diagnoses
-- Investigation orders
-- Prescription items
-- Clinical document upload
-- Refer patient
-- Finalize visit
-- Amendment after finalization
-- Complete consultation
+   `sql/task-13l-dashboard-notifications.sql`
 
-### Task 13F — Referrals + live notification drawer
-- Incoming/outgoing referrals
-- Routine/urgent referrals
-- Accept / reject
-- Start review
-- Complete with specialist response
-- Shared referred visit information
-- Shared diagnoses / investigations / medications / documents
-- Notification badge/drawer for referrals, waiting patients and schedule requests
+2. Replace these files in GitHub:
 
----
+   - `js/notifications.js`
+   - `js/dashboard.js`
+   - `js/logistics.js`
+   - `css/style.css`
+   - `sw.js`
 
-# IMPORTANT — Run the SQL helper first
+3. Commit the changes.
 
-Before replacing the website files, open:
+4. Wait for GitHub Pages to redeploy.
 
-`sql/task-13b-13f-helper.sql`
+5. Open the clinic and perform a hard refresh (`Ctrl + Shift + R`).
 
-Copy the entire file into:
+## How to mark a logistics issue as a deficiency
 
-**Supabase → SQL Editor → New query → Run**
+Go to **Logistics**.
 
-The helper does two things:
+For a new request, check:
 
-1. Adds a safe `list_active_doctors()` function so the interface can populate doctor dropdowns without exposing role-management tables.
-2. Adds stable `frontend_*` wrapper RPCs around the secure backend functions already created in earlier tasks.
+`Mark as deficiency`
 
-It does not replace your existing RLS/security model.
+For an existing open request, click:
 
----
+`Mark deficiency`
 
-# GitHub update
+That request will immediately appear as an important dashboard notification for all active clinic members. It does not expose the financial amount to doctors or other members who do not have finance access.
 
-After the SQL helper succeeds:
+## Apology behavior
 
-1. Open your `clinic` GitHub repository.
-2. Replace the old website files with the CONTENTS of this package.
-3. Keep this structure at the repository root:
+An approved schedule exception of type:
 
-```text
-clinic/
-├── index.html
-├── app.html
-├── css/
-│   └── style.css
-├── js/
-│   ├── supabase-client.js
-│   ├── auth.js
-│   ├── core.js
-│   ├── dashboard.js
-│   ├── schedules.js
-│   ├── patients.js
-│   ├── appointments.js
-│   ├── clinical.js
-│   ├── referrals.js
-│   └── notifications.js
-└── sql/
-    └── task-13b-13f-helper.sql
-```
+- apology
+- vacation
+- emergency cancellation
+- changed hours
 
-4. Commit to `main`.
-5. Wait for GitHub Pages to redeploy.
-6. Hard refresh the site with **Ctrl + Shift + R**.
+is surfaced in the dashboard notification feed.
 
-Your existing Supabase project URL and publishable key are already present in `js/supabase-client.js`.
-
----
-
-# Recommended test order
-
-### Test 1 — Dr Mohamed
-- Login
-- Dashboard values load
-- My Schedule opens
-- Referrals opens
-
-### Test 2 — Owner
-- Login
-- Doctors' Schedules
-- Add one working-hours rule for Dr Mohamed or Dr Ahmed
-- Add an approved extra clinic or apology
-
-### Test 3 — Reception/Secretary after that account is created
-- Create patient
-- Book appointment
-- Confirm
-- Check in
-- Send to doctor
-
-### Test 4 — Doctor
-- Open My Queue
-- Start consultation
-- Save draft
-- Add diagnosis
-- Add investigation
-- Add medication
-- Finalize visit
-- Complete consultation
-
-### Test 5 — Referral
-- Refer the finalized/open consultation to the other doctor
-- Login as receiving doctor
-- Accept → Start → Complete
-
----
-
-# Security reminder
-
-The browser package contains only the Supabase publishable key. Never place a `service_role`, `sb_secret_...`, database password, or other private server credential in GitHub/browser files.
+Pending schedule/apology requests remain management-only until approved.

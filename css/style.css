@@ -1262,7 +1262,7 @@ textarea.control { min-height:90px; resize:vertical; }
 .success-callout { background:#f0fdf4; border-color:#bbf7d0; }
 .referral-review h4 { margin:22px 0 9px; }
 
-.notification-badge { position:absolute; top:-4px; inset-inline-end:-4px; min-width:19px; height:19px; padding:0 5px; display:grid; place-items:center; border-radius:99px; background:#dc2626; color:white; font-size:10px; font-weight:800; border:2px solid white; }
+.notification-badge { position:absolute; top:-4px; inset-inline-end:-4px; min-width:19px; height:19px; padding:0 5px; display:grid; place-items:center; border-radius:99px; background: #f59e0b; color:white; font-size:10px; font-weight:800; border:2px solid white; }
 .drawer { position:fixed; z-index:80; top:0; bottom:0; inset-inline-end:0; width:min(430px,92vw); background:#fff; box-shadow:0 0 60px rgba(5,18,33,.18); transform:translateX(110%); transition:.22s ease; display:flex; flex-direction:column; }
 html[dir="rtl"] .drawer { transform:translateX(-110%); }
 .drawer.open { transform:translateX(0)!important; }
@@ -1364,4 +1364,447 @@ html[dir="rtl"] .drawer { transform:translateX(-110%); }
 @media(max-width:620px){
   .invoice-total-grid,.bonus-breakdown,.role-check-grid { grid-template-columns:1fr; }
   .settings-fixed { grid-template-columns:1fr 1fr; }
+}
+
+
+/* ========================================================
+   TASK 13L — DASHBOARD NOTIFICATIONS
+======================================================== */
+
+.notification-badge {
+  background: #f59e0b !important;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, .34);
+}
+
+.dashboard-notifications-card {
+  margin-bottom: 22px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.dashboard-notification-head {
+  padding: 24px 24px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.notification-heading-line {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.notification-heading-line .eyebrow {
+  margin-bottom: 0;
+}
+
+.dashboard-unread-badge {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f59e0b;
+  color: white;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1;
+  box-shadow: 0 5px 14px rgba(245, 158, 11, .26);
+}
+
+.dashboard-unread-badge.zero {
+  background: #e5e7eb;
+  color: #64748b;
+  box-shadow: none;
+}
+
+.notification-intro {
+  margin: 7px 0 0;
+  max-width: 760px;
+  font-size: 13px;
+}
+
+.notification-filters {
+  display: flex;
+  gap: 8px;
+  padding: 14px 18px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+  background: #fbfcfe;
+  scrollbar-width: thin;
+}
+
+.notification-filter {
+  flex: 0 0 auto;
+  min-height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: white;
+  color: var(--text);
+  padding: 6px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.notification-filter:hover {
+  border-color: #f59e0b;
+}
+
+.notification-filter.active {
+  border-color: #f59e0b;
+  background: #fff7ed;
+  color: #b45309;
+}
+
+.notification-filter b {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f1f5f9;
+  font-size: 10px;
+}
+
+.notification-filter i {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f59e0b;
+  color: white;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.dashboard-notification-list {
+  display: grid;
+}
+
+.dashboard-notification-row {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: white;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 18px;
+  gap: 12px;
+  align-items: center;
+  padding: 15px 20px;
+  text-align: start;
+}
+
+.dashboard-notification-row:last-child {
+  border-bottom: 0;
+}
+
+.dashboard-notification-row:hover {
+  background: #fafcff;
+}
+
+.dashboard-notification-row.unread {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(245, 158, 11, .075),
+      rgba(255,255,255,0) 55%
+    ),
+    white;
+}
+
+html[dir="rtl"] .dashboard-notification-row.unread {
+  background:
+    linear-gradient(
+      -90deg,
+      rgba(245, 158, 11, .075),
+      rgba(255,255,255,0) 55%
+    ),
+    white;
+}
+
+.dashboard-notification-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+}
+
+.dashboard-notification-copy {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.dashboard-notification-copy strong,
+.dashboard-notification-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard-notification-copy strong {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.dashboard-notification-copy small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: normal;
+}
+
+.dashboard-notification-topline,
+.notification-item-topline {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.dashboard-notification-topline {
+  justify-content: space-between;
+}
+
+.dashboard-notification-time {
+  color: #94a3b8;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.notification-category {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+
+.category-booking {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.category-finance {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.category-logistics {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.category-apology {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.category-referral {
+  background: #ecfeff;
+  color: #0e7490;
+}
+
+.category-attendance {
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.category-bg-booking {
+  background: #eff6ff;
+}
+
+.category-bg-finance {
+  background: #ecfdf5;
+}
+
+.category-bg-logistics {
+  background: #fff7ed;
+}
+
+.category-bg-apology {
+  background: #fef3c7;
+}
+
+.category-bg-referral {
+  background: #ecfeff;
+}
+
+.category-bg-attendance {
+  background: #f5f3ff;
+}
+
+.dashboard-row-unread-dot,
+.unread-dot {
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, .12);
+}
+
+.dashboard-row-unread-dot {
+  width: 9px;
+  height: 9px;
+  justify-self: center;
+}
+
+.unread-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+}
+
+.dashboard-row-chevron {
+  color: #94a3b8;
+  font-size: 25px;
+  line-height: 1;
+}
+
+.dashboard-notification-empty {
+  padding: 34px 20px;
+}
+
+.notification-item.unread {
+  background: #fffaf2;
+}
+
+.notification-item.read {
+  background: white;
+}
+
+.notification-item-topline {
+  margin-bottom: 2px;
+}
+
+.notification-item .notification-category {
+  font-size: 8px;
+  padding: 3px 6px;
+}
+
+
+/* Logistics deficiency controls */
+
+.logistics-deficiency-card {
+  border-color: #fdba74 !important;
+  box-shadow: 0 5px 20px rgba(249, 115, 22, .08);
+}
+
+.deficiency-tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: #fff7ed;
+  color: #c2410c;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .04em;
+}
+
+.deficiency-note {
+  margin-top: 8px;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.warning-outline {
+  border-color: #fdba74 !important;
+  color: #c2410c !important;
+  background: #fff7ed !important;
+}
+
+.checkbox-card {
+  min-height: 70px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  padding: 12px;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: flex-start;
+  gap: 10px !important;
+  background: var(--surface-soft);
+}
+
+.checkbox-card input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: #f59e0b;
+}
+
+.checkbox-card span {
+  display: grid;
+  gap: 3px;
+}
+
+.checkbox-card strong {
+  font-size: 12px;
+}
+
+.checkbox-card small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.compact-loading {
+  min-height: 160px !important;
+  padding: 24px;
+}
+
+
+@media (max-width: 700px) {
+  .dashboard-notification-head {
+    align-items: flex-start;
+    padding: 20px 16px 14px;
+  }
+
+  .dashboard-notification-head > button {
+    font-size: 11px;
+    padding-inline: 10px;
+  }
+
+  .notification-filters {
+    padding-inline: 12px;
+  }
+
+  .dashboard-notification-row {
+    grid-template-columns: 38px minmax(0, 1fr) 10px;
+    padding: 13px 14px;
+    gap: 10px;
+  }
+
+  .dashboard-notification-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+  }
+
+  .dashboard-notification-time {
+    display: none;
+  }
+
+  .dashboard-notification-copy small {
+    font-size: 11px;
+  }
+
+  .notification-intro {
+    display: none;
+  }
 }
