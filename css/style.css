@@ -3106,3 +3106,21 @@ html[dir="rtl"] .dashboard-notification-row.unread {
     width: 100%;
   }
 }
+/* Public patient-form bookings = light violet */
+.hour-patient-seat.occupied.status-booked.public-booking {
+  background: #f3edff !important;
+  color: #6d3bbd !important;
+}
+
+.hour-patient-seat.occupied.status-booked.public-booking:hover {
+  background: #ece3ff !important;
+}
+
+.hour-patient-seat.occupied.status-booked.public-booking .seat-number {
+  background: #e6d9ff !important;
+  color: #6d3bbd !important;
+}
+
+.hour-patient-seat.occupied.status-booked.public-booking .seat-copy small {
+  color: #7b57b4 !important;
+}
