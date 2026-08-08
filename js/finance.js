@@ -41,7 +41,10 @@
       bookingIncomeResult,
       invoiceResult,
       servicesResult,
-      closingResult
+      closingResult,
+      logisticsRequestResult,
+      clinicExpenseResult,
+      expenseCategoryResult
     ] = await Promise.all([
 
       c.sb.rpc(
@@ -86,7 +89,38 @@
           'closing_date',
           {ascending:false}
         )
-        .limit(20)
+        .limit(20),
+
+      c.sb
+        .from('logistics_requests')
+        .select('*')
+        .in(
+          'status',
+          ['approved','paid']
+        )
+        .order(
+          'requested_at',
+          {ascending:false}
+        )
+        .limit(100),
+
+      c.sb
+        .from('clinic_expenses')
+        .select('*')
+        .order(
+          'expense_at',
+          {ascending:false}
+        )
+        .limit(200),
+
+      c.sb
+        .from('expense_categories')
+        .select('*')
+        .eq(
+          'is_active',
+          true
+        )
+        .order('name_en')
     ]);
 
 
@@ -104,6 +138,22 @@
 
     const closings=
       closingResult.data||[];
+
+    const logisticsRequests=
+      logisticsRequestResult.data||[];
+
+    const clinicExpenses=
+      clinicExpenseResult.data||[];
+
+    const expenseCategories=
+      expenseCategoryResult.data||[];
+
+    const expenseCategoryMap=
+      new Map(
+        expenseCategories.map(
+          x=>[x.id,x]
+        )
+      );
 
 
     const allPatientIds=[
@@ -148,18 +198,6 @@
               ?'فاتورة'
               :'Invoice'}
           </button>
-
-          ${c.hasRole('owner')
-            ? `<button
-                 id="resetFinanceTest"
-                 class="danger-button compact"
-               >
-                 ${c.lang==='ar'
-                   ?'إعادة ضبط المالية'
-                   :'Reset finance'}
-               </button>`
-            : ''
-          }
 
         </div>
 
@@ -262,6 +300,15 @@
           ${c.lang==='ar'
             ?'الدخل'
             :'Income'}
+        </button>
+
+        <button
+          class="tab"
+          data-tab="logistics-expenses"
+        >
+          ${c.lang==='ar'
+            ?'مصروفات الاحتياجات'
+            :'Logistics expenses'}
         </button>
 
         <button
@@ -574,6 +621,644 @@
           };
 
         });
+    }
+
+
+    function showLogisticsExpenses(){
+
+      const approved=
+        logisticsRequests.filter(
+          x=>x.status==='approved'
+        );
+
+      const paid=
+        logisticsRequests.filter(
+          x=>x.status==='paid'
+        );
+
+
+      area.innerHTML=`
+
+        <div class="section-head">
+
+          <div>
+
+            <span class="eyebrow">
+              ${c.lang==='ar'
+                ?'احتياجات تمت الموافقة عليها'
+                :'APPROVED LOGISTICS'}
+            </span>
+
+            <h3>
+              ${c.lang==='ar'
+                ?'إدخال السعر الفعلي'
+                :'Enter actual purchase price'}
+            </h3>
+
+            <p class="muted">
+              ${c.lang==='ar'
+                ?'بعد موافقة الإدارة، تسجل السكرتارية السعر الفعلي هنا. سيصبح مصروفاً مالياً مرتبطاً بطلب الاحتياج.'
+                :'After management approval, the secretary records the actual price here. It becomes a Finance expense linked to the logistics order.'}
+            </p>
+
+          </div>
+
+        </div>
+
+
+        ${
+          approved.length
+
+          ? `
+
+            <div class="finance-logistics-pending">
+
+              ${approved.map(request=>`
+
+                <article class="finance-logistics-card">
+
+                  <div>
+
+                    <span class="deficiency-tag">
+                      ${c.lang==='ar'
+                        ?'مطلوب شراء'
+                        :'TO PURCHASE'}
+                    </span>
+
+                    <strong>
+                      ${c.escape(
+                        request.item_name
+                      )}
+                    </strong>
+
+                    <small>
+                      ${request.quantity||'—'}
+                      ${c.escape(
+                        request.unit||
+                        ''
+                      )}
+                      •
+                      ${c.formatDate(
+                        request.requested_at
+                      )}
+                    </small>
+
+                  </div>
+
+
+                  <button
+                    class="primary-button compact"
+                    data-record-logistics-price="${request.id}"
+                  >
+                    ${c.lang==='ar'
+                      ?'إدخال السعر'
+                      :'Enter price'}
+                  </button>
+
+                </article>
+
+              `).join('')}
+
+            </div>
+
+          `
+
+          : `
+
+            <div class="empty-state compact-empty">
+
+              ${c.lang==='ar'
+                ?'لا توجد طلبات احتياجات معتمدة بانتظار السعر.'
+                :'No approved logistics orders are waiting for a price.'}
+
+            </div>
+
+          `
+        }
+
+
+        <div class="section-head space-top">
+
+          <div>
+
+            <span class="eyebrow">
+              ${c.lang==='ar'
+                ?'سجل المصروفات'
+                :'EXPENSE LEDGER'}
+            </span>
+
+            <h3>
+              ${c.lang==='ar'
+                ?'مصروفات العيادة'
+                :'Clinic expenses'}
+            </h3>
+
+          </div>
+
+        </div>
+
+
+        ${
+          clinicExpenses.length
+
+          ? `
+
+            <div class="table-wrap">
+
+              <table class="data-table">
+
+                <thead>
+
+                  <tr>
+
+                    <th>
+                      ${c.lang==='ar'
+                        ?'رقم'
+                        :'No.'}
+                    </th>
+
+                    <th>
+                      ${c.lang==='ar'
+                        ?'الوصف'
+                        :'Description'}
+                    </th>
+
+                    <th>
+                      ${c.lang==='ar'
+                        ?'الفئة'
+                        :'Category'}
+                    </th>
+
+                    <th>
+                      ${c.lang==='ar'
+                        ?'المبلغ'
+                        :'Amount'}
+                    </th>
+
+                    <th>
+                      ${c.lang==='ar'
+                        ?'الدفع'
+                        :'Method'}
+                    </th>
+
+                    <th>
+                      ${c.lang==='ar'
+                        ?'التاريخ'
+                        :'Date'}
+                    </th>
+
+                    <th>
+                      ${c.lang==='ar'
+                        ?'الحالة'
+                        :'Status'}
+                    </th>
+
+                  </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                  ${clinicExpenses.map(expense=>`
+
+                    <tr>
+
+                      <td>
+                        <strong>
+                          ${c.escape(
+                            expense.expense_number
+                          )}
+                        </strong>
+                      </td>
+
+                      <td>
+                        ${c.escape(
+                          expense.description
+                        )}
+                      </td>
+
+                      <td>
+                        ${c.escape(
+                          expenseCategoryMap
+                            .get(expense.category_id)
+                            ?.name_en||
+                          '—'
+                        )}
+                      </td>
+
+                      <td>
+                        <strong>
+                          ${c.formatMoney(
+                            expense.amount
+                          )}
+                        </strong>
+                      </td>
+
+                      <td>
+                        ${c.escape(
+                          expense.payment_method
+                        )}
+                      </td>
+
+                      <td>
+                        ${c.formatDate(
+                          expense.expense_at,
+                          {
+                            hour:'2-digit',
+                            minute:'2-digit'
+                          }
+                        )}
+                      </td>
+
+                      <td>
+                        ${expense.is_voided
+                          ? c.statusPill('voided')
+                          : c.statusPill('paid')
+                        }
+                      </td>
+
+                    </tr>
+
+                  `).join('')}
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          `
+
+          : `
+
+            <div class="empty-state">
+
+              ${c.lang==='ar'
+                ?'لم يتم تسجيل مصروفات بعد.'
+                :'No clinic expenses recorded yet.'}
+
+            </div>
+
+          `
+        }
+      `;
+
+
+      area
+        .querySelectorAll(
+          '[data-record-logistics-price]'
+        )
+        .forEach(button=>{
+
+          button.onclick=()=>{
+
+            const request=
+              logisticsRequests.find(
+                x=>x.id===
+                  button.dataset.recordLogisticsPrice
+              );
+
+            logisticsPriceModal(
+              request
+            );
+          };
+
+        });
+    }
+
+
+    function logisticsPriceModal(request){
+
+      if(!request){
+        return;
+      }
+
+
+      c.showModal({
+
+        title:
+          c.lang==='ar'
+            ?'إدخال سعر الاحتياج'
+            :'Record logistics purchase price',
+
+        body:`
+
+          <form
+            id="logisticsPriceForm"
+            class="form-grid"
+          >
+
+            <div
+              class="finance-logistics-item-summary full-span"
+            >
+
+              <span>📦</span>
+
+              <div>
+
+                <strong>
+                  ${c.escape(
+                    request.item_name
+                  )}
+                </strong>
+
+                <small>
+                  ${request.quantity||'—'}
+                  ${c.escape(
+                    request.unit||
+                    ''
+                  )}
+                </small>
+
+              </div>
+
+            </div>
+
+
+            <label>
+
+              ${c.lang==='ar'
+                ?'الفئة'
+                :'Expense category'}
+
+              <select
+                id="logPriceCategory"
+                class="control"
+                required
+              >
+
+                ${expenseCategories.map(cat=>`
+
+                  <option
+                    value="${cat.id}"
+                    ${
+                      cat.id===
+                      request.category_id
+                        ?'selected'
+                        :''
+                    }
+                  >
+                    ${c.escape(
+                      cat.name_en
+                    )}
+                  </option>
+
+                `).join('')}
+
+              </select>
+
+            </label>
+
+
+            <label>
+
+              ${c.lang==='ar'
+                ?'السعر الفعلي'
+                :'Actual price'}
+
+              <input
+                id="logPriceAmount"
+                class="control"
+                type="number"
+                min="0.01"
+                step="0.01"
+                required
+              >
+
+            </label>
+
+
+            <label>
+
+              ${c.lang==='ar'
+                ?'طريقة الدفع'
+                :'Payment method'}
+
+              <select
+                id="logPriceMethod"
+                class="control"
+              >
+                <option value="cash">
+                  Cash
+                </option>
+
+                <option value="instapay">
+                  InstaPay
+                </option>
+
+                <option value="card">
+                  Card
+                </option>
+
+                <option value="bank_transfer">
+                  Bank transfer
+                </option>
+
+                <option value="other">
+                  Other
+                </option>
+              </select>
+
+            </label>
+
+
+            <label>
+
+              ${c.lang==='ar'
+                ?'المورد'
+                :'Vendor'}
+
+              <input
+                id="logPriceVendor"
+                class="control"
+              >
+
+            </label>
+
+
+            <label>
+
+              ${c.lang==='ar'
+                ?'مرجع / رقم إيصال'
+                :'Reference / receipt no.'}
+
+              <input
+                id="logPriceRef"
+                class="control"
+              >
+
+            </label>
+
+
+            <label>
+
+              ${c.lang==='ar'
+                ?'التاريخ والوقت'
+                :'Date / time'}
+
+              <input
+                id="logPriceDate"
+                class="control"
+                type="datetime-local"
+              >
+
+            </label>
+
+
+            <label class="full-span">
+
+              ${c.lang==='ar'
+                ?'ملاحظات'
+                :'Notes'}
+
+              <textarea
+                id="logPriceNotes"
+                class="control"
+              ></textarea>
+
+            </label>
+
+
+            <div class="form-actions full-span">
+
+              <button
+                class="primary-button compact"
+                type="submit"
+              >
+                ${c.lang==='ar'
+                  ?'تسجيل المصروف'
+                  :'Record expense'}
+              </button>
+
+            </div>
+
+          </form>
+        `,
+
+        onOpen:(root)=>{
+
+          root
+            .querySelector(
+              '#logisticsPriceForm'
+            )
+            .onsubmit=async event=>{
+
+              event.preventDefault();
+
+
+              const local=
+                root
+                  .querySelector(
+                    '#logPriceDate'
+                  )
+                  .value;
+
+
+              const args={
+
+                p_category_id:
+                  root
+                    .querySelector(
+                      '#logPriceCategory'
+                    )
+                    .value,
+
+                p_description:
+                  request.item_name,
+
+                p_amount:
+                  Number(
+                    root
+                      .querySelector(
+                        '#logPriceAmount'
+                      )
+                      .value
+                  ),
+
+                p_method:
+                  root
+                    .querySelector(
+                      '#logPriceMethod'
+                    )
+                    .value,
+
+                p_logistics_request_id:
+                  request.id,
+
+                p_vendor:
+                  root
+                    .querySelector(
+                      '#logPriceVendor'
+                    )
+                    .value||
+                  null,
+
+                p_reference:
+                  root
+                    .querySelector(
+                      '#logPriceRef'
+                    )
+                    .value||
+                  null,
+
+                p_notes:
+                  root
+                    .querySelector(
+                      '#logPriceNotes'
+                    )
+                    .value||
+                  null,
+
+                p_receipt_path:
+                  null,
+
+                p_receipt_original_name:
+                  null
+              };
+
+
+              if(local){
+                args.p_expense_at=
+                  `${local}:00+03:00`;
+              }
+
+
+              const {error}=await c.sb.rpc(
+                'record_clinic_expense',
+                args
+              );
+
+
+              if(error){
+                return c.toast(
+                  error.message,
+                  'error'
+                );
+              }
+
+
+              c.closeModal();
+
+
+              c.toast(
+                c.lang==='ar'
+                  ?'تم تسجيل السعر كمصروف مالي.'
+                  :'Purchase price recorded in Finance.'
+              );
+
+
+              window
+                .ClinicNotifications
+                ?.refresh?.();
+
+
+              c.route(
+                'finance'
+              );
+            };
+        }
+      });
     }
 
 
@@ -1164,6 +1849,12 @@
           }
 
           if(
+            button.dataset.tab==='logistics-expenses'
+          ){
+            showLogisticsExpenses();
+          }
+
+          if(
             button.dataset.tab==='invoices'
           ){
             showInvoices();
@@ -1188,47 +1879,6 @@
     document
       .getElementById('newInvoice')
       .onclick=newInvoiceModal;
-
-
-    document
-      .getElementById('resetFinanceTest')
-      ?.addEventListener(
-        'click',
-        async()=>{
-          const phrase=prompt(
-            c.lang==='ar'
-              ?'هذا سيحذف كل معاملات المالية التجريبية: الدخل، الفواتير، المدفوعات، الإغلاق النقدي والمصروفات. قائمة أسعار الخدمات ستبقى. اكتب RESET FINANCE للمتابعة.'
-              :'This deletes all test finance transactions: income, invoices, payments, cash closings and expenses. The service price list is preserved. Type RESET FINANCE to continue.'
-          );
-
-          if(phrase!=='RESET FINANCE'){
-            return;
-          }
-
-          const {data,error}=await c.sb.rpc(
-            'owner_reset_finance_test_data',
-            {
-              p_confirmation:
-                phrase
-            }
-          );
-
-          if(error){
-            return c.toast(
-              error.message,
-              'error'
-            );
-          }
-
-          c.toast(
-            c.lang==='ar'
-              ?'تمت إعادة ضبط البيانات المالية التجريبية.'
-              :'Test finance data reset.'
-          );
-
-          c.route('finance');
-        }
-      );
 
 
     showIncome();

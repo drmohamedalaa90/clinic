@@ -1,708 +1,1648 @@
 (function(){
   const C=()=>window.Clinic;
 
+  function itemLabel(item){
+    const c=C();
+
+    return c.lang==='ar'
+      ? (
+          item.item_name_ar||
+          item.item_name_en
+        )
+      : item.item_name_en;
+  }
+
+
+  function orderStatusMessage(status){
+    const c=C();
+
+    const labels={
+      requested:
+        c.lang==='ar'
+          ?'بانتظار موافقة الإدارة'
+          :'Awaiting management approval',
+
+      approved:
+        c.lang==='ar'
+          ?'تمت الموافقة — أدخل السعر في المالية'
+          :'Approved — enter purchase price in Finance',
+
+      paid:
+        c.lang==='ar'
+          ?'تم تسجيل السعر — بانتظار الاستلام / الإكمال'
+          :'Price recorded — awaiting receipt/completion',
+
+      completed:
+        c.lang==='ar'
+          ?'مكتمل'
+          :'Completed',
+
+      rejected:
+        c.lang==='ar'
+          ?'مرفوض'
+          :'Rejected',
+
+      cancelled:
+        c.lang==='ar'
+          ?'ملغي'
+          :'Cancelled'
+    };
+
+    return labels[status]||status;
+  }
+
+
   async function render(){
     const c=C();
-    if(!c.isReception()) return c.route('dashboard');
 
-    c.setTitle(c.t('logistics'));
+    if(!c.isReception()){
+      return c.route('dashboard');
+    }
+
+
+    c.setTitle(
+      c.t('logistics')
+    );
+
 
     const [
-      {data:reqs},
-      {data:cats},
-      {data:expenses}
+      catalogResult,
+      requestsResult,
+      catsResult
     ] = await Promise.all([
+
+      c.sb
+        .from('logistics_catalog')
+        .select('*')
+        .order(
+          'display_order',
+          {ascending:true}
+        )
+        .order(
+          'item_name_en',
+          {ascending:true}
+        ),
+
       c.sb
         .from('logistics_requests')
         .select('*')
-        .order('requested_at',{ascending:false})
-        .limit(100),
+        .order(
+          'requested_at',
+          {ascending:false}
+        )
+        .limit(200),
 
       c.sb
         .from('expense_categories')
         .select('*')
-        .eq('is_active',true)
-        .order('name_en'),
+        .eq(
+          'is_active',
+          true
+        )
+        .order('name_en')
 
-      c.sb
-        .from('clinic_expenses')
-        .select('*')
-        .order('expense_at',{ascending:false})
-        .limit(100)
     ]);
 
-    const catMap=new Map((cats||[]).map(x=>[x.id,x]));
 
-    document.getElementById('mainContent').innerHTML=`
-      <section class="page-toolbar">
-        <div>
-          <span class="eyebrow">OPERATIONS</span>
-          <h2>${c.lang==='ar'?'احتياجات ومصروفات العيادة':'Clinic logistics & expenses'}</h2>
-          <p class="muted">
-            ${c.lang==='ar'
-              ?'طلبات الشراء، الموافقات، النواقص، المصروفات والمتابعة.'
-              :'Requests, approvals, deficiencies, purchases and expense tracking.'}
-          </p>
-        </div>
-
-        <div class="toolbar-actions">
-          <button id="newLogistics" class="primary-button compact">
-            + ${c.lang==='ar'?'طلب جديد':'New request'}
-          </button>
-
-          ${c.isManagement()
-            ? `<button id="directExpense" class="secondary-button">
-                 + ${c.lang==='ar'?'مصروف مباشر':'Direct expense'}
-               </button>`
-            : ''
-          }
-        </div>
-      </section>
-
-      <div class="tabs" id="logTabs">
-        <button class="tab active" data-tab="requests">
-          ${c.lang==='ar'?'الطلبات':'Requests'}
-        </button>
-
-        <button class="tab" data-tab="expenses">
-          ${c.lang==='ar'?'المصروفات':'Expenses'}
-        </button>
-      </div>
-
-      <section class="content-card">
-        <div id="logArea"></div>
-      </section>
-    `;
-
-    const area=document.getElementById('logArea');
-
-    function requests(){
-      const rows=reqs||[];
-
-      area.innerHTML=rows.length
-        ? `<div class="stack-list">
-            ${rows.map(r=>{
-              const cat=catMap.get(r.category_id)||{};
-
-              return `
-                <article class="list-card ${r.is_deficiency ? 'logistics-deficiency-card' : ''}">
-                  <div>
-                    <div class="referral-topline">
-                      ${c.statusPill(r.status)}
-
-                      ${r.urgency==='urgent'
-                        ? '<span class="urgent-tag">URGENT</span>'
-                        : ''
-                      }
-
-                      ${r.is_deficiency
-                        ? `<span class="deficiency-tag">
-                             ${c.lang==='ar'?'نقص / مشكلة':'DEFICIENCY'}
-                           </span>`
-                        : ''
-                      }
-                    </div>
-
-                    <div class="list-title">
-                      ${c.escape(r.item_name)}
-                    </div>
-
-                    <div class="small-note">
-                      ${c.escape(cat.name_en||'Other')}
-                      • ${r.quantity||'—'} ${c.escape(r.unit||'')}
-                      ${r.estimated_cost!=null
-                        ? `• ${c.lang==='ar'?'تقديري':'Est.'} ${c.formatMoney(r.estimated_cost)}`
-                        : ''
-                      }
-                    </div>
-
-                    ${r.deficiency_note
-                      ? `<div class="deficiency-note">
-                           ⚠ ${c.escape(r.deficiency_note)}
-                         </div>`
-                      : ''
-                    }
-
-                    ${r.request_notes
-                      ? `<div class="small-note">${c.escape(r.request_notes)}</div>`
-                      : ''
-                    }
-                  </div>
-
-                  <div class="list-actions">
-                    ${!['completed','rejected','cancelled'].includes(r.status)
-                      ? `<button
-                           class="table-action ${r.is_deficiency ? 'warning-outline' : ''}"
-                           data-deficiency="${r.id}"
-                           data-deficiency-state="${r.is_deficiency ? '1' : '0'}"
-                         >
-                           ${r.is_deficiency
-                             ? (c.lang==='ar'?'إزالة علامة النقص':'Clear deficiency')
-                             : (c.lang==='ar'?'تعليم كنقص':'Mark deficiency')
-                           }
-                         </button>`
-                      : ''
-                    }
-
-                    ${c.isManagement()&&r.status==='requested'
-                      ? `<button
-                           class="table-action success-outline"
-                           data-review="${r.id}"
-                           data-action="approve"
-                         >Approve</button>
-
-                         <button
-                           class="table-action danger-outline"
-                           data-review="${r.id}"
-                           data-action="reject"
-                         >Reject</button>`
-                      : ''
-                    }
-
-                    ${['approved','paid'].includes(r.status)
-                      ? `<button class="table-action" data-purchase="${r.id}">
-                           ${r.status==='approved'
-                             ? (c.lang==='ar'?'تسجيل شراء':'Record purchase')
-                             : (c.lang==='ar'?'تفاصيل':'Details')
-                           }
-                         </button>`
-                      : ''
-                    }
-
-                    ${r.status==='paid'
-                      ? `<button
-                           class="table-action success-outline"
-                           data-complete="${r.id}"
-                         >
-                           ${c.lang==='ar'?'إكمال':'Complete'}
-                         </button>`
-                      : ''
-                    }
-                  </div>
-                </article>
-              `;
-            }).join('')}
-          </div>`
-        : `<div class="empty-state">${c.t('noData')}</div>`;
-
-      area
-        .querySelectorAll('[data-review]')
-        .forEach(b=>b.onclick=()=>reviewRequest(
-          b.dataset.review,
-          b.dataset.action
-        ));
-
-      area
-        .querySelectorAll('[data-purchase]')
-        .forEach(b=>b.onclick=()=>expenseModal(
-          cats||[],
-          reqs.find(x=>x.id===b.dataset.purchase)
-        ));
-
-      area
-        .querySelectorAll('[data-complete]')
-        .forEach(b=>b.onclick=()=>completeRequest(
-          b.dataset.complete
-        ));
-
-      area
-        .querySelectorAll('[data-deficiency]')
-        .forEach(b=>b.onclick=()=>toggleDeficiency(
-          b.dataset.deficiency,
-          b.dataset.deficiencyState === '1'
-        ));
+    if(catalogResult.error){
+      return c.toast(
+        catalogResult.error.message,
+        'error'
+      );
     }
 
-    function expenseRows(){
-      area.innerHTML=(expenses||[]).length
-        ? `<div class="table-wrap">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>${c.lang==='ar'?'رقم':'No.'}</th>
-                  <th>${c.lang==='ar'?'الوصف':'Description'}</th>
-                  <th>${c.lang==='ar'?'الفئة':'Category'}</th>
-                  <th>${c.lang==='ar'?'المبلغ':'Amount'}</th>
-                  <th>${c.lang==='ar'?'الطريقة':'Method'}</th>
-                  <th>${c.lang==='ar'?'التاريخ':'Date'}</th>
-                  <th>${c.lang==='ar'?'الحالة':'Status'}</th>
-                  <th></th>
-                </tr>
-              </thead>
 
-              <tbody>
-                ${expenses.map(e=>`
-                  <tr>
-                    <td><strong>${c.escape(e.expense_number)}</strong></td>
-                    <td>${c.escape(e.description)}</td>
-                    <td>${c.escape(catMap.get(e.category_id)?.name_en||'—')}</td>
-                    <td>${c.formatMoney(e.amount)}</td>
-                    <td>${c.escape(e.payment_method)}</td>
-                    <td>${c.formatDate(e.expense_at,{hour:'2-digit',minute:'2-digit'})}</td>
-                    <td>${e.is_voided?c.statusPill('voided'):c.statusPill('paid')}</td>
-                    <td>
-                      ${c.isManagement()&&!e.is_voided
-                        ? `<button
-                             class="table-action danger-outline"
-                             data-void-expense="${e.id}"
-                           >
-                             ${c.lang==='ar'?'إلغاء':'Void'}
-                           </button>`
-                        : ''
-                      }
-                    </td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>`
-        : `<div class="empty-state">${c.t('noData')}</div>`;
+    const catalog=
+      catalogResult.data||[];
 
-      area
-        .querySelectorAll('[data-void-expense]')
-        .forEach(b=>b.onclick=()=>voidExpense(
-          b.dataset.voidExpense
-        ));
-    }
+    const requests=
+      requestsResult.data||[];
 
-    document
-      .querySelectorAll('#logTabs .tab')
-      .forEach(b=>b.onclick=()=>{
-        document
-          .querySelectorAll('#logTabs .tab')
-          .forEach(x=>x.classList.remove('active'));
+    const cats=
+      catsResult.data||[];
 
-        b.classList.add('active');
-
-        b.dataset.tab==='requests'
-          ? requests()
-          : expenseRows();
-      });
-
-    document.getElementById('newLogistics').onclick=()=>requestModal(cats||[]);
-
-    document
-      .getElementById('directExpense')
-      ?.addEventListener(
-        'click',
-        ()=>expenseModal(cats||[],null)
+    const catMap=
+      new Map(
+        cats.map(x=>[
+          x.id,
+          x
+        ])
       );
 
-    requests();
-  }
+
+    const openByCatalog=
+      new Map();
+
+    requests
+      .filter(r=>
+        r.catalog_item_id
+        &&
+        ![
+          'completed',
+          'rejected',
+          'cancelled'
+        ].includes(r.status)
+      )
+      .forEach(r=>{
+        if(
+          !openByCatalog.has(
+            r.catalog_item_id
+          )
+        ){
+          openByCatalog.set(
+            r.catalog_item_id,
+            r
+          );
+        }
+      });
 
 
-  function requestModal(cats){
-    const c=C();
+    document
+      .getElementById(
+        'mainContent'
+      )
+      .innerHTML=`
 
-    c.showModal({
-      title:c.lang==='ar'?'طلب احتياج جديد':'New logistics request',
+        <section class="page-toolbar">
 
-      body:`
-        <form id="reqForm" class="form-grid">
-          <label>
-            ${c.lang==='ar'?'البند':'Item'}
-            <input id="reqItem" class="control" required>
-          </label>
+          <div>
 
-          <label>
-            ${c.lang==='ar'?'الفئة':'Category'}
-            <select id="reqCat" class="control">
-              <option value="">—</option>
-              ${cats.map(x=>`
-                <option value="${x.id}">
-                  ${c.escape(x.name_en)}
-                </option>
-              `).join('')}
-            </select>
-          </label>
-
-          <label>
-            ${c.lang==='ar'?'الكمية':'Quantity'}
-            <input
-              id="reqQty"
-              class="control"
-              type="number"
-              min="0.01"
-              step="0.01"
-            >
-          </label>
-
-          <label>
-            ${c.lang==='ar'?'الوحدة':'Unit'}
-            <input id="reqUnit" class="control">
-          </label>
-
-          <label>
-            ${c.lang==='ar'?'التكلفة التقديرية':'Estimated cost'}
-            <input
-              id="reqCost"
-              class="control"
-              type="number"
-              min="0"
-              step="0.01"
-            >
-          </label>
-
-          <label>
-            ${c.lang==='ar'?'مطلوب قبل':'Needed by'}
-            <input id="reqNeeded" class="control" type="date">
-          </label>
-
-          <label>
-            ${c.lang==='ar'?'الأولوية':'Urgency'}
-            <select id="reqUrgency" class="control">
-              <option value="routine">Routine</option>
-              <option value="urgent">Urgent</option>
-            </select>
-          </label>
-
-          <label class="checkbox-card">
-            <input id="reqDeficiency" type="checkbox">
-            <span>
-              <strong>
-                ${c.lang==='ar'?'تعليم كنقص / مشكلة':'Mark as deficiency'}
-              </strong>
-              <small>
-                ${c.lang==='ar'
-                  ?'سيظهر كتحديث مهم لكل أعضاء العيادة.'
-                  :'This will appear as an important update for all clinic members.'}
-              </small>
+            <span class="eyebrow">
+              OPERATIONS
             </span>
-          </label>
 
-          <label
-            id="reqDeficiencyNoteWrap"
-            class="full-span hidden"
-          >
-            ${c.lang==='ar'?'وصف النقص / المشكلة':'Deficiency note'}
-            <input id="reqDeficiencyNote" class="control">
-          </label>
+            <h2>
+              ${c.lang==='ar'
+                ?'احتياجات العيادة'
+                :'Clinic logistics'}
+            </h2>
 
-          <label class="full-span">
-            ${c.lang==='ar'?'ملاحظات':'Notes'}
-            <textarea id="reqNotes" class="control"></textarea>
-          </label>
+            <p class="muted">
+              ${c.lang==='ar'
+                ?'المالك يحدد القائمة الأساسية لاحتياجات العيادة، والسكرتارية تختار منها ما هو ناقص وترسل طلب الشراء.'
+                :'The Owner controls the clinic master list. The secretary selects what is missing and sends it for approval.'}
+            </p>
 
-          <div class="form-actions full-span">
-            <button class="primary-button compact" type="submit">
-              ${c.lang==='ar'?'إرسال':'Submit'}
-            </button>
           </div>
-        </form>
-      `,
 
-      onOpen:(root)=>{
-        const deficiency = root.querySelector('#reqDeficiency');
-        const deficiencyWrap = root.querySelector('#reqDeficiencyNoteWrap');
 
-        deficiency.onchange = () => {
-          deficiencyWrap.classList.toggle(
-            'hidden',
-            !deficiency.checked
-          );
-        };
+          <div class="toolbar-actions">
 
-        root.querySelector('#reqForm').onsubmit=async e=>{
-          e.preventDefault();
-
-          const {data,error}=await c.sb.rpc(
-            'create_logistics_request',
-            {
-              p_item_name:root.querySelector('#reqItem').value,
-              p_category_id:root.querySelector('#reqCat').value||null,
-              p_quantity:root.querySelector('#reqQty').value
-                ? Number(root.querySelector('#reqQty').value)
-                : null,
-              p_unit:root.querySelector('#reqUnit').value||null,
-              p_estimated_cost:root.querySelector('#reqCost').value
-                ? Number(root.querySelector('#reqCost').value)
-                : null,
-              p_needed_by:root.querySelector('#reqNeeded').value||null,
-              p_urgency:root.querySelector('#reqUrgency').value,
-              p_notes:root.querySelector('#reqNotes').value||null
+            ${c.hasRole('owner')
+              ? `
+                  <button
+                    id="addCatalogItem"
+                    class="primary-button compact"
+                  >
+                    + ${c.lang==='ar'
+                      ?'إضافة احتياج'
+                      :'Add clinic item'}
+                  </button>
+                `
+              : ''
             }
-          );
 
-          if(error) return c.toast(error.message,'error');
+          </div>
 
-          const created = Array.isArray(data) ? data[0] : data;
+        </section>
 
-          if(deficiency.checked && created?.id){
-            const {error:defError}=await c.sb.rpc(
-              'set_logistics_deficiency',
+
+        <div
+          class="logistics-flow-strip"
+        >
+
+          <span>
+            <b>1</b>
+            ${c.lang==='ar'
+              ?'المالك يحدد القائمة'
+              :'Owner controls list'}
+          </span>
+
+          <i>→</i>
+
+          <span>
+            <b>2</b>
+            ${c.lang==='ar'
+              ?'السكرتارية تحدد الناقص'
+              :'Secretary reports missing'}
+          </span>
+
+          <i>→</i>
+
+          <span>
+            <b>3</b>
+            ${c.lang==='ar'
+              ?'الإدارة توافق'
+              :'Management approves'}
+          </span>
+
+          <i>→</i>
+
+          <span>
+            <b>4</b>
+            ${c.lang==='ar'
+              ?'السعر يُسجل في المالية'
+              :'Price entered in Finance'}
+          </span>
+
+        </div>
+
+
+        <div
+          class="tabs"
+          id="logTabs"
+        >
+
+          <button
+            class="tab active"
+            data-tab="catalog"
+          >
+            ${c.lang==='ar'
+              ?'قائمة احتياجات العيادة'
+              :'Clinic items'}
+          </button>
+
+          <button
+            class="tab"
+            data-tab="orders"
+          >
+            ${c.lang==='ar'
+              ?'طلبات الشراء'
+              :'Orders'}
+          </button>
+
+        </div>
+
+
+        <section class="content-card">
+
+          <div id="logArea"></div>
+
+        </section>
+      `;
+
+
+    const area=
+      document.getElementById(
+        'logArea'
+      );
+
+
+    function renderCatalog(){
+
+      const visible=
+        c.hasRole('owner')
+          ? catalog
+          : catalog.filter(
+              item=>item.is_active
+            );
+
+
+      area.innerHTML=visible.length
+        ? `
+
+          <div class="logistics-catalog-grid">
+
+            ${visible.map(item=>{
+
+              const openRequest=
+                openByCatalog.get(
+                  item.id
+                );
+
+              const category=
+                catMap.get(
+                  item.category_id
+                );
+
+
+              return `
+
+                <article
+                  class="
+                    logistics-catalog-card
+                    ${
+                      !item.is_active
+                        ? 'inactive'
+                        : ''
+                    }
+                    ${
+                      openRequest
+                        ? 'has-order'
+                        : ''
+                    }
+                  "
+                >
+
+                  <div class="logistics-catalog-card-head">
+
+                    <div>
+
+                      <span
+                        class="logistics-item-icon"
+                      >
+                        📦
+                      </span>
+
+                      <div>
+
+                        <strong>
+                          ${c.escape(
+                            itemLabel(item)
+                          )}
+                        </strong>
+
+                        <small>
+                          ${c.escape(
+                            category?.name_en||
+                            (
+                              c.lang==='ar'
+                                ?'بدون فئة'
+                                :'Uncategorized'
+                            )
+                          )}
+                        </small>
+
+                      </div>
+
+                    </div>
+
+
+                    ${
+                      item.is_active
+
+                      ? `<span class="catalog-active-chip">
+                           ${c.lang==='ar'
+                             ?'نشط'
+                             :'Active'}
+                         </span>`
+
+                      : `<span class="catalog-inactive-chip">
+                           ${c.lang==='ar'
+                             ?'معطل'
+                             :'Inactive'}
+                         </span>`
+                    }
+
+                  </div>
+
+
+                  <div
+                    class="logistics-catalog-meta"
+                  >
+
+                    <span>
+
+                      <b>
+                        ${item.default_quantity||'—'}
+                      </b>
+
+                      ${c.escape(
+                        item.unit||''
+                      )}
+
+                    </span>
+
+                    ${
+                      item.notes
+
+                      ? `<small>
+                           ${c.escape(
+                             item.notes
+                           )}
+                         </small>`
+
+                      : ''
+                    }
+
+                  </div>
+
+
+                  ${
+                    openRequest
+
+                    ? `
+
+                      <div
+                        class="catalog-open-order"
+                      >
+
+                        <span>
+                          ${c.statusPill(
+                            openRequest.status
+                          )}
+                        </span>
+
+                        <strong>
+                          ${c.escape(
+                            orderStatusMessage(
+                              openRequest.status
+                            )
+                          )}
+                        </strong>
+
+                      </div>
+
+                    `
+
+                    : ''
+                  }
+
+
+                  <div
+                    class="logistics-catalog-actions"
+                  >
+
+                    ${
+                      c.hasRole('secretary')
+                      &&
+                      item.is_active
+                      &&
+                      !openRequest
+
+                      ? `
+
+                        <button
+                          class="primary-button compact"
+                          data-order-catalog="${item.id}"
+                        >
+                          ${c.lang==='ar'
+                            ?'ناقص — اطلب الآن'
+                            :'Missing — order'}
+                        </button>
+
+                      `
+
+                      : ''
+                    }
+
+
+                    ${
+                      c.hasRole('owner')
+
+                      ? `
+
+                        <button
+                          class="secondary-button compact"
+                          data-edit-catalog="${item.id}"
+                        >
+                          ${c.lang==='ar'
+                            ?'تعديل'
+                            :'Edit'}
+                        </button>
+
+
+                        <button
+                          class="
+                            table-action
+                            ${
+                              item.is_active
+                                ? 'danger-outline'
+                                : 'success-outline'
+                            }
+                          "
+                          data-toggle-catalog="${item.id}"
+                          data-active="${item.is_active?'1':'0'}"
+                        >
+                          ${item.is_active
+                            ? (
+                                c.lang==='ar'
+                                  ?'تعطيل'
+                                  :'Disable'
+                              )
+                            : (
+                                c.lang==='ar'
+                                  ?'تفعيل'
+                                  :'Activate'
+                              )
+                          }
+                        </button>
+
+                      `
+
+                      : ''
+                    }
+
+                  </div>
+
+                </article>
+              `;
+
+            }).join('')}
+
+          </div>
+        `
+
+        : `
+
+          <div class="empty-state">
+
+            <strong>
+              ${c.lang==='ar'
+                ?'لم تتم إضافة قائمة احتياجات العيادة بعد.'
+                :'The clinic logistics list is empty.'}
+            </strong>
+
+            ${
+              c.hasRole('owner')
+
+              ? `<span>
+                   ${c.lang==='ar'
+                     ?'اضغط "إضافة احتياج" لبدء القائمة.'
+                     :'Use “Add clinic item” to build the master list.'}
+                 </span>`
+
+              : ''
+            }
+
+          </div>
+        `;
+
+
+      area
+        .querySelectorAll(
+          '[data-order-catalog]'
+        )
+        .forEach(button=>{
+
+          button.onclick=()=>{
+
+            const item=
+              catalog.find(
+                x=>x.id===
+                  button.dataset.orderCatalog
+              );
+
+            orderMissingModal(
+              item
+            );
+          };
+
+        });
+
+
+      area
+        .querySelectorAll(
+          '[data-edit-catalog]'
+        )
+        .forEach(button=>{
+
+          button.onclick=()=>{
+
+            const item=
+              catalog.find(
+                x=>x.id===
+                  button.dataset.editCatalog
+              );
+
+            catalogModal(
+              item
+            );
+          };
+
+        });
+
+
+      area
+        .querySelectorAll(
+          '[data-toggle-catalog]'
+        )
+        .forEach(button=>{
+
+          button.onclick=async()=>{
+
+            const isActive=
+              button.dataset.active==='1';
+
+            const {error}=await c.sb.rpc(
+              'owner_set_logistics_catalog_active',
               {
-                p_request_id:created.id,
-                p_is_deficiency:true,
-                p_note:root.querySelector('#reqDeficiencyNote').value||null
+                p_item_id:
+                  button.dataset.toggleCatalog,
+
+                p_is_active:
+                  !isActive
               }
             );
 
-            if(defError) {
-              return c.toast(defError.message,'error');
+
+            if(error){
+              return c.toast(
+                error.message,
+                'error'
+              );
             }
-          }
 
-          c.closeModal();
 
-          c.toast(
-            c.lang==='ar'
-              ?'تم إرسال الطلب'
-              :'Request submitted'
+            c.toast(
+              c.lang==='ar'
+                ?'تم تحديث القائمة.'
+                :'Clinic item updated.'
+            );
+
+            c.route('logistics');
+          };
+
+        });
+    }
+
+
+    function renderOrders(){
+
+      area.innerHTML=requests.length
+        ? `
+
+          <div class="stack-list">
+
+            ${requests.map(r=>{
+
+              const cat=
+                catMap.get(
+                  r.category_id
+                )||{};
+
+
+              return `
+
+                <article
+                  class="
+                    list-card
+                    ${
+                      r.is_deficiency
+                        ? 'logistics-deficiency-card'
+                        : ''
+                    }
+                  "
+                >
+
+                  <div>
+
+                    <div class="referral-topline">
+
+                      ${c.statusPill(
+                        r.status
+                      )}
+
+                      ${
+                        r.urgency==='urgent'
+                          ? '<span class="urgent-tag">URGENT</span>'
+                          : ''
+                      }
+
+                      ${
+                        r.is_deficiency
+                          ? `
+                              <span class="deficiency-tag">
+                                ${c.lang==='ar'
+                                  ?'ناقص'
+                                  :'MISSING'}
+                              </span>
+                            `
+                          : ''
+                      }
+
+                    </div>
+
+
+                    <div class="list-title">
+
+                      ${c.escape(
+                        r.item_name
+                      )}
+
+                    </div>
+
+
+                    <div class="small-note">
+
+                      ${c.escape(
+                        cat.name_en||
+                        'Other'
+                      )}
+
+                      •
+
+                      ${r.quantity||'—'}
+
+                      ${c.escape(
+                        r.unit||''
+                      )}
+
+                      ${r.needed_by
+                        ? ` • ${
+                            c.lang==='ar'
+                              ?'مطلوب'
+                              :'Needed'
+                          } ${c.formatDate(r.needed_by)}`
+                        : ''
+                      }
+
+                    </div>
+
+
+                    <div
+                      class="logistics-order-state"
+                    >
+                      ${c.escape(
+                        orderStatusMessage(
+                          r.status
+                        )
+                      )}
+                    </div>
+
+
+                    ${
+                      r.request_notes
+
+                      ? `<div class="small-note">
+                           ${c.escape(
+                             r.request_notes
+                           )}
+                         </div>`
+
+                      : ''
+                    }
+
+                  </div>
+
+
+                  <div class="list-actions">
+
+                    ${
+                      c.isManagement()
+                      &&
+                      r.status==='requested'
+
+                      ? `
+
+                        <button
+                          class="table-action success-outline"
+                          data-review="${r.id}"
+                          data-action="approve"
+                        >
+                          ${c.lang==='ar'
+                            ?'موافقة'
+                            :'Approve'}
+                        </button>
+
+
+                        <button
+                          class="table-action danger-outline"
+                          data-review="${r.id}"
+                          data-action="reject"
+                        >
+                          ${c.lang==='ar'
+                            ?'رفض'
+                            :'Reject'}
+                        </button>
+
+                      `
+
+                      : ''
+                    }
+
+
+                    ${
+                      r.status==='approved'
+
+                      ? `
+
+                        <button
+                          class="table-action finance-link-button"
+                          data-go-finance="1"
+                        >
+                          💳
+                          ${c.lang==='ar'
+                            ?'أدخل السعر في المالية'
+                            :'Enter price in Finance'}
+                        </button>
+
+                      `
+
+                      : ''
+                    }
+
+
+                    ${
+                      r.status==='paid'
+
+                      ? `
+
+                        <button
+                          class="table-action success-outline"
+                          data-complete="${r.id}"
+                        >
+                          ${c.lang==='ar'
+                            ?'تم الاستلام — إكمال'
+                            :'Received — complete'}
+                        </button>
+
+                      `
+
+                      : ''
+                    }
+
+                  </div>
+
+                </article>
+              `;
+
+            }).join('')}
+
+          </div>
+        `
+
+        : `
+
+          <div class="empty-state">
+            ${c.lang==='ar'
+              ?'لا توجد طلبات شراء.'
+              :'No logistics orders yet.'}
+          </div>
+        `;
+
+
+      area
+        .querySelectorAll(
+          '[data-review]'
+        )
+        .forEach(button=>{
+
+          button.onclick=()=>reviewRequest(
+            button.dataset.review,
+            button.dataset.action
           );
 
-          window.ClinicNotifications?.refresh?.();
-          c.route('logistics');
-        };
-      }
-    });
-  }
+        });
 
 
-  async function toggleDeficiency(id,isCurrentlyDeficiency){
-    const c=C();
-    let note=null;
+      area
+        .querySelectorAll(
+          '[data-go-finance]'
+        )
+        .forEach(button=>{
 
-    if(!isCurrentlyDeficiency){
-      note=prompt(
-        c.lang==='ar'
-          ?'اكتب وصف النقص أو المشكلة (اختياري)'
-          :'Deficiency / issue description (optional)'
-      );
+          button.onclick=
+            ()=>c.route('finance');
+
+        });
+
+
+      area
+        .querySelectorAll(
+          '[data-complete]'
+        )
+        .forEach(button=>{
+
+          button.onclick=()=>completeRequest(
+            button.dataset.complete
+          );
+
+        });
     }
 
-    const {error}=await c.sb.rpc(
-      'set_logistics_deficiency',
-      {
-        p_request_id:id,
-        p_is_deficiency:!isCurrentlyDeficiency,
-        p_note:note
-      }
-    );
 
-    if(error) return c.toast(error.message,'error');
+    function catalogModal(item=null){
 
-    c.toast(
-      !isCurrentlyDeficiency
-        ? (
-            c.lang==='ar'
-              ?'تم تعليم الطلب كنقص وسيظهر في إشعارات الأعضاء.'
-              :'Marked as deficiency and added to member notifications.'
-          )
-        : (
-            c.lang==='ar'
-              ?'تمت إزالة علامة النقص.'
-              :'Deficiency flag cleared.'
-          )
-    );
+      c.showModal({
 
-    window.ClinicNotifications?.refresh?.();
-    c.route('logistics');
-  }
+        title:
+          item
 
+            ? (
+                c.lang==='ar'
+                  ?'تعديل احتياج'
+                  :'Edit clinic item'
+              )
 
-  async function reviewRequest(id,action){
-    const c=C();
+            : (
+                c.lang==='ar'
+                  ?'إضافة احتياج للعيادة'
+                  :'Add clinic item'
+              ),
 
-    let note=null;
+        body:`
 
-    if(action==='reject'){
-      note=prompt(
-        c.lang==='ar'
-          ?'سبب الرفض'
-          :'Rejection reason'
-      );
+          <form
+            id="catalogForm"
+            class="form-grid"
+          >
 
-      if(!note) return;
-    }
+            <label>
 
-    const {error}=await c.sb.rpc(
-      'review_logistics_request',
-      {
-        p_request_id:id,
-        p_action:action,
-        p_note:note
-      }
-    );
+              ${c.lang==='ar'
+                ?'الاسم بالإنجليزية'
+                :'English name'}
 
-    if(error) return c.toast(error.message,'error');
+              <input
+                id="catNameEn"
+                class="control"
+                value="${c.escape(
+                  item?.item_name_en||
+                  ''
+                )}"
+                required
+              >
 
-    c.toast('Updated');
-    window.ClinicNotifications?.refresh?.();
-    c.route('logistics');
-  }
+            </label>
 
 
-  function expenseModal(cats,request){
-    const c=C();
+            <label>
 
-    c.showModal({
-      title:request
-        ? (c.lang==='ar'?'تسجيل شراء':'Record purchase')
-        : (c.lang==='ar'?'مصروف مباشر':'Direct expense'),
+              ${c.lang==='ar'
+                ?'الاسم بالعربية'
+                :'Arabic name'}
 
-      body:`
-        <form id="expenseForm" class="form-grid">
-          <label>
-            ${c.lang==='ar'?'الفئة':'Category'}
-            <select id="expCat" class="control" required>
-              ${cats.map(x=>`
-                <option
-                  value="${x.id}"
-                  ${x.id===request?.category_id?'selected':''}
-                >
-                  ${c.escape(x.name_en)}
+              <input
+                id="catNameAr"
+                class="control"
+                value="${c.escape(
+                  item?.item_name_ar||
+                  ''
+                )}"
+              >
+
+            </label>
+
+
+            <label>
+
+              ${c.lang==='ar'
+                ?'الفئة'
+                :'Category'}
+
+              <select
+                id="catCategory"
+                class="control"
+              >
+
+                <option value="">
+                  —
                 </option>
-              `).join('')}
-            </select>
-          </label>
 
-          <label>
-            ${c.lang==='ar'?'المبلغ':'Amount'}
-            <input
-              id="expAmount"
-              class="control"
-              type="number"
-              min="0.01"
-              step="0.01"
-              required
-            >
-          </label>
+                ${cats.map(cat=>`
 
-          <label class="full-span">
-            ${c.lang==='ar'?'الوصف':'Description'}
-            <input
-              id="expDesc"
-              class="control"
-              value="${c.escape(request?.item_name||'')}"
-              required
-            >
-          </label>
+                  <option
+                    value="${cat.id}"
+                    ${
+                      cat.id===
+                      item?.category_id
+                        ?'selected'
+                        :''
+                    }
+                  >
+                    ${c.escape(
+                      cat.name_en
+                    )}
+                  </option>
 
-          <label>
-            ${c.lang==='ar'?'طريقة الدفع':'Payment method'}
-            <select id="expMethod" class="control">
-              <option value="cash">Cash</option>
-              <option value="card">Card</option>
-              <option value="instapay">InstaPay</option>
-              <option value="bank_transfer">Bank transfer</option>
-              <option value="other">Other</option>
-            </select>
-          </label>
+                `).join('')}
 
-          <label>
-            ${c.lang==='ar'?'المورد':'Vendor'}
-            <input id="expVendor" class="control">
-          </label>
+              </select>
 
-          <label>
-            ${c.lang==='ar'?'مرجع':'Reference'}
-            <input id="expRef" class="control">
-          </label>
+            </label>
 
-          <label>
-            ${c.lang==='ar'?'التاريخ والوقت':'Date/time'}
-            <input id="expDate" class="control" type="datetime-local">
-          </label>
 
-          <label class="full-span">
-            ${c.lang==='ar'?'ملاحظات':'Notes'}
-            <textarea id="expNotes" class="control"></textarea>
-          </label>
+            <label>
 
-          <div class="form-actions full-span">
-            <button class="primary-button compact" type="submit">
-              ${c.lang==='ar'?'حفظ':'Save'}
-            </button>
-          </div>
-        </form>
-      `,
+              ${c.lang==='ar'
+                ?'الكمية المعتادة'
+                :'Default quantity'}
 
-      onOpen:(root)=>root.querySelector('#expenseForm').onsubmit=async e=>{
-        e.preventDefault();
+              <input
+                id="catQty"
+                class="control"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value="${item?.default_quantity??''}"
+              >
 
-        const local=root.querySelector('#expDate').value;
-        const expenseAt=local?`${local}:00+03:00`:null;
+            </label>
 
-        const args={
-          p_category_id:root.querySelector('#expCat').value,
-          p_description:root.querySelector('#expDesc').value,
-          p_amount:Number(root.querySelector('#expAmount').value),
-          p_method:root.querySelector('#expMethod').value,
-          p_logistics_request_id:request?.id||null,
-          p_vendor:root.querySelector('#expVendor').value||null,
-          p_reference:root.querySelector('#expRef').value||null,
-          p_notes:root.querySelector('#expNotes').value||null,
-          p_receipt_path:null,
-          p_receipt_original_name:null
-        };
 
-        if(expenseAt) args.p_expense_at=expenseAt;
+            <label>
 
-        const {error}=await c.sb.rpc(
-          'record_clinic_expense',
-          args
-        );
+              ${c.lang==='ar'
+                ?'الوحدة'
+                :'Unit'}
 
-        if(error) return c.toast(error.message,'error');
+              <input
+                id="catUnit"
+                class="control"
+                placeholder="${
+                  c.lang==='ar'
+                    ?'علبة / زجاجة / قطعة'
+                    :'box / bottle / piece'
+                }"
+                value="${c.escape(
+                  item?.unit||
+                  ''
+                )}"
+              >
 
-        c.closeModal();
+            </label>
 
-        c.toast(
+
+            <label>
+
+              ${c.lang==='ar'
+                ?'ترتيب الظهور'
+                :'Display order'}
+
+              <input
+                id="catOrder"
+                class="control"
+                type="number"
+                step="1"
+                value="${item?.display_order??100}"
+              >
+
+            </label>
+
+
+            <label class="full-span">
+
+              ${c.lang==='ar'
+                ?'ملاحظات'
+                :'Notes'}
+
+              <textarea
+                id="catNotes"
+                class="control"
+              >${c.escape(
+                item?.notes||
+                ''
+              )}</textarea>
+
+            </label>
+
+
+            <label class="checkbox-card full-span">
+
+              <input
+                id="catActive"
+                type="checkbox"
+                ${
+                  item?.is_active===false
+                    ?''
+                    :'checked'
+                }
+              >
+
+              <span>
+
+                <strong>
+                  ${c.lang==='ar'
+                    ?'موجود في القائمة'
+                    :'Active clinic item'}
+                </strong>
+
+                <small>
+                  ${c.lang==='ar'
+                    ?'يظهر للسكرتارية ضمن قائمة احتياجات العيادة.'
+                    :'Visible to the secretary in the clinic logistics list.'}
+                </small>
+
+              </span>
+
+            </label>
+
+
+            <div class="form-actions full-span">
+
+              <button
+                class="primary-button compact"
+                type="submit"
+              >
+                ${c.lang==='ar'
+                  ?'حفظ'
+                  :'Save'}
+              </button>
+
+            </div>
+
+          </form>
+        `,
+
+        onOpen:(root)=>{
+
+          root
+            .querySelector(
+              '#catalogForm'
+            )
+            .onsubmit=async event=>{
+
+              event.preventDefault();
+
+
+              const qtyText=
+                root
+                  .querySelector(
+                    '#catQty'
+                  )
+                  .value
+                  .trim();
+
+
+              const {error}=await c.sb.rpc(
+                'owner_save_logistics_catalog_item',
+                {
+                  p_item_id:
+                    item?.id||
+                    null,
+
+                  p_item_name_en:
+                    root
+                      .querySelector(
+                        '#catNameEn'
+                      )
+                      .value,
+
+                  p_item_name_ar:
+                    root
+                      .querySelector(
+                        '#catNameAr'
+                      )
+                      .value||
+                    null,
+
+                  p_category_id:
+                    root
+                      .querySelector(
+                        '#catCategory'
+                      )
+                      .value||
+                    null,
+
+                  p_default_quantity:
+                    qtyText
+                      ? Number(qtyText)
+                      : null,
+
+                  p_unit:
+                    root
+                      .querySelector(
+                        '#catUnit'
+                      )
+                      .value||
+                    null,
+
+                  p_notes:
+                    root
+                      .querySelector(
+                        '#catNotes'
+                      )
+                      .value||
+                    null,
+
+                  p_display_order:
+                    Number(
+                      root
+                        .querySelector(
+                          '#catOrder'
+                        )
+                        .value||
+                      100
+                    ),
+
+                  p_is_active:
+                    root
+                      .querySelector(
+                        '#catActive'
+                      )
+                      .checked
+                }
+              );
+
+
+              if(error){
+                return c.toast(
+                  error.message,
+                  'error'
+                );
+              }
+
+
+              c.closeModal();
+
+
+              c.toast(
+                c.lang==='ar'
+                  ?'تم حفظ قائمة الاحتياجات.'
+                  :'Clinic logistics list saved.'
+              );
+
+
+              c.route(
+                'logistics'
+              );
+            };
+        }
+      });
+    }
+
+
+    function orderMissingModal(item){
+
+      if(!item){
+        return;
+      }
+
+
+      c.showModal({
+
+        title:
           c.lang==='ar'
-            ?'تم تسجيل المصروف'
-            :'Expense recorded'
+            ?'طلب بند ناقص'
+            :'Order missing clinic item',
+
+        body:`
+
+          <form
+            id="missingOrderForm"
+            class="form-grid"
+          >
+
+            <div
+              class="missing-order-item full-span"
+            >
+
+              <span>
+                📦
+              </span>
+
+              <div>
+
+                <strong>
+                  ${c.escape(
+                    itemLabel(item)
+                  )}
+                </strong>
+
+                <small>
+                  ${c.lang==='ar'
+                    ?'سيصل إشعار للمالك والمديرين للموافقة.'
+                    :'Owner and managers will receive an approval notification.'}
+                </small>
+
+              </div>
+
+            </div>
+
+
+            <label>
+
+              ${c.lang==='ar'
+                ?'الكمية المطلوبة'
+                :'Quantity needed'}
+
+              <input
+                id="missingQty"
+                class="control"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value="${item.default_quantity??1}"
+                required
+              >
+
+            </label>
+
+
+            <label>
+
+              ${c.lang==='ar'
+                ?'الوحدة'
+                :'Unit'}
+
+              <input
+                class="control"
+                value="${c.escape(
+                  item.unit||
+                  ''
+                )}"
+                disabled
+              >
+
+            </label>
+
+
+            <label>
+
+              ${c.lang==='ar'
+                ?'الأولوية'
+                :'Urgency'}
+
+              <select
+                id="missingUrgency"
+                class="control"
+              >
+                <option value="routine">
+                  ${c.lang==='ar'
+                    ?'عادي'
+                    :'Routine'}
+                </option>
+
+                <option value="urgent">
+                  ${c.lang==='ar'
+                    ?'عاجل'
+                    :'Urgent'}
+                </option>
+              </select>
+
+            </label>
+
+
+            <label>
+
+              ${c.lang==='ar'
+                ?'مطلوب قبل'
+                :'Needed by'}
+
+              <input
+                id="missingNeededBy"
+                class="control"
+                type="date"
+              >
+
+            </label>
+
+
+            <label class="full-span">
+
+              ${c.lang==='ar'
+                ?'ملاحظة'
+                :'Note'}
+
+              <textarea
+                id="missingNote"
+                class="control"
+                placeholder="${
+                  c.lang==='ar'
+                    ?'مثال: المخزون انتهى'
+                    :'Example: stock is finished'
+                }"
+              ></textarea>
+
+            </label>
+
+
+            <div class="form-actions full-span">
+
+              <button
+                class="primary-button compact"
+                type="submit"
+              >
+                ${c.lang==='ar'
+                  ?'إرسال طلب الشراء'
+                  :'Send order request'}
+              </button>
+
+            </div>
+
+          </form>
+        `,
+
+        onOpen:(root)=>{
+
+          root
+            .querySelector(
+              '#missingOrderForm'
+            )
+            .onsubmit=async event=>{
+
+              event.preventDefault();
+
+
+              const {error}=await c.sb.rpc(
+                'secretary_order_missing_logistics_item',
+                {
+                  p_catalog_item_id:
+                    item.id,
+
+                  p_quantity:
+                    Number(
+                      root
+                        .querySelector(
+                          '#missingQty'
+                        )
+                        .value
+                    ),
+
+                  p_needed_by:
+                    root
+                      .querySelector(
+                        '#missingNeededBy'
+                      )
+                      .value||
+                    null,
+
+                  p_urgency:
+                    root
+                      .querySelector(
+                        '#missingUrgency'
+                      )
+                      .value,
+
+                  p_note:
+                    root
+                      .querySelector(
+                        '#missingNote'
+                      )
+                      .value||
+                    null
+                }
+              );
+
+
+              if(error){
+                return c.toast(
+                  error.message,
+                  'error'
+                );
+              }
+
+
+              c.closeModal();
+
+
+              c.toast(
+                c.lang==='ar'
+                  ?'تم إرسال الطلب إلى الإدارة.'
+                  :'Order sent to management.'
+              );
+
+
+              window
+                .ClinicNotifications
+                ?.refresh?.();
+
+
+              c.route(
+                'logistics'
+              );
+            };
+        }
+      });
+    }
+
+
+    async function reviewRequest(
+      id,
+      action
+    ){
+
+      let note=null;
+
+
+      if(action==='reject'){
+
+        note=prompt(
+          c.lang==='ar'
+            ?'سبب الرفض'
+            :'Rejection reason'
         );
 
-        window.ClinicNotifications?.refresh?.();
-        c.route('logistics');
+
+        if(!note){
+          return;
+        }
       }
-    });
-  }
 
 
-  async function completeRequest(id){
-    const c=C();
+      const {error}=await c.sb.rpc(
+        'review_logistics_request',
+        {
+          p_request_id:
+            id,
 
-    const {error}=await c.sb.rpc(
-      'complete_logistics_request',
-      {p_request_id:id}
-    );
+          p_action:
+            action,
 
-    if(error) return c.toast(error.message,'error');
-
-    c.toast('Completed');
-    window.ClinicNotifications?.refresh?.();
-    c.route('logistics');
-  }
+          p_note:
+            note
+        }
+      );
 
 
-  async function voidExpense(id){
-    const c=C();
-
-    const reason=prompt(
-      c.lang==='ar'
-        ?'سبب الإلغاء'
-        :'Void reason'
-    );
-
-    if(!reason) return;
-
-    const {error}=await c.sb.rpc(
-      'void_clinic_expense',
-      {
-        p_expense_id:id,
-        p_reason:reason
+      if(error){
+        return c.toast(
+          error.message,
+          'error'
+        );
       }
-    );
 
-    if(error) return c.toast(error.message,'error');
 
-    c.toast('Voided');
-    window.ClinicNotifications?.refresh?.();
-    c.route('logistics');
+      c.toast(
+        action==='approve'
+          ? (
+              c.lang==='ar'
+                ?'تمت الموافقة. السعر يُسجل الآن من صفحة المالية.'
+                :'Approved. The actual price can now be entered in Finance.'
+            )
+          : (
+              c.lang==='ar'
+                ?'تم رفض الطلب.'
+                :'Request rejected.'
+            )
+      );
+
+
+      window
+        .ClinicNotifications
+        ?.refresh?.();
+
+
+      c.route(
+        'logistics'
+      );
+    }
+
+
+    async function completeRequest(id){
+
+      const {error}=await c.sb.rpc(
+        'complete_logistics_request',
+        {
+          p_request_id:
+            id
+        }
+      );
+
+
+      if(error){
+        return c.toast(
+          error.message,
+          'error'
+        );
+      }
+
+
+      c.toast(
+        c.lang==='ar'
+          ?'تم استلام الاحتياج وإكمال الطلب.'
+          :'Item received and order completed.'
+      );
+
+
+      window
+        .ClinicNotifications
+        ?.refresh?.();
+
+
+      c.route(
+        'logistics'
+      );
+    }
+
+
+    document
+      .querySelectorAll(
+        '#logTabs .tab'
+      )
+      .forEach(button=>{
+
+        button.onclick=()=>{
+
+          document
+            .querySelectorAll(
+              '#logTabs .tab'
+            )
+            .forEach(
+              x=>x.classList.remove(
+                'active'
+              )
+            );
+
+
+          button.classList.add(
+            'active'
+          );
+
+
+          button.dataset.tab==='catalog'
+            ? renderCatalog()
+            : renderOrders();
+        };
+      });
+
+
+    document
+      .getElementById(
+        'addCatalogItem'
+      )
+      ?.addEventListener(
+        'click',
+        ()=>catalogModal()
+      );
+
+
+    renderCatalog();
   }
 
 
-  window.ClinicPages['logistics']=render;
+  window.ClinicPages['logistics']=
+    render;
+
 })();

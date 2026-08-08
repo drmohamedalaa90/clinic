@@ -2821,3 +2821,288 @@ html[dir="rtl"] .dashboard-notification-row.unread {
     width: 100%;
   }
 }
+
+
+/* ========================================================
+   LOGISTICS MASTER LIST WORKFLOW
+======================================================== */
+
+.logistics-flow-strip {
+  margin: -4px 0 18px;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: white;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.logistics-flow-strip span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.logistics-flow-strip b {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 9px;
+}
+
+.logistics-flow-strip i {
+  color: #94a3b8;
+  font-style: normal;
+}
+
+.logistics-catalog-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit,minmax(250px,1fr));
+  gap: 12px;
+}
+
+.logistics-catalog-card {
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: white;
+  padding: 14px;
+  display: grid;
+  gap: 13px;
+}
+
+.logistics-catalog-card.has-order {
+  border-color: #fdba74;
+  background: #fffaf5;
+}
+
+.logistics-catalog-card.inactive {
+  opacity: .58;
+  background: #f8fafc;
+}
+
+.logistics-catalog-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.logistics-catalog-card-head > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.logistics-catalog-card-head > div:first-child > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.logistics-catalog-card-head strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.logistics-catalog-card-head small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.logistics-item-icon {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+}
+
+.catalog-active-chip,
+.catalog-inactive-chip {
+  border-radius: 999px;
+  padding: 5px 8px;
+  font-size: 8px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.catalog-active-chip {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.catalog-inactive-chip {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.logistics-catalog-meta {
+  display: grid;
+  gap: 5px;
+}
+
+.logistics-catalog-meta span {
+  color: var(--text);
+  font-size: 10px;
+}
+
+.logistics-catalog-meta span b {
+  font-size: 15px;
+}
+
+.logistics-catalog-meta small {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.catalog-open-order {
+  padding: 9px 10px;
+  border-radius: 11px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  display: grid;
+  gap: 5px;
+}
+
+.catalog-open-order strong {
+  color: #9a3412;
+  font-size: 9px;
+}
+
+.logistics-catalog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: auto;
+}
+
+.logistics-order-state {
+  margin-top: 6px;
+  color: #475569;
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.finance-link-button {
+  border-color: #bfdbfe !important;
+  color: #1d4ed8 !important;
+  background: #eff6ff !important;
+}
+
+.missing-order-item,
+.finance-logistics-item-summary {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: #f8fafc;
+  display: grid;
+  grid-template-columns: 38px minmax(0,1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.missing-order-item > span,
+.finance-logistics-item-summary > span {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: white;
+  border: 1px solid var(--border);
+}
+
+.missing-order-item > div,
+.finance-logistics-item-summary > div {
+  display: grid;
+  gap: 3px;
+}
+
+.missing-order-item strong,
+.finance-logistics-item-summary strong {
+  font-size: 13px;
+}
+
+.missing-order-item small,
+.finance-logistics-item-summary small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+
+/* ========================================================
+   FINANCE — LOGISTICS EXPENSES
+======================================================== */
+
+.finance-logistics-pending {
+  display: grid;
+  gap: 9px;
+}
+
+.finance-logistics-card {
+  padding: 12px 13px;
+  border: 1px solid #fed7aa;
+  border-radius: 13px;
+  background: #fffaf5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.finance-logistics-card > div {
+  display: grid;
+  gap: 4px;
+}
+
+.finance-logistics-card > div > strong {
+  font-size: 12px;
+}
+
+.finance-logistics-card > div > small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+
+@media (max-width: 700px) {
+
+  .logistics-flow-strip {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .logistics-flow-strip i {
+    transform: rotate(90deg);
+    justify-self: start;
+    margin-inline-start: 8px;
+  }
+
+  .logistics-catalog-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .finance-logistics-card {
+    display: grid;
+  }
+
+  .finance-logistics-card .primary-button {
+    width: 100%;
+  }
+}

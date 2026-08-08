@@ -1,86 +1,114 @@
-# Operation Clinic — Patient Reset + Doctor Today/Tomorrow Home
+# Operation Clinic — Owner Logistics Master List
 
-## 1. Owner can reset ALL patients
+This patch changes Logistics into the requested operational workflow.
 
-Patients now has an Owner-only:
+## Owner
 
-**Reset all patients**
+The Owner controls a permanent **Clinic items** master list.
 
-It requires typing:
+Each item can contain:
+- English name
+- Arabic name
+- expense category
+- usual quantity
+- unit
+- notes
+- display order
+- active / inactive
 
-`RESET PATIENTS`
+Example items:
+- Water bottles
+- Paper cups
+- Printer paper
+- Toner
+- Cleaning products
+- Tissues
+- ECG paper
 
-It clears all test patient-linked data first, then patients, and restarts the
-patient MRN sequence.
+The owner can add, edit, activate or disable items.
 
-The NEXT patient will be:
+## Secretary
 
-`OPC-000001`
+The secretary does NOT type random logistics requests anymore.
 
-Preserved:
-- users / roles
-- doctor working schedules
-- schedule exceptions
-- service price list
-- logistics
-- attendance
+She opens:
 
-Because appointments, visits, referrals and patient invoices depend on patient
-records, those patient-linked test records are removed too.
+**Logistics -> Clinic items**
 
-## 2. Doctor home page = Today's Clinic
+and selects:
 
-After a Doctor logs in, the app now opens:
+**Missing — order**
 
-**Today's Clinic**
+She enters:
+- required quantity
+- routine / urgent
+- needed-by date
+- note
 
-instead of Appointments.
+The order is created from the Owner's approved master list.
 
-Doctor sidebar starts with:
-1. Today's Clinic
-2. Appointments
-3. My Queue
-4. Patients
-5. Referrals
-6. My Schedule
-7. Dashboard
-8. My Profile
+## Management notification
 
-## 3. Today's Clinic stays active until 2 hours after clinic end
+When the secretary sends a missing-item order:
 
-Example:
-- clinic ends 18:00
-- Today's Clinic remains the active doctor home through 20:00
+- Owner
+- Manager
+- Deputy manager
 
-After the 2-hour period, the same home page moves the focus to tomorrow.
+receive an orange Logistics notification:
 
-## 4. Tomorrow's Clinic is always inside the doctor home page
+**Logistics order awaiting approval**
 
-The doctor can see:
-- today's booked patients by hour
-- status
-- booked / waiting / completed counts
-- tomorrow's clinic
-- tomorrow's booked patients by hour
+Management can open Logistics and:
+- Approve
+- Reject
 
-If today's clinic has already ended plus two hours, the page shows a brief
-"Today's clinic has ended" card and puts Tomorrow's Clinic in focus.
+The existing deficiency notification remains available too.
+
+## Price / Finance
+
+The secretary does NOT enter the purchase price when reporting the missing item.
+
+After management approves the request:
+
+**Finance -> Logistics expenses**
+
+shows the approved item with:
+
+**Enter price**
+
+The secretary records:
+- actual price
+- payment method
+- vendor
+- receipt/reference
+- date/time
+- notes
+
+This calls the existing `record_clinic_expense` workflow, links the financial
+expense to the logistics request, and the amount appears in the Finance
+expense ledger.
+
+The logistics request then moves to the purchased/paid stage and can be marked
+Received / Complete.
 
 ## Install
 
 ### Supabase
+
 Run the full contents of:
 
-`sql/owner-reset-all-patients.sql`
+`sql/logistics-master-list.sql`
 
 ### GitHub
+
 Replace:
-- `js/core.js`
-- `js/patients.js`
-- `js/appointments.js`
+- `js/logistics.js`
+- `js/finance.js`
+- `js/notifications.js`
 - `css/style.css`
 - `sw.js`
 
-Then wait for GitHub Pages and press:
+Then wait for GitHub Pages deployment and press:
 
 `Ctrl + Shift + R`

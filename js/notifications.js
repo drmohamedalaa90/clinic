@@ -50,23 +50,52 @@ window.ClinicNotifications = {
     const C = window.Clinic;
     if (!C?.user) return;
 
-    const { data, error } = await C.sb.rpc(
-      'get_dashboard_notifications',
-      { p_limit: 80 }
-    );
+    const [
+      baseResult,
+      logisticsManagementResult
+    ] = await Promise.all([
+      C.sb.rpc(
+        'get_dashboard_notifications',
+        { p_limit: 80 }
+      ),
 
-    if (error) {
+      C.isManagement?.()
+        ? C.sb.rpc(
+            'get_logistics_management_notifications',
+            { p_limit: 30 }
+          )
+        : Promise.resolve({
+            data: [],
+            error: null
+          })
+    ]);
+
+    if (baseResult.error) {
       console.warn(
-        'Dashboard notifications unavailable. Run sql/task-13l-dashboard-notifications.sql',
-        error
+        'Dashboard notifications unavailable. Run the dashboard notification SQL patch.',
+        baseResult.error
       );
-      this.items = [];
-      this.render();
-      this.renderDashboard();
-      return;
     }
 
-    this.items = (data || []).map(x => ({
+    if (logisticsManagementResult.error) {
+      console.warn(
+        'Management logistics notifications unavailable. Run sql/logistics-master-list.sql',
+        logisticsManagementResult.error
+      );
+    }
+
+    const data = [
+      ...(baseResult.data || []),
+      ...(logisticsManagementResult.data || [])
+    ]
+      .sort((a,b) =>
+        Number(b.priority || 0) - Number(a.priority || 0)
+        ||
+        new Date(b.event_time || 0) - new Date(a.event_time || 0)
+      )
+      .slice(0, 100);
+
+    this.items = data.map(x => ({
       id: x.notification_key,
       category: x.category,
       priority: Number(x.priority || 0),
