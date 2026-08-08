@@ -607,6 +607,19 @@
         role="alert"
       ></div>
 
+      <div
+        id="technicalError"
+        style="
+          display:none;
+          margin:-12px 20px 20px;
+          color:#8b96a6;
+          font-size:9px;
+          direction:ltr;
+          text-align:left;
+          word-break:break-word;
+        "
+      ></div>
+
 
       <section
         id="successPanel"
@@ -617,7 +630,7 @@
         <h2>تم الحجز بنجاح</h2>
 
         <p>
-          تم تسجيل موعدك في العيادة.
+          تم تسجيل موعدك فعلياً في جدول العيادة.
         </p>
 
         <div
@@ -693,6 +706,11 @@
         'errorMessage'
       );
 
+    const technicalError =
+      document.getElementById(
+        'technicalError'
+      );
+
     const submitButton =
       document.getElementById(
         'submitButton'
@@ -741,6 +759,10 @@
       errorMessage.classList.remove(
         'show'
       );
+
+      technicalError.textContent = '';
+      technicalError.style.display =
+        'none';
     }
 
 
@@ -1240,9 +1262,43 @@
             error.message
           );
 
+          technicalError.textContent =
+            error.message || '';
+
+          technicalError.style.display =
+            error.message
+              ? 'block'
+              : 'none';
+
+          console.error(
+            'Public booking failed:',
+            error
+          );
+
           // Refresh capacity in case another patient
           // just occupied the final place.
           await loadSlots();
+
+          return;
+        }
+
+
+        if(
+          !data
+          ||
+          data.success !== true
+          ||
+          !data.appointment_id
+        ) {
+          showError(
+            'Appointment was not created'
+          );
+
+          technicalError.textContent =
+            'The booking RPC returned without a real appointment_id.';
+
+          technicalError.style.display =
+            'block';
 
           return;
         }
@@ -1297,6 +1353,11 @@
               data?.appointment_number ||
               '—'
             )}</strong>
+          </div>
+
+          <div>
+            <span>الحالة</span>
+            <strong>محجوز</strong>
           </div>
         `;
 
