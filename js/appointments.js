@@ -240,6 +240,46 @@
               </label>
 
               <label>
+                ${C.lang==='ar'?'الرسوم (جنيه)':'Fees (EGP)'}
+                <input
+                  id="bookingFee"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value="0"
+                  class="control"
+                >
+              </label>
+
+              <label>
+                ${C.lang==='ar'?'طريقة الدفع':'Payment method'}
+                <select
+                  id="bookingPaymentMethod"
+                  class="control"
+                >
+                  <option value="cash">
+                    ${C.lang==='ar'?'نقدي':'Cash'}
+                  </option>
+
+                  <option value="instapay">
+                    InstaPay
+                  </option>
+
+                  <option value="card">
+                    ${C.lang==='ar'?'بطاقة':'Card'}
+                  </option>
+
+                  <option value="bank_transfer">
+                    ${C.lang==='ar'?'تحويل بنكي':'Bank transfer'}
+                  </option>
+
+                  <option value="other">
+                    ${C.lang==='ar'?'أخرى':'Other'}
+                  </option>
+                </select>
+              </label>
+
+              <label>
                 ${C.lang==='ar'?'الفترة الزمنية':'Time interval'}
                 <select
                   id="bookingSlot"
@@ -270,6 +310,13 @@
               id="slotHint"
               class="small-note"
             ></div>
+
+            <div class="booking-income-note">
+              💰
+              ${C.lang==='ar'
+                ?'أي رسوم أكبر من صفر تُسجل تلقائياً في المالية ← الدخل.'
+                :'Any fee above zero is recorded automatically in Finance → Income.'}
+            </div>
           </section>
 
 
@@ -611,6 +658,23 @@
           const note=
             root.querySelector('#bookingNotes').value.trim()||null;
 
+          const fee=
+            Number(
+              root.querySelector('#bookingFee').value||0
+            );
+
+          const paymentMethod=
+            root.querySelector('#bookingPaymentMethod').value;
+
+          if(fee < 0){
+            return C.toast(
+              C.lang==='ar'
+                ?'الرسوم لا يمكن أن تكون سالبة.'
+                :'Fees cannot be negative.',
+              'error'
+            );
+          }
+
           let result;
 
           if(patientMode==='existing'){
@@ -627,14 +691,16 @@
             }
 
             result=await C.sb.rpc(
-              'frontend_book_appointment',
+              'frontend_book_existing_patient_with_fee',
               {
                 p_patient:patientId,
                 p_doctor:doctor.value,
                 p_start:parts[0],
                 p_end:parts[1],
                 p_type:appointmentType,
-                p_note:note
+                p_note:note,
+                p_fee:fee,
+                p_payment_method:paymentMethod
               }
             );
           }
@@ -659,7 +725,7 @@
               root.querySelector('#bookingBirthYear').value.trim();
 
             result=await C.sb.rpc(
-              'frontend_create_patient_and_book',
+              'frontend_create_patient_and_book_with_fee',
               {
                 p_doctor:doctor.value,
                 p_start:parts[0],
@@ -676,7 +742,13 @@
                 p_mobile:
                   root.querySelector('#bookingMobile').value.trim()||null,
                 p_address:
-                  root.querySelector('#bookingAddress').value.trim()||null
+                  root.querySelector('#bookingAddress').value.trim()||null,
+
+                p_fee:
+                  fee,
+
+                p_payment_method:
+                  paymentMethod
               }
             );
           }

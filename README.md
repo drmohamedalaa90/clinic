@@ -1,83 +1,82 @@
-# Operation Clinic — Hourly Slots, 4 Patients per Hour
+# Operation Clinic — Fees + Finance Income + Missing Pages Fix
 
-Requested workflow implemented:
+This patch fixes two separate issues.
 
-## Appointment model
+## 1. Fees inside booking
 
-Instead of 15-minute slots:
+The booking window now contains:
 
-- 15:00–16:00 = one hour
-- 16:00–17:00 = one hour
-- 17:00–18:00 = one hour
+- Fees (EGP)
+- Payment method:
+  - Cash
+  - InstaPay
+  - Card
+  - Bank transfer
+  - Other
 
-Each hour contains **4 patient places**.
+If Fees > 0, the booking and income record are saved together in one
+database transaction.
 
-Example:
+The amount appears automatically in:
 
-15:00–16:00  
-1. Ahmed Hassan  
-2. Sara Ali  
-3. Available  
-4. Available  
+Finance → Income
 
-The hour remains bookable until all four places are occupied.
+with patient, doctor, date, amount and payment method.
 
-## Doctor home page
+## 2. Why Finance and Logistics were still placeholders
 
-For a doctor login:
+The pages were already written, but `app.html` never loaded these JavaScript
+modules:
 
-**Appointments opens automatically after login.**
+- `finance.js`
+- `logistics.js`
+- `attendance.js`
+- `reports.js`
+- `admin.js`
+- `pwa.js`
 
-Doctor sidebar starts with:
+So the sidebar existed, but ClinicPages had no renderer for those entries and
+the app fell back to the placeholder page.
 
-1. Appointments
-2. Dashboard
-3. Today's Clinic
-4. My Queue
-5. Patients
-6. Referrals
-7. My Schedule
+This patch fixes the wiring.
 
-Doctors can also create a booking in their own appointment schedule.
-
-## Schedule management
-
-The old slot-duration control is removed from the interface.
-
-Every working-hours rule now means:
-
-**1 hour = up to 4 patients**
-
-Existing working hours and extra/changed clinic rules are migrated to 60-minute slots by the SQL patch.
+Finance, Logistics, Attendance, Reports, Profile / Users / Technical pages
+will now actually load their existing frontend modules.
 
 ## Install
 
-### 1. Supabase
+### Step 1 — Supabase
+Run the FULL CONTENTS of:
 
-Run the full contents of:
+`sql/booking-fees-income.sql`
 
-`sql/hourly-capacity4.sql`
+Expected verification:
+- table: `booking_income`
+- four functions:
+  - frontend_book_existing_patient_with_fee
+  - frontend_create_patient_and_book_with_fee
+  - frontend_booking_income_summary
+  - void_booking_income
 
-This is required because the database previously prevented overlapping appointments.
-
-### 2. GitHub
-
+### Step 2 — GitHub
 Replace:
 
-- `js/core.js`
+- `app.html`
 - `js/appointments.js`
-- `js/schedules.js`
+- `js/finance.js`
+- `js/logistics.js`
+- `js/attendance.js`
+- `js/reports.js`
+- `js/admin.js`
+- `js/pwa.js`
 - `css/style.css`
 - `sw.js`
 
-### 3. Refresh
+### Step 3 — Refresh
+Wait for GitHub Pages deployment and press:
 
-Wait for GitHub Pages deployment, then:
-
-`Ctrl + Shift + R`
+Ctrl + Shift + R
 
 ## Important
-
-The SQL safely changes appointment capacity from **1 to 4 per doctor/hour**.
-
-Cancelled and rescheduled appointments do not consume capacity.
+A fee of 0 creates the booking without an income entry.
+Any fee above 0 is recorded under Finance → Income.

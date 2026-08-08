@@ -2475,3 +2475,27 @@ html[dir="rtl"] .dashboard-notification-row.unread {
   color: #065f46;
   font-size: 13px;
 }
+
+
+/* ========================================================
+   BOOKING FEES / FINANCE INCOME
+======================================================== */
+
+.booking-income-note {
+  margin-top: 10px;
+  padding: 9px 11px;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  background: #f0fdf4;
+  color: #166534;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+#financeTabs {
+  overflow-x: auto;
+}
+
+#financeArea .section-head .eyebrow {
+  margin-bottom: 4px;
+}
