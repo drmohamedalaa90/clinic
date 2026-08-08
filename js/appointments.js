@@ -496,7 +496,7 @@
           `;
 
           const {data,error}=await C.sb.rpc(
-            'frontend_get_available_slots',
+            'frontend_get_hourly_slots',
             {
               p_doctor:doctor.value,
               p_day:dateInput.value
@@ -531,24 +531,37 @@
               }
             </option>
 
-            ${rows.map(x=>`
-              <option
-                value="${x.slot_start}|${x.slot_end}"
-              >
-                ${C.formatTime(x.slot_start)}
-                –
-                ${C.formatTime(x.slot_end)}
-              </option>
-            `).join('')}
+            ${rows
+              .filter(x=>Number(x.remaining_capacity||0)>0)
+              .map(x=>`
+                <option
+                  value="${x.slot_start}|${x.slot_end}"
+                >
+                  ${C.formatTime(x.slot_start)}
+                  –
+                  ${C.formatTime(x.slot_end)}
+                  •
+                  ${x.remaining_capacity}/4
+                  ${C.lang==='ar'?'أماكن متبقية':'places left'}
+                </option>
+              `).join('')}
           `;
 
-          hint.textContent=rows.length
-            ? `${rows.length} ${
+          const openRows = rows.filter(
+            x=>Number(x.remaining_capacity||0)>0
+          );
+
+          hint.textContent=openRows.length
+            ? `${openRows.length} ${
                 C.lang==='ar'
-                  ?'فترة متاحة'
-                  :'available intervals'
+                  ?'ساعات متاحة — الحد الأقصى 4 مرضى لكل ساعة'
+                  :'available hours — maximum 4 patients per hour'
               }`
-            : '';
+            : (
+                C.lang==='ar'
+                  ?'كل الساعات ممتلئة.'
+                  :'All hourly slots are full.'
+              );
         }
 
         doctor.onchange=loadSlots;
@@ -826,7 +839,7 @@
     const slotResults=await Promise.all(
       dates.map(async date=>{
         const {data,error}=await C.sb.rpc(
-          'frontend_get_available_slots',
+          'frontend_get_hourly_slots',
           {
             p_doctor:doctorId,
             p_day:date
@@ -910,31 +923,146 @@
       && x.is_all_day
     );
 
-    const events=[];
+    const isPast=date < C.cairoDate();
 
-    slotInfo.slots.forEach(s=>{
-      events.push({
-        kind:'available',
-        start:s.slot_start,
-        end:s.slot_end
-      });
+    const hourlyCards=(slotInfo.slots||[]).map(slot=>{
+      const hourPatients=appts
+        .filter(a=>
+          new Date(a.scheduled_start) < new Date(slot.slot_end)
+          &&
+          new Date(a.scheduled_end) > new Date(slot.slot_start)
+        )
+        .sort((a,b)=>
+          new Date(a.created_at||a.scheduled_start) -
+          new Date(b.created_at||b.scheduled_start)
+        );
+
+      const booked=hourPatients.length;
+      const remaining=Math.max(
+        0,
+        Number(slot.capacity||4)-booked
+      );
+
+      return `
+        <div class="hour-capacity-card ${
+          remaining===0 ? 'full' : ''
+        }">
+          <div class="hour-capacity-head">
+            <div>
+              <strong>
+                ${C.formatTime(slot.slot_start)}
+                –
+                ${C.formatTime(slot.slot_end)}
+              </strong>
+
+              <small>
+                ${booked}/4
+                ${C.lang==='ar'?'مرضى':'patients'}
+              </small>
+            </div>
+
+            <span class="capacity-pill ${
+              remaining===0 ? 'full' : 'open'
+            }">
+              ${remaining===0
+                ? (
+                    C.lang==='ar'
+                      ?'ممتلئ'
+                      :'Full'
+                  )
+                : `${remaining} ${
+                    C.lang==='ar'
+                      ?'متبقي'
+                      :'left'
+                  }`
+              }
+            </span>
+          </div>
+
+          <div class="hour-patient-list">
+            ${Array.from({length:4},(_,index)=>{
+              const appointment=hourPatients[index];
+
+              if(appointment){
+                const patient=data.patients.get(
+                  appointment.patient_id
+                ) || {};
+
+                return `
+                  <button
+                    class="hour-patient-seat occupied status-${C.escape(appointment.status)}"
+                    data-appointment-id="${appointment.id}"
+                    type="button"
+                  >
+                    <span class="seat-number">
+                      ${index+1}
+                    </span>
+
+                    <span class="seat-copy">
+                      <strong>
+                        ${C.escape(
+                          patient.english_name||
+                          patient.arabic_name||
+                          'Patient'
+                        )}
+                      </strong>
+
+                      <small>
+                        ${C.escape(
+                          appointmentStatusLabel(
+                            appointment.status
+                          )
+                        )}
+                      </small>
+                    </span>
+                  </button>
+                `;
+              }
+
+              return `
+                <button
+                  class="hour-patient-seat empty"
+                  ${canBook && !isPast && remaining>0
+                    ? `data-book-slot="1"
+                       data-date="${date}"
+                       data-start="${slot.slot_start}"
+                       data-end="${slot.slot_end}"`
+                    : 'disabled'
+                  }
+                >
+                  <span class="seat-number">
+                    ${index+1}
+                  </span>
+
+                  <span class="seat-copy">
+                    <strong>
+                      ${isPast
+                        ? (
+                            C.lang==='ar'
+                              ?'انتهى'
+                              :'Past'
+                          )
+                        : (
+                            C.lang==='ar'
+                              ?'متاح'
+                              :'Available'
+                          )
+                      }
+                    </strong>
+
+                    <small>
+                      ${C.lang==='ar'
+                        ?'حجز مريض'
+                        :'Book patient'}
+                    </small>
+                  </span>
+                </button>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
     });
-
-    appts.forEach(a=>{
-      events.push({
-        kind:'appointment',
-        start:a.scheduled_start,
-        end:a.scheduled_end,
-        appointment:a
-      });
-    });
-
-    events.sort((a,b)=>
-      new Date(a.start) - new Date(b.start)
-    );
-
-    const isPast=
-      date < C.cairoDate();
 
     return `
       <article
@@ -993,87 +1121,16 @@
                  </small>
                </div>`
 
-            : events.length
-              ? events.map(event=>{
-                  if(event.kind==='available'){
-                    return `
-                      <button
-                        class="calendar-slot available-slot"
-                        ${canBook && !isPast
-                          ? `data-book-slot="1"
-                             data-date="${date}"
-                             data-start="${event.start}"
-                             data-end="${event.end}"`
-                          : 'disabled'
-                        }
-                      >
-                        <strong>
-                          ${C.formatTime(event.start)}
-                          –
-                          ${C.formatTime(event.end)}
-                        </strong>
-
-                        <small>
-                          ${isPast
-                            ? (
-                                C.lang==='ar'
-                                  ?'انتهى'
-                                  :'Past'
-                              )
-                            : (
-                                C.lang==='ar'
-                                  ?'متاح'
-                                  :'Available'
-                              )
-                          }
-                        </small>
-                      </button>
-                    `;
-                  }
-
-                  const a=event.appointment;
-                  const patient=data.patients.get(
-                    a.patient_id
-                  ) || {};
-
-                  return `
-                    <button
-                      class="calendar-slot booked-slot status-${C.escape(a.status)}"
-                      data-appointment-id="${a.id}"
-                      type="button"
-                    >
-                      <strong>
-                        ${C.formatTime(a.scheduled_start)}
-                        –
-                        ${C.formatTime(a.scheduled_end)}
-                      </strong>
-
-                      <small>
-                        ${C.escape(
-                          patient.english_name||
-                          patient.arabic_name||
-                          'Patient'
-                        )}
-                      </small>
-
-                      <em>
-                        ${C.escape(
-                          appointmentStatusLabel(
-                            a.status
-                          )
-                        )}
-                      </em>
-                    </button>
-                  `;
-                }).join('')
+            : hourlyCards.length
+              ? hourlyCards.join('')
 
               : `<div class="no-clinic-day">
                    ${slotInfo.error
                      ? C.escape(slotInfo.error)
                      : (
                          C.lang==='ar'
-                           ?'لا توجد عيادة / فترات متاحة'
-                           :'No clinic / available intervals'
+                           ?'لا توجد عيادة / ساعات متاحة'
+                           :'No clinic / hourly slots'
                        )
                    }
                  </div>`
@@ -1264,7 +1321,7 @@
 
         async function load(){
           const {data,error}=await C.sb.rpc(
-            'frontend_get_available_slots',
+            'frontend_get_hourly_slots',
             {
               p_doctor:doctorId,
               p_day:date.value
@@ -1275,13 +1332,16 @@
             ? `<option>${C.escape(error.message)}</option>`
             : `
                 <option value="">—</option>
-                ${(data||[]).map(x=>`
-                  <option value="${x.slot_start}|${x.slot_end}">
-                    ${C.formatTime(x.slot_start)}
-                    –
-                    ${C.formatTime(x.slot_end)}
-                  </option>
-                `).join('')}
+                ${(data||[])
+                  .filter(x=>Number(x.remaining_capacity||0)>0)
+                  .map(x=>`
+                    <option value="${x.slot_start}|${x.slot_end}">
+                      ${C.formatTime(x.slot_start)}
+                      –
+                      ${C.formatTime(x.slot_end)}
+                      • ${x.remaining_capacity}/4 left
+                    </option>
+                  `).join('')}
               `;
         }
 
@@ -1457,7 +1517,7 @@
     C.setTitle(C.t('appointments'));
     await C.loadDoctors(true);
 
-    const canBook=C.isReception() && !doctorOnly;
+    const canBook=C.isReception() || doctorOnly;
     const defaultDoctor=doctorOnly
       ? C.user.id
       : (
@@ -1501,7 +1561,7 @@
           <p class="muted">
             ${C.lang==='ar'
               ?'يعرض هذا الأسبوع والأسبوع القادم. اضغط على أي فترة متاحة لإنشاء المريض والحجز مباشرة.'
-              :'Current week and next week. Click any available time interval to enter the patient and book directly.'}
+              :'Current week and next week. Each one-hour slot accepts up to 4 patients. Click any empty patient place to book.'}
           </p>
         </div>
 

@@ -147,7 +147,7 @@
                   </td>
 
                   <td>
-                    ${row.slot_minutes||'—'} min
+                    ${Clinic.lang==='ar'?'4 مرضى / ساعة':'4 patients / hour'}
                   </td>
 
                   <td>
@@ -578,27 +578,10 @@
               >
             </label>
 
-            <label>
-              ${C.lang==='ar'
-                ?'مدة الموعد'
-                :'Slot minutes'}
-
-              <select
-                name="slot_minutes"
-                class="control"
-              >
-                ${[10,15,20,30,45,60]
-                  .map(value=>`
-                    <option
-                      value="${value}"
-                      ${value===15?'selected':''}
-                    >
-                      ${value}
-                    </option>
-                  `)
-                  .join('')}
-              </select>
-            </label>
+            <div class="capacity-rule-card">
+              <span>${C.lang==='ar'?'نظام الحجز':'Booking rule'}</span>
+              <strong>${C.lang==='ar'?'كل ساعة = 4 مرضى':'Each hour = 4 patients'}</strong>
+            </div>
 
             <label>
               ${C.lang==='ar'
@@ -669,10 +652,7 @@
                   p_end:
                     f.get('end_time'),
 
-                  p_slot_minutes:
-                    Number(
-                      f.get('slot_minutes')
-                    ),
+                  p_slot_minutes:60,
 
                   p_effective_from:
                     f.get('effective_from'),
@@ -794,20 +774,10 @@
               >
             </label>
 
-            <label>
-              ${C.lang==='ar'
-                ?'مدة الموعد'
-                :'Slot minutes'}
-
-              <input
-                name="slot_minutes"
-                type="number"
-                min="5"
-                max="180"
-                value="15"
-                class="control"
-              >
-            </label>
+            <div class="capacity-rule-card">
+              <span>${C.lang==='ar'?'نظام الحجز':'Booking rule'}</span>
+              <strong>${C.lang==='ar'?'كل ساعة = 4 مرضى':'Each hour = 4 patients'}</strong>
+            </div>
 
             <label class="full-span">
               ${C.lang==='ar'?'ملاحظة':'Note'}
@@ -880,9 +850,7 @@
                   p_slot_minutes:
                     ['extra_clinic','changed_hours']
                       .includes(type)
-                        ? Number(
-                            f.get('slot_minutes')||15
-                          )
+                        ? 60
                         : null,
 
                   p_note:
@@ -1150,9 +1118,7 @@
                   p_slot_minutes:
                     ['extra_clinic','changed_hours']
                       .includes(type)
-                        ? Number(
-                            f.get('slot_minutes')||15
-                          )
+                        ? 60
                         : null,
 
                   p_note:

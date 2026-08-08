@@ -1,90 +1,66 @@
-# Operation Clinic — Appointment-First Two-Week Scheduler
+# Operation Clinic — Hourly Slots, 4 Patients per Hour
 
-This patch implements the requested workflow.
+Requested workflow implemented:
 
-## What changed
+## Appointment model
 
-### 1. Appointments are now the operational starting point
+Instead of 15-minute slots:
 
-Sidebar order for booking-capable users is now:
+- 15:00–16:00 = one hour
+- 16:00–17:00 = one hour
+- 17:00–18:00 = one hour
 
-1. Dashboard
-2. **Appointments**
-3. **Patients**
-4. Reception
-5. ...
+Each hour contains **4 patient places**.
 
-Patient registration is no longer a necessary first step.
+Example:
 
-### 2. Patient data is entered during booking
+15:00–16:00  
+1. Ahmed Hassan  
+2. Sara Ali  
+3. Available  
+4. Available  
 
-Click an available time interval.
+The hour remains bookable until all four places are occupied.
 
-The booking window contains:
+## Doctor home page
 
-- Arabic name
-- English name
-- Year of birth
-- Gender
-- Mobile
-- Address
-- Appointment type
-- Notes
+For a doctor login:
 
-The patient is created automatically and becomes visible in the **Patients**
-window after the booking is saved.
+**Appointments opens automatically after login.**
 
-There is also an **Existing patient** tab for follow-up bookings.
+Doctor sidebar starts with:
 
-### 3. Appointment window is now a two-week scheduler
+1. Appointments
+2. Dashboard
+3. Today's Clinic
+4. My Queue
+5. Patients
+6. Referrals
+7. My Schedule
 
-The screen displays:
+Doctors can also create a booking in their own appointment schedule.
 
-- current clinic week, Saturday → Friday
-- next clinic week, Saturday → Friday
-- each slot as a time interval, for example:
-  `15:00 – 15:15`
-- available slots
-- booked slots with patient name
-- apology / vacation / emergency cancellation
-- today's date
-- appointment status
+## Schedule management
 
-Click an available interval to book.
+The old slot-duration control is removed from the interface.
 
-### 4. Schedule page no longer depends on fragile direct table reads
+Every working-hours rule now means:
 
-The schedule screen now uses controlled Supabase RPC functions for:
+**1 hour = up to 4 patients**
 
-- reading working hours
-- reading exceptions
-- saving working hours
-- activation / deactivation
-- adding management exceptions
-- doctor requests
-- management approval/rejection
-
-If a doctor's current account truly has no saved schedule, the page now says
-that explicitly instead of rendering a blank white section.
+Existing working hours and extra/changed clinic rules are migrated to 60-minute slots by the SQL patch.
 
 ## Install
 
-### Step 1 — Supabase
+### 1. Supabase
 
-Run the **FULL CONTENTS** of:
+Run the full contents of:
 
-`sql/appointment-first-scheduler.sql`
+`sql/hourly-capacity4.sql`
 
-The final result also shows:
+This is required because the database previously prevented overlapping appointments.
 
-`working_hour_rows`
-
-for every current doctor.
-
-This diagnostic is important after the recent doctor-account reassignment:
-it will tell you exactly which current login owns the old saved schedule.
-
-### Step 2 — GitHub
+### 2. GitHub
 
 Replace:
 
@@ -94,20 +70,14 @@ Replace:
 - `css/style.css`
 - `sw.js`
 
-### Step 3 — Refresh
+### 3. Refresh
 
-Wait for GitHub Pages deployment and press:
+Wait for GitHub Pages deployment, then:
 
 `Ctrl + Shift + R`
 
-## Important schedule note
+## Important
 
-If the schedule page now says:
+The SQL safely changes appointment capacity from **1 to 4 per doctor/hour**.
 
-`No working hours are saved for this doctor`
-
-that is not a rendering failure.
-
-The SQL verification table will show which doctor account owns the saved
-working-hour rows. Because the doctor accounts were reassigned earlier,
-old schedules may still belong to the old authentication UUID.
+Cancelled and rescheduled appointments do not consume capacity.

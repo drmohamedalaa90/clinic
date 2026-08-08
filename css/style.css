@@ -2309,3 +2309,169 @@ html[dir="rtl"] .dashboard-notification-row.unread {
     width: 100%;
   }
 }
+
+
+/* ========================================================
+   HOURLY CAPACITY — 4 PATIENTS / HOUR
+======================================================== */
+
+.hour-capacity-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+}
+
+.hour-capacity-card.full {
+  background: #fafafa;
+}
+
+.hour-capacity-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border);
+  background: #f8fafc;
+}
+
+.hour-capacity-head > div {
+  display: grid;
+  gap: 2px;
+}
+
+.hour-capacity-head strong {
+  font-size: 11px;
+}
+
+.hour-capacity-head small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.capacity-pill {
+  border-radius: 999px;
+  padding: 4px 7px;
+  font-size: 8px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.capacity-pill.open {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.capacity-pill.full {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.hour-patient-list {
+  display: grid;
+  gap: 1px;
+  background: var(--border);
+}
+
+.hour-patient-seat {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: white;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: 23px minmax(0,1fr);
+  gap: 7px;
+  align-items: center;
+  text-align: start;
+}
+
+.hour-patient-seat.empty:not(:disabled):hover {
+  background: #ecfdf5;
+}
+
+.hour-patient-seat.empty {
+  color: #047857;
+}
+
+.hour-patient-seat.empty:disabled {
+  color: #94a3b8;
+  cursor: default;
+}
+
+.hour-patient-seat.occupied {
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.hour-patient-seat.occupied.status-arrived {
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.hour-patient-seat.occupied.status-waiting {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.hour-patient-seat.occupied.status-with_doctor {
+  background: #f0fdfa;
+  color: #0f766e;
+}
+
+.hour-patient-seat.occupied.status-completed {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.seat-number {
+  width: 23px;
+  height: 23px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: rgba(148,163,184,.13);
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.seat-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.seat-copy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+}
+
+.seat-copy small {
+  font-size: 8px;
+  opacity: .78;
+}
+
+.capacity-rule-card {
+  min-height: 72px;
+  border: 1px solid #a7f3d0;
+  border-radius: 13px;
+  background: #ecfdf5;
+  padding: 12px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+}
+
+.capacity-rule-card span {
+  color: #047857;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.capacity-rule-card strong {
+  color: #065f46;
+  font-size: 13px;
+}

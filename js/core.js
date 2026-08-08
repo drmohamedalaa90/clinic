@@ -195,7 +195,15 @@ const Clinic = window.Clinic = {
   },
 
   buildNavigation() {
-    let menu = this.navItem('⌂', 'dashboard', 'dashboard');
+    let menu = '';
+
+    if (this.isDoctor() && !this.hasRole('owner')) {
+      menu += this.navItem('📅','appointments','doctor-appointments');
+      menu += this.navItem('⌂','dashboard','dashboard');
+    } else {
+      menu += this.navItem('⌂','dashboard','dashboard');
+    }
+
     if (this.isManagement()) {
       menu += this.navItem('📅','appointments','appointments');
       menu += this.navItem('👥','patients','patients');
@@ -223,7 +231,6 @@ const Clinic = window.Clinic = {
     if (this.isDoctor() && !this.hasRole('owner')) {
       menu += this.navItem('☀','todayClinic','today-clinic');
       menu += this.navItem('⌛','queue','queue');
-      menu += this.navItem('📅','appointments','doctor-appointments');
       menu += this.navItem('👥','patients','patients');
       menu += this.navItem('⇄','referrals','referrals');
       menu += this.navItem('🕒','mySchedule','my-schedule');
@@ -327,7 +334,12 @@ const Clinic = window.Clinic = {
     document.getElementById('appLoading').classList.add('hidden');
     document.getElementById('appRoot').classList.remove('hidden');
 
-    await this.route('dashboard');
+    await this.route(
+      this.isDoctor() && !this.hasRole('owner')
+        ? 'doctor-appointments'
+        : 'dashboard'
+    );
+
     window.ClinicNotifications?.refresh?.();
   }
 };
