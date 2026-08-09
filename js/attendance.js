@@ -318,7 +318,25 @@
                           </div>
                         </div>
 
-                        ${c.statusPill(s.is_active?'active':'inactive')}
+                        <div class="inline-actions">
+                          ${c.statusPill(s.is_active?'active':'inactive')}
+
+                          ${
+                            c.hasRole('owner')
+                              ? `
+                                <button
+                                  type="button"
+                                  class="table-action"
+                                  data-edit-staff-schedule="${s.id}"
+                                >
+                                  ${c.lang==='ar'
+                                    ?'تعديل'
+                                    :'Edit'}
+                                </button>
+                              `
+                              : ''
+                          }
+                        </div>
                       </div>
                     `).join('')
                   : `<div class="empty-state">${c.t('noData')}</div>`
@@ -427,6 +445,40 @@
 
         </section>
       `;
+
+      area
+        .querySelectorAll(
+          '[data-edit-staff-schedule]'
+        )
+        .forEach(button=>{
+
+          button.addEventListener(
+            'click',
+            ()=>{
+
+              if(!c.hasRole('owner')){
+                return;
+              }
+
+              const schedule=
+                schedules.find(
+                  s=>
+                    s.id===
+                    button.dataset
+                      .editStaffSchedule
+                );
+
+              if(schedule){
+                scheduleModal(
+                  staffId,
+                  schedule
+                );
+              }
+            }
+          );
+
+        });
+
 
       area
         .querySelectorAll(
@@ -615,9 +667,338 @@
     showToday();
   }
 
-  function scheduleModal(staffId){
+  function scheduleModal(staffId,schedule=null){
     const c=C();
-    c.showModal({title:c.lang==='ar'?'إضافة جدول عمل':'Add work schedule',body:`<form id="staffScheduleForm" class="form-grid"><label>${c.lang==='ar'?'اليوم':'Weekday'}<select id="ssDay" class="control">${weekdayOptions()}</select></label><label>${c.lang==='ar'?'من':'Start'}<input id="ssStart" type="time" class="control" required></label><label>${c.lang==='ar'?'إلى':'End'}<input id="ssEnd" type="time" class="control" required></label><label>${c.lang==='ar'?'سماح التأخير':'Late grace'}<input id="ssLate" type="number" class="control" value="0" min="0" max="120"></label><label>${c.lang==='ar'?'سماح الخروج المبكر':'Early grace'}<input id="ssEarly" type="number" class="control" value="0" min="0" max="120"></label><label>${c.lang==='ar'?'ساري من':'Effective from'}<input id="ssFrom" type="date" class="control" value="${c.cairoDate()}" required></label><div class="form-actions full-span"><button class="primary-button compact" type="submit">${c.lang==='ar'?'حفظ':'Save'}</button></div></form>`,onOpen:(root)=>root.querySelector('#staffScheduleForm').onsubmit=async e=>{e.preventDefault();const {error}=await c.sb.rpc('save_staff_work_schedule',{p_schedule_id:null,p_staff_id:staffId,p_weekday:Number(root.querySelector('#ssDay').value),p_start_time:root.querySelector('#ssStart').value,p_end_time:root.querySelector('#ssEnd').value,p_late_grace_minutes:Number(root.querySelector('#ssLate').value||0),p_early_leave_grace_minutes:Number(root.querySelector('#ssEarly').value||0),p_effective_from:root.querySelector('#ssFrom').value,p_effective_until:null,p_notes:null,p_is_active:true});if(error)return c.toast(error.message,'error');c.closeModal();c.toast('Saved');c.route('attendance');}});
+
+    const editing=
+      Boolean(
+        schedule?.id
+      );
+
+    c.showModal({
+      title:
+        editing
+          ? (
+              c.lang==='ar'
+                ?'تعديل جدول السكرتارية'
+                :'Edit secretary schedule'
+            )
+          : (
+              c.lang==='ar'
+                ?'إضافة جدول عمل'
+                :'Add work schedule'
+            ),
+
+      body:`
+        <form
+          id="staffScheduleForm"
+          class="form-grid"
+        >
+
+          <label>
+            ${c.lang==='ar'?'اليوم':'Weekday'}
+
+            <select
+              id="ssDay"
+              class="control"
+            >
+              ${weekdayOptions()}
+            </select>
+          </label>
+
+
+          <label>
+            ${c.lang==='ar'?'من':'Start'}
+
+            <input
+              id="ssStart"
+              type="time"
+              class="control"
+              value="${
+                schedule?.start_time
+                  ? schedule.start_time.slice(0,5)
+                  : ''
+              }"
+              required
+            >
+          </label>
+
+
+          <label>
+            ${c.lang==='ar'?'إلى':'End'}
+
+            <input
+              id="ssEnd"
+              type="time"
+              class="control"
+              value="${
+                schedule?.end_time
+                  ? schedule.end_time.slice(0,5)
+                  : ''
+              }"
+              required
+            >
+          </label>
+
+
+          <label>
+            ${c.lang==='ar'
+              ?'سماح التأخير'
+              :'Late grace'}
+
+            <input
+              id="ssLate"
+              type="number"
+              class="control"
+              value="${schedule?.late_grace_minutes??0}"
+              min="0"
+              max="120"
+            >
+          </label>
+
+
+          <label>
+            ${c.lang==='ar'
+              ?'سماح الخروج المبكر'
+              :'Early grace'}
+
+            <input
+              id="ssEarly"
+              type="number"
+              class="control"
+              value="${schedule?.early_leave_grace_minutes??0}"
+              min="0"
+              max="120"
+            >
+          </label>
+
+
+          <label>
+            ${c.lang==='ar'
+              ?'ساري من'
+              :'Effective from'}
+
+            <input
+              id="ssFrom"
+              type="date"
+              class="control"
+              value="${schedule?.effective_from||c.cairoDate()}"
+              required
+            >
+          </label>
+
+
+          <label>
+            ${c.lang==='ar'
+              ?'ساري حتى (اختياري)'
+              :'Effective until (optional)'}
+
+            <input
+              id="ssUntil"
+              type="date"
+              class="control"
+              value="${schedule?.effective_until||''}"
+            >
+          </label>
+
+
+          <label>
+            ${c.lang==='ar'
+              ?'الحالة'
+              :'Status'}
+
+            <select
+              id="ssActive"
+              class="control"
+            >
+              <option
+                value="true"
+                ${schedule?.is_active===false?'':'selected'}
+              >
+                ${c.lang==='ar'?'نشط':'Active'}
+              </option>
+
+              <option
+                value="false"
+                ${schedule?.is_active===false?'selected':''}
+              >
+                ${c.lang==='ar'?'غير نشط':'Inactive'}
+              </option>
+            </select>
+          </label>
+
+
+          <label class="full-span">
+            ${c.lang==='ar'
+              ?'ملاحظات (اختياري)'
+              :'Notes (optional)'}
+
+            <textarea
+              id="ssNotes"
+              class="control"
+            >${c.escape(schedule?.notes||'')}</textarea>
+          </label>
+
+
+          <div class="form-actions full-span">
+            <button
+              class="primary-button compact"
+              type="submit"
+            >
+              ${
+                editing
+                  ? (
+                      c.lang==='ar'
+                        ?'حفظ التعديل'
+                        :'Save changes'
+                    )
+                  : (
+                      c.lang==='ar'
+                        ?'حفظ'
+                        :'Save'
+                    )
+              }
+            </button>
+          </div>
+
+        </form>
+      `,
+
+      onOpen:(root)=>{
+
+        if(schedule?.weekday){
+          root
+            .querySelector(
+              '#ssDay'
+            )
+            .value=
+              String(
+                schedule.weekday
+              );
+        }
+
+
+        root
+          .querySelector(
+            '#staffScheduleForm'
+          )
+          .onsubmit=async event=>{
+
+            event.preventDefault();
+
+
+            const {error}=await c.sb.rpc(
+              'save_staff_work_schedule',
+              {
+                p_schedule_id:
+                  schedule?.id||null,
+
+                p_staff_id:
+                  staffId,
+
+                p_weekday:
+                  Number(
+                    root
+                      .querySelector(
+                        '#ssDay'
+                      )
+                      .value
+                  ),
+
+                p_start_time:
+                  root
+                    .querySelector(
+                      '#ssStart'
+                    )
+                    .value,
+
+                p_end_time:
+                  root
+                    .querySelector(
+                      '#ssEnd'
+                    )
+                    .value,
+
+                p_late_grace_minutes:
+                  Number(
+                    root
+                      .querySelector(
+                        '#ssLate'
+                      )
+                      .value||0
+                  ),
+
+                p_early_leave_grace_minutes:
+                  Number(
+                    root
+                      .querySelector(
+                        '#ssEarly'
+                      )
+                      .value||0
+                  ),
+
+                p_effective_from:
+                  root
+                    .querySelector(
+                      '#ssFrom'
+                    )
+                    .value,
+
+                p_effective_until:
+                  root
+                    .querySelector(
+                      '#ssUntil'
+                    )
+                    .value||null,
+
+                p_notes:
+                  root
+                    .querySelector(
+                      '#ssNotes'
+                    )
+                    .value||null,
+
+                p_is_active:
+                  root
+                    .querySelector(
+                      '#ssActive'
+                    )
+                    .value==='true'
+              }
+            );
+
+
+            if(error){
+              return c.toast(
+                error.message,
+                'error'
+              );
+            }
+
+
+            c.closeModal();
+
+            c.toast(
+              editing
+                ? (
+                    c.lang==='ar'
+                      ?'تم تعديل جدول السكرتارية.'
+                      :'Secretary schedule updated.'
+                  )
+                : (
+                    c.lang==='ar'
+                      ?'تم إضافة جدول العمل.'
+                      :'Work schedule added.'
+                  )
+            );
+
+
+            c.route(
+              'attendance'
+            );
+          };
+      }
+    });
   }
 
   function manualModal(staffId,record){

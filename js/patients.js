@@ -1,4 +1,413 @@
 (function(){
+
+  function ownerEditPatientModal(patient,onDone){
+    const C=Clinic;
+
+    if(!C.hasRole('owner') || !patient){
+      return;
+    }
+
+    const currentYear=
+      Number(
+        new Intl.DateTimeFormat(
+          'en-GB',
+          {
+            timeZone:'Africa/Cairo',
+            year:'numeric'
+          }
+        ).format(new Date())
+      );
+
+    C.showModal({
+      title:
+        C.lang==='ar'
+          ?'تعديل بيانات المريض'
+          :'Edit patient',
+
+      body:`
+        <form
+          id="ownerEditPatientForm"
+          class="form-grid"
+        >
+
+          <label>
+            ${C.lang==='ar'
+              ?'الاسم بالعربية'
+              :'Arabic name'}
+
+            <input
+              id="ownerPatientArabic"
+              class="control"
+              value="${C.escape(patient.arabic_name||'')}"
+            >
+          </label>
+
+
+          <label>
+            ${C.lang==='ar'
+              ?'الاسم بالإنجليزية (اختياري)'
+              :'English name (optional)'}
+
+            <input
+              id="ownerPatientEnglish"
+              class="control"
+              value="${C.escape(patient.english_name||'')}"
+            >
+          </label>
+
+
+          <label>
+            ${C.lang==='ar'
+              ?'سنة الميلاد'
+              :'Year of birth'}
+
+            <input
+              id="ownerPatientBirthYear"
+              type="number"
+              min="1900"
+              max="${currentYear}"
+              class="control"
+              value="${C.birthYearFromPatient(patient)||''}"
+            >
+          </label>
+
+
+          <label>
+            ${C.lang==='ar'
+              ?'النوع'
+              :'Gender'}
+
+            <select
+              id="ownerPatientGender"
+              class="control"
+            >
+              <option value="">—</option>
+
+              <option
+                value="male"
+                ${patient.gender==='male'?'selected':''}
+              >
+                ${C.lang==='ar'?'ذكر':'Male'}
+              </option>
+
+              <option
+                value="female"
+                ${patient.gender==='female'?'selected':''}
+              >
+                ${C.lang==='ar'?'أنثى':'Female'}
+              </option>
+            </select>
+          </label>
+
+
+          <label>
+            ${C.lang==='ar'
+              ?'الموبايل / واتساب'
+              :'Mobile / WhatsApp'}
+
+            <input
+              id="ownerPatientMobile"
+              class="control"
+              inputmode="tel"
+              value="${C.escape(patient.mobile||'')}"
+            >
+          </label>
+
+
+          <label>
+            ${C.lang==='ar'
+              ?'منطقة السكن'
+              :'Residency area'}
+
+            <input
+              id="ownerPatientArea"
+              class="control"
+              value="${C.escape(patient.residency_area||'')}"
+            >
+          </label>
+
+
+          <label class="full-span">
+            ${C.lang==='ar'
+              ?'العنوان'
+              :'Address'}
+
+            <input
+              id="ownerPatientAddress"
+              class="control"
+              value="${C.escape(patient.address||'')}"
+            >
+          </label>
+
+
+          <label class="full-span">
+            ${C.lang==='ar'
+              ?'سبب التعديل'
+              :'Reason for edit'}
+
+            <textarea
+              id="ownerPatientEditReason"
+              class="control"
+              required
+              placeholder="${
+                C.lang==='ar'
+                  ?'مثال: تصحيح خطأ في البيانات'
+                  :'Example: correcting a data-entry mistake'
+              }"
+            ></textarea>
+          </label>
+
+
+          <div class="form-actions full-span">
+            <button
+              type="submit"
+              class="primary-button compact"
+            >
+              ${C.lang==='ar'
+                ?'حفظ التعديل'
+                :'Save changes'}
+            </button>
+          </div>
+
+        </form>
+      `,
+
+      onOpen:(root)=>{
+        root
+          .querySelector(
+            '#ownerEditPatientForm'
+          )
+          .onsubmit=async event=>{
+
+            event.preventDefault();
+
+            const value=id=>
+              root
+                .querySelector(id)
+                .value
+                .trim();
+
+            const reason=
+              value(
+                '#ownerPatientEditReason'
+              );
+
+            if(!reason){
+              return C.toast(
+                C.lang==='ar'
+                  ?'سبب التعديل مطلوب.'
+                  :'Edit reason is required.',
+                'error'
+              );
+            }
+
+
+            const yearText=
+              value(
+                '#ownerPatientBirthYear'
+              );
+
+            const birthYear=
+              yearText
+                ? Number(yearText)
+                : null;
+
+
+            if(
+              birthYear
+              &&
+              (
+                !Number.isInteger(birthYear)
+                ||
+                birthYear<1900
+                ||
+                birthYear>currentYear
+              )
+            ){
+              return C.toast(
+                C.lang==='ar'
+                  ?'سنة الميلاد غير صحيحة.'
+                  :'Invalid year of birth.',
+                'error'
+              );
+            }
+
+
+            const arabicName=
+              value(
+                '#ownerPatientArabic'
+              );
+
+            const englishName=
+              value(
+                '#ownerPatientEnglish'
+              );
+
+
+            if(
+              !arabicName
+              &&
+              !englishName
+            ){
+              return C.toast(
+                C.lang==='ar'
+                  ?'يجب أن يوجد اسم للمريض.'
+                  :'Patient must have a name.',
+                'error'
+              );
+            }
+
+
+            const {error}=await C.sb.rpc(
+              'owner_update_patient_record',
+              {
+                p_patient_id:
+                  patient.id,
+
+                p_arabic_name:
+                  arabicName||null,
+
+                p_english_name:
+                  englishName||null,
+
+                p_birth_year:
+                  birthYear,
+
+                p_gender:
+                  value(
+                    '#ownerPatientGender'
+                  )||null,
+
+                p_mobile:
+                  value(
+                    '#ownerPatientMobile'
+                  )||null,
+
+                p_residency_area:
+                  value(
+                    '#ownerPatientArea'
+                  )||null,
+
+                p_address:
+                  value(
+                    '#ownerPatientAddress'
+                  )||null,
+
+                p_reason:
+                  reason
+              }
+            );
+
+
+            if(error){
+              return C.toast(
+                error.message,
+                'error'
+              );
+            }
+
+
+            C.closeModal();
+
+            C.toast(
+              C.lang==='ar'
+                ?'تم تعديل بيانات المريض.'
+                :'Patient updated.'
+            );
+
+
+            if(typeof onDone==='function'){
+              onDone();
+            }
+          };
+      }
+    });
+  }
+
+
+  async function ownerDeletePatient(patient,onDone){
+    const C=Clinic;
+
+    if(
+      !C.hasRole('owner')
+      ||
+      !patient
+    ){
+      return;
+    }
+
+
+    const patientName=
+      patient.english_name
+      ||
+      patient.arabic_name
+      ||
+      patient.medical_record_number
+      ||
+      'Patient';
+
+
+    const reason=prompt(
+      C.lang==='ar'
+        ?`سبب حذف المريض: ${patientName}`
+        :`Reason for deleting patient: ${patientName}`
+    );
+
+
+    if(!reason?.trim()){
+      return;
+    }
+
+
+    const confirmed=confirm(
+      C.lang==='ar'
+        ?`سيتم حذف المريض ${patientName} وكل بيانات الاختبار المرتبطة به، بما فيها الحجوزات. هل تريد المتابعة؟`
+        :`This will permanently delete ${patientName} and linked test data, including appointments. Continue?`
+    );
+
+
+    if(!confirmed){
+      return;
+    }
+
+
+    const {error}=await C.sb.rpc(
+      'owner_delete_patient_record',
+      {
+        p_patient_id:
+          patient.id,
+
+        p_reason:
+          reason.trim()
+      }
+    );
+
+
+    if(error){
+      return C.toast(
+        error.message,
+        'error'
+      );
+    }
+
+
+    C.toast(
+      C.lang==='ar'
+        ?'تم حذف المريض.'
+        :'Patient deleted.'
+    );
+
+
+    window
+      .ClinicNotifications
+      ?.refresh?.();
+
+
+    if(typeof onDone==='function'){
+      onDone();
+    }
+  }
+
   async function fetchPatients(search=''){
     let q=Clinic.sb
       .from('patients')
@@ -101,6 +510,25 @@
                          </button>`
                       : ''
                     }
+
+                    ${C.hasRole('owner')
+                      ? `
+                        <button
+                          class="table-action"
+                          data-edit-patient="${p.id}"
+                        >
+                          ${C.lang==='ar'?'تعديل':'Edit'}
+                        </button>
+
+                        <button
+                          class="table-action danger-outline"
+                          data-delete-patient="${p.id}"
+                        >
+                          ${C.lang==='ar'?'حذف':'Delete'}
+                        </button>
+                      `
+                      : ''
+                    }
                   </td>
                 </tr>
               `;
@@ -125,6 +553,48 @@
           patientId:b.dataset.bookPatient,
           openBooking:true
         });
+      });
+
+
+    area
+      .querySelectorAll(
+        '[data-edit-patient]'
+      )
+      .forEach(button=>{
+        button.onclick=()=>{
+          const patient=
+            rows.find(
+              p=>
+                p.id===
+                button.dataset.editPatient
+            );
+
+          ownerEditPatientModal(
+            patient,
+            ()=>renderList(search)
+          );
+        };
+      });
+
+
+    area
+      .querySelectorAll(
+        '[data-delete-patient]'
+      )
+      .forEach(button=>{
+        button.onclick=()=>{
+          const patient=
+            rows.find(
+              p=>
+                p.id===
+                button.dataset.deletePatient
+            );
+
+          ownerDeletePatient(
+            patient,
+            ()=>renderList(search)
+          );
+        };
       });
   }
 
@@ -579,6 +1049,29 @@
                </button>`
             : ''
           }
+
+          ${C.hasRole('owner')
+            ? `
+              <button
+                class="secondary-button"
+                id="ownerEditPatientProfile"
+              >
+                ${C.lang==='ar'
+                  ?'تعديل المريض'
+                  :'Edit patient'}
+              </button>
+
+              <button
+                class="danger-button compact"
+                id="ownerDeletePatientProfile"
+              >
+                ${C.lang==='ar'
+                  ?'حذف المريض'
+                  :'Delete patient'}
+              </button>
+            `
+            : ''
+          }
         </div>
       </section>
 
@@ -643,6 +1136,39 @@
     `;
 
     const body=document.getElementById('patientTabBody');
+
+
+    document
+      .getElementById(
+        'ownerEditPatientProfile'
+      )
+      ?.addEventListener(
+        'click',
+        ()=>{
+          ownerEditPatientModal(
+            p,
+            ()=>ClinicPages['patient-detail']({
+              patientId
+            })
+          );
+        }
+      );
+
+
+    document
+      .getElementById(
+        'ownerDeletePatientProfile'
+      )
+      ?.addEventListener(
+        'click',
+        ()=>{
+          ownerDeletePatient(
+            p,
+            ()=>C.route('patients')
+          );
+        }
+      );
+
 
     function show(tab){
       document

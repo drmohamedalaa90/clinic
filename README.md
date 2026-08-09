@@ -1,30 +1,64 @@
-# Owner — delete Sara attendance during test period
+# Owner Patient Controls + Secretary Schedule Editing
 
-## What this adds
+This patch adds the two requested Owner controls.
 
-On the Owner account, Attendance → Today now shows a red:
+## Patients
 
-**Delete test record / حذف سجل الاختبار**
+On the Patients table, Owner now sees:
 
-button beside every daily attendance row.
+- Open
+- Book
+- Edit
+- Delete
 
-You can delete Sara's check-in/out record from ANY day in the displayed
-attendance history.
+Edit allows:
+- Arabic name
+- English name
+- year of birth
+- gender
+- mobile / WhatsApp
+- residency area
+- address
 
-After deletion:
-- the day disappears from Sara's attendance history
-- if it is today, Sara can check in again
-- the deleted row is preserved in `attendance_test_deletions` as a test-period
-  audit snapshot
+A reason for edit is mandatory.
 
-Managers / Deputy / Secretary do NOT get the delete button.
+Delete:
+- is Owner-only
+- asks for a reason and confirmation
+- removes the patient's linked TEST appointments and known linked test records
+- preserves a snapshot in `owner_patient_change_log`
+
+The same Edit/Delete controls are also available inside the patient's profile.
+
+## Secretary schedule
+
+Attendance → Sara → Today → Weekly schedule
+
+Owner now sees an **Edit** button beside every schedule row.
+
+Edit allows:
+- weekday
+- start time
+- end time
+- late grace
+- early-leave grace
+- effective from
+- effective until
+- active / inactive
+- notes
+
+The existing `save_staff_work_schedule` RPC is used, passing the selected
+schedule id, so this edits the row instead of creating a duplicate.
 
 ## Install
 
-1. Run:
-   `sql/owner-delete-attendance-test-record.sql`
+### Supabase
+Run:
+`sql/owner-patient-edit-delete.sql`
 
-2. Replace:
-   `js/attendance.js`
+### GitHub
+Replace:
+- `js/patients.js`
+- `js/attendance.js`
 
-3. Wait for GitHub Pages deployment and press Ctrl + Shift + R.
+Then wait for GitHub Pages and press Ctrl + Shift + R.
