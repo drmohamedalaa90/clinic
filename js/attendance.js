@@ -290,19 +290,78 @@
 
           <article>
 
-            <h3>
-              ${c.lang==='ar'
-                ?'الجدول الأسبوعي'
-                :'Weekly schedule'}
-            </h3>
+            <div class="section-head compact-section-head">
+
+              <div>
+                <h3>
+                  ${c.lang==='ar'
+                    ?'الجدول الأسبوعي'
+                    :'Weekly schedule'}
+                </h3>
+
+                ${
+                  c.hasRole('owner')
+                    ? `
+                      <p class="muted">
+                        ${c.lang==='ar'
+                          ?'حدد يوماً واحداً أو أكثر ثم احذف أيام الجدول المطلوبة.'
+                          :'Select one or more days to remove from Sara\'s schedule.'}
+                      </p>
+                    `
+                    : ''
+                }
+              </div>
+
+              ${
+                c.hasRole('owner')
+                  ? `
+                    <button
+                      id="deleteSelectedStaffSchedule"
+                      type="button"
+                      class="danger-button compact"
+                      disabled
+                    >
+                      ${c.lang==='ar'
+                        ?'حذف الأيام المحددة'
+                        :'Delete selected days'}
+                    </button>
+                  `
+                  : ''
+              }
+
+            </div>
 
             <div class="stack-list space-top">
 
               ${
                 (schedules||[]).length
                   ? sortClinicWeek(schedules||[]).map(s=>`
-                      <div class="list-card">
-                        <div>
+                      <div
+                        class="list-card staff-schedule-row"
+                        data-staff-schedule-row="${s.id}"
+                      >
+
+                        ${
+                          c.hasRole('owner')
+                            ? `
+                              <label
+                                class="staff-schedule-selector"
+                                title="${
+                                  c.lang==='ar'
+                                    ?'تحديد للحذف'
+                                    :'Select for deletion'
+                                }"
+                              >
+                                <input
+                                  type="checkbox"
+                                  data-staff-schedule-select="${s.id}"
+                                >
+                              </label>
+                            `
+                            : ''
+                        }
+
+                        <div class="staff-schedule-main">
                           <strong>
                             ${weekdayLabel(s.weekday)}
                           </strong>
@@ -445,6 +504,167 @@
 
         </section>
       `;
+
+      const scheduleDeleteButton =
+        document.getElementById(
+          'deleteSelectedStaffSchedule'
+        );
+
+
+      function selectedScheduleIds(){
+        return [
+          ...area.querySelectorAll(
+            '[data-staff-schedule-select]:checked'
+          )
+        ].map(
+          input=>
+            input.dataset
+              .staffScheduleSelect
+        );
+      }
+
+
+      function updateScheduleDeleteButton(){
+        if(!scheduleDeleteButton){
+          return;
+        }
+
+        const count=
+          selectedScheduleIds()
+            .length;
+
+        scheduleDeleteButton.disabled=
+          count===0;
+
+        scheduleDeleteButton.textContent=
+          count
+            ? (
+                c.lang==='ar'
+                  ? `حذف الأيام المحددة (${count})`
+                  : `Delete selected days (${count})`
+              )
+            : (
+                c.lang==='ar'
+                  ?'حذف الأيام المحددة'
+                  :'Delete selected days'
+              );
+      }
+
+
+      area
+        .querySelectorAll(
+          '[data-staff-schedule-select]'
+        )
+        .forEach(input=>{
+
+          input.addEventListener(
+            'change',
+            updateScheduleDeleteButton
+          );
+
+        });
+
+
+      scheduleDeleteButton
+        ?.addEventListener(
+          'click',
+          async()=>{
+
+            if(!c.hasRole('owner')){
+              return;
+            }
+
+            const ids=
+              selectedScheduleIds();
+
+            if(!ids.length){
+              return;
+            }
+
+            const selectedRows=
+              schedules.filter(
+                schedule=>
+                  ids.includes(
+                    schedule.id
+                  )
+              );
+
+            const dayNames=
+              selectedRows
+                .map(
+                  schedule=>
+                    weekdayLabel(
+                      schedule.weekday
+                    )
+                )
+                .join(', ');
+
+
+            const reason=prompt(
+              c.lang==='ar'
+                ? `سبب حذف أيام الجدول: ${dayNames}`
+                : `Reason for deleting schedule days: ${dayNames}`
+            );
+
+
+            if(!reason?.trim()){
+              return;
+            }
+
+
+            const confirmed=confirm(
+              c.lang==='ar'
+                ? `سيتم حذف ${ids.length} يوم/أيام من جدول سارة:\n${dayNames}\n\nهل تريد المتابعة؟`
+                : `Delete ${ids.length} schedule day(s) for Sara?\n${dayNames}\n\nContinue?`
+            );
+
+
+            if(!confirmed){
+              return;
+            }
+
+
+            scheduleDeleteButton.disabled=
+              true;
+
+
+            const {error}=await c.sb.rpc(
+              'owner_delete_staff_schedule_days',
+              {
+                p_schedule_ids:
+                  ids,
+
+                p_reason:
+                  reason.trim()
+              }
+            );
+
+
+            if(error){
+
+              scheduleDeleteButton.disabled=
+                false;
+
+              return c.toast(
+                error.message,
+                'error'
+              );
+            }
+
+
+            c.toast(
+              c.lang==='ar'
+                ?'تم حذف أيام الجدول المحددة.'
+                :'Selected schedule days deleted.'
+            );
+
+
+            c.route(
+              'attendance'
+            );
+          }
+        );
+
 
       area
         .querySelectorAll(

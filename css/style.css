@@ -3804,3 +3804,152 @@ html[dir="rtl"] .mini-calendar-days {
   font-size: 10px;
   font-weight: 850;
 }
+
+
+/* ========================================================
+   OWNER — SELECT/DELETE SECRETARY SCHEDULE DAYS
+======================================================== */
+
+.compact-section-head {
+  margin-bottom: 8px;
+}
+
+.staff-schedule-row {
+  grid-template-columns:
+    auto
+    minmax(0,1fr)
+    auto;
+  align-items: center;
+}
+
+.staff-schedule-selector {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+.staff-schedule-selector input {
+  width: 16px;
+  height: 16px;
+  accent-color: #b91c1c;
+  cursor: pointer;
+}
+
+.staff-schedule-main {
+  min-width: 0;
+}
+
+
+/* ========================================================
+   FINANCE — DAY / MONTH / ALL-TIME FILTER
+======================================================== */
+
+.finance-period-panel {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: white;
+  display: grid;
+  grid-template-columns:
+    minmax(130px,.7fr)
+    auto
+    minmax(160px,.7fr);
+  gap: 12px;
+  align-items: end;
+}
+
+.finance-period-copy {
+  display: grid;
+  gap: 3px;
+}
+
+.finance-period-copy strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.finance-period-buttons {
+  display: inline-grid;
+  grid-template-columns: repeat(3,1fr);
+  padding: 3px;
+  border-radius: 12px;
+  background: #edf2f7;
+}
+
+.finance-period-button {
+  min-height: 38px;
+  padding: 7px 13px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.finance-period-button.active {
+  background: white;
+  color: var(--ink);
+  box-shadow:
+    0 1px 4px rgba(15,35,58,.08);
+}
+
+.finance-period-input-wrap {
+  display: grid;
+  justify-items: stretch;
+}
+
+.finance-period-input-wrap label {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.finance-period-input-wrap .control {
+  min-height: 40px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.finance-summary-grid {
+  grid-template-columns:
+    repeat(5,minmax(0,1fr));
+}
+
+
+@media (max-width: 1150px) {
+
+  .finance-summary-grid {
+    grid-template-columns:
+      repeat(3,minmax(0,1fr));
+  }
+
+}
+
+
+@media (max-width: 760px) {
+
+  .finance-period-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .finance-period-buttons {
+    width: 100%;
+  }
+
+  .finance-summary-grid {
+    grid-template-columns:
+      repeat(2,minmax(0,1fr));
+  }
+
+}

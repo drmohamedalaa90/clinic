@@ -1,4 +1,4 @@
-const CACHE = 'operation-clinic-v19-calendar-attendance-title-2026-08-09';
+const CACHE = 'operation-clinic-v20-finance-period-schedule-delete-2026-08-10';
 const STATIC = [
   './', './index.html', './app.html', './css/style.css', './manifest.webmanifest',
   './js/supabase-client.js', './js/auth.js', './js/core.js', './js/dashboard.js', './js/schedules.js',

@@ -1,64 +1,79 @@
-# Owner Patient Controls + Secretary Schedule Editing
+# Operation Clinic — Schedule Delete + Finance Period Filters
 
-This patch adds the two requested Owner controls.
-
-## Patients
-
-On the Patients table, Owner now sees:
-
-- Open
-- Book
-- Edit
-- Delete
-
-Edit allows:
-- Arabic name
-- English name
-- year of birth
-- gender
-- mobile / WhatsApp
-- residency area
-- address
-
-A reason for edit is mandatory.
-
-Delete:
-- is Owner-only
-- asks for a reason and confirmation
-- removes the patient's linked TEST appointments and known linked test records
-- preserves a snapshot in `owner_patient_change_log`
-
-The same Edit/Delete controls are also available inside the patient's profile.
-
-## Secretary schedule
+## 1. Owner: delete one or multiple days from Sara's schedule
 
 Attendance → Sara → Today → Weekly schedule
 
-Owner now sees an **Edit** button beside every schedule row.
+Owner now sees a checkbox beside every schedule day.
 
-Edit allows:
-- weekday
-- start time
-- end time
-- late grace
-- early-leave grace
-- effective from
-- effective until
-- active / inactive
-- notes
+You can select:
+- one day
+- several days
+- all displayed schedule rows if needed
 
-The existing `save_staff_work_schedule` RPC is used, passing the selected
-schedule id, so this edits the row instead of creating a duplicate.
+Then press:
+
+**Delete selected days / حذف الأيام المحددة**
+
+A reason is mandatory.
+
+Before deletion, each removed schedule row is copied to:
+`staff_schedule_test_deletions`
+
+Managers, Deputy Manager and Sara do not receive this delete control.
+
+---
+
+## 2. Finance: Day / Month / All time
+
+At the top of Finance there is now one global period control:
+
+- **Day / يوم**
+- **Month / شهر**
+- **All time / الإجمالي**
+
+When Day is selected, choose a date.
+
+When Month is selected, choose a month.
+
+When All time is selected, the whole available finance history is shown.
+
+The selected period applies to:
+
+- Checked-in cases
+- Booking income
+- Clinic/logistics expense ledger
+- Invoices
+- Income summary
+- Cash summary
+- InstaPay summary
+- Expense total
+- Net total
+
+Approved logistics orders that are still waiting for a purchase price remain
+visible regardless of the period because they are an active operational task.
+
+Services and Cash Closing stay as their existing configuration/workflow tabs.
+
+---
 
 ## Install
 
 ### Supabase
+
 Run:
-`sql/owner-patient-edit-delete.sql`
+
+`sql/owner-delete-staff-schedule-days.sql`
 
 ### GitHub
-Replace:
-- `js/patients.js`
-- `js/attendance.js`
 
-Then wait for GitHub Pages and press Ctrl + Shift + R.
+Replace:
+
+- `js/attendance.js`
+- `js/finance.js`
+- `css/style.css`
+- `sw.js`
+
+Then wait for GitHub Pages deployment and press:
+
+`Ctrl + Shift + R`

@@ -24,7 +24,7 @@
   }
 
 
-  async function renderFinance(){
+  async function renderFinance(params={}){
     const c=C();
 
     if(!c.isReception()){
@@ -34,6 +34,240 @@
     c.setTitle(c.t('finance'));
 
     const today=c.cairoDate();
+
+
+    const allowedPeriodModes=
+      new Set([
+        'day',
+        'month',
+        'all'
+      ]);
+
+
+    let financePeriodMode=
+      allowedPeriodModes.has(
+        params.periodMode
+      )
+        ? params.periodMode
+        : (
+            localStorage.getItem(
+              'clinic_finance_period_mode'
+            )
+            || 'day'
+          );
+
+
+    if(
+      !allowedPeriodModes.has(
+        financePeriodMode
+      )
+    ){
+      financePeriodMode='day';
+    }
+
+
+    let financePeriodDate=
+      params.periodDate
+      ||
+      localStorage.getItem(
+        'clinic_finance_period_date'
+      )
+      ||
+      today;
+
+
+    if(
+      !/^\d{4}-\d{2}-\d{2}$/.test(
+        financePeriodDate
+      )
+    ){
+      financePeriodDate=
+        today;
+    }
+
+
+    function ymdParts(value){
+      const [
+        year,
+        month,
+        day
+      ]=
+        value
+          .split('-')
+          .map(Number);
+
+      return {
+        year,
+        month,
+        day
+      };
+    }
+
+
+    function daysInMonth(
+      year,
+      month
+    ){
+      return new Date(
+        Date.UTC(
+          year,
+          month,
+          0
+        )
+      ).getUTCDate();
+    }
+
+
+    function financeRangeDates(){
+
+      if(
+        financePeriodMode==='all'
+      ){
+        return {
+          from:'2000-01-01',
+          to:today
+        };
+      }
+
+
+      if(
+        financePeriodMode==='month'
+      ){
+        const {
+          year,
+          month
+        }=
+          ymdParts(
+            financePeriodDate
+          );
+
+        const lastDay=
+          daysInMonth(
+            year,
+            month
+          );
+
+        return {
+          from:
+            `${String(year).padStart(4,'0')}-${String(month).padStart(2,'0')}-01`,
+
+          to:
+            `${String(year).padStart(4,'0')}-${String(month).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`
+        };
+      }
+
+
+      return {
+        from:
+          financePeriodDate,
+
+        to:
+          financePeriodDate
+      };
+    }
+
+
+    const financeRange=
+      financeRangeDates();
+
+
+    function cairoYmd(value){
+      if(!value){
+        return '';
+      }
+
+      const date=
+        new Date(value);
+
+      if(
+        Number.isNaN(
+          date.getTime()
+        )
+      ){
+        return '';
+      }
+
+      const parts=
+        new Intl.DateTimeFormat(
+          'en-CA',
+          {
+            timeZone:'Africa/Cairo',
+            year:'numeric',
+            month:'2-digit',
+            day:'2-digit'
+          }
+        )
+        .formatToParts(date);
+
+      const part=type=>
+        parts.find(
+          x=>x.type===type
+        )?.value||'';
+
+      return `${part('year')}-${part('month')}-${part('day')}`;
+    }
+
+
+    function inFinancePeriod(value){
+      if(
+        financePeriodMode==='all'
+      ){
+        return true;
+      }
+
+      const date=
+        cairoYmd(value);
+
+      if(!date){
+        return false;
+      }
+
+      if(
+        financePeriodMode==='month'
+      ){
+        return date.slice(0,7)
+          ===
+          financePeriodDate.slice(0,7);
+      }
+
+      return date===
+        financePeriodDate;
+    }
+
+
+    function financePeriodLabel(){
+      if(
+        financePeriodMode==='all'
+      ){
+        return c.lang==='ar'
+          ?'الإجمالي'
+          :'All time';
+      }
+
+      if(
+        financePeriodMode==='month'
+      ){
+        const monthDate=
+          `${financePeriodDate.slice(0,7)}-01T12:00:00`;
+
+        return new Intl.DateTimeFormat(
+          c.lang==='ar'
+            ?'ar-EG'
+            :'en-GB',
+          {
+            timeZone:'Africa/Cairo',
+            month:'long',
+            year:'numeric'
+          }
+        ).format(
+          new Date(monthDate)
+        );
+      }
+
+      return c.formatDate(
+        `${financePeriodDate}T12:00:00`
+      );
+    }
 
 
     const [
@@ -52,8 +286,11 @@
       c.sb.rpc(
         'frontend_booking_income_summary',
         {
-          p_from:today,
-          p_to:today
+          p_from:
+            financeRange.from,
+
+          p_to:
+            financeRange.to
         }
       ),
 
@@ -64,7 +301,7 @@
           'received_at',
           {ascending:false}
         )
-        .limit(200),
+        .limit(1000),
 
       c.sb
         .from('invoices')
@@ -73,7 +310,7 @@
           'created_at',
           {ascending:false}
         )
-        .limit(80),
+        .limit(1000),
 
       c.sb
         .from('clinic_services')
@@ -113,7 +350,7 @@
           'expense_at',
           {ascending:false}
         )
-        .limit(200),
+        .limit(1000),
 
       c.sb
         .from('expense_categories')
@@ -138,7 +375,7 @@
           'checked_in_at',
           {ascending:false}
         )
-        .limit(300),
+        .limit(1000),
 
       c.sb
         .from('booking_income_edits')
@@ -147,7 +384,7 @@
           'edited_at',
           {ascending:false}
         )
-        .limit(500)
+        .limit(1000)
     ]);
 
 
@@ -188,9 +425,77 @@
     const feeEdits=
       feeEditsResult.data||[];
 
+
+    const filteredBookingIncome=
+      bookingIncome.filter(
+        entry=>
+          inFinancePeriod(
+            entry.received_at
+          )
+      );
+
+
+    const filteredInvoices=
+      invoices.filter(
+        invoice=>
+          inFinancePeriod(
+            invoice.created_at
+          )
+      );
+
+
+    const filteredClinicExpenses=
+      clinicExpenses.filter(
+        expense=>
+          inFinancePeriod(
+            expense.expense_at
+          )
+      );
+
+
+    const filteredCheckedInCases=
+      checkedInCases.filter(
+        appointment=>
+          inFinancePeriod(
+            appointment.checked_in_at
+          )
+      );
+
+
+    const selectedExpenseTotal=
+      filteredClinicExpenses
+        .filter(
+          expense=>
+            !expense.is_voided
+        )
+        .reduce(
+          (
+            total,
+            expense
+          )=>
+            total+
+            Number(
+              expense.amount||0
+            ),
+          0
+        );
+
+
+    const selectedIncomeTotal=
+      Number(
+        incomeSummary.total_income||0
+      );
+
+
+    const selectedNetTotal=
+      selectedIncomeTotal
+      -
+      selectedExpenseTotal;
+
+
     const incomeByAppointment=
       new Map(
-        bookingIncome
+        filteredBookingIncome
           .filter(x=>!x.is_voided)
           .map(x=>[
             x.appointment_id,
@@ -216,9 +521,9 @@
 
 
     const allPatientIds=[
-      ...bookingIncome.map(x=>x.patient_id),
-      ...invoices.map(x=>x.patient_id),
-      ...checkedInCases.map(x=>x.patient_id)
+      ...filteredBookingIncome.map(x=>x.patient_id),
+      ...filteredInvoices.map(x=>x.patient_id),
+      ...filteredCheckedInCases.map(x=>x.patient_id)
     ];
 
     const pm=
@@ -276,7 +581,130 @@
       </section>
 
 
-      <section class="dashboard-grid">
+      <section class="finance-period-panel">
+
+        <div class="finance-period-copy">
+
+          <span class="eyebrow">
+            ${c.lang==='ar'
+              ?'الفترة المعروضة'
+              :'VIEW PERIOD'}
+          </span>
+
+          <strong id="financePeriodLabel">
+            ${financePeriodLabel()}
+          </strong>
+
+        </div>
+
+
+        <div
+          class="finance-period-buttons"
+          role="group"
+          aria-label="${
+            c.lang==='ar'
+              ?'اختيار الفترة'
+              :'Choose finance period'
+          }"
+        >
+
+          <button
+            type="button"
+            class="finance-period-button ${
+              financePeriodMode==='day'
+                ?'active'
+                :''
+            }"
+            data-finance-period="day"
+          >
+            ${c.lang==='ar'
+              ?'يوم'
+              :'Day'}
+          </button>
+
+
+          <button
+            type="button"
+            class="finance-period-button ${
+              financePeriodMode==='month'
+                ?'active'
+                :''
+            }"
+            data-finance-period="month"
+          >
+            ${c.lang==='ar'
+              ?'شهر'
+              :'Month'}
+          </button>
+
+
+          <button
+            type="button"
+            class="finance-period-button ${
+              financePeriodMode==='all'
+                ?'active'
+                :''
+            }"
+            data-finance-period="all"
+          >
+            ${c.lang==='ar'
+              ?'الإجمالي'
+              :'All time'}
+          </button>
+
+        </div>
+
+
+        <div
+          id="financePeriodInputWrap"
+          class="finance-period-input-wrap"
+        >
+
+          ${
+            financePeriodMode==='day'
+              ? `
+                <label>
+                  ${c.lang==='ar'
+                    ?'التاريخ'
+                    :'Date'}
+
+                  <input
+                    id="financePeriodDateInput"
+                    type="date"
+                    class="control"
+                    value="${financePeriodDate}"
+                  >
+                </label>
+              `
+              : ''
+          }
+
+
+          ${
+            financePeriodMode==='month'
+              ? `
+                <label>
+                  ${c.lang==='ar'
+                    ?'الشهر'
+                    :'Month'}
+
+                  <input
+                    id="financePeriodMonthInput"
+                    type="month"
+                    class="control"
+                    value="${financePeriodDate.slice(0,7)}"
+                  >
+                </label>
+              `
+              : ''
+          }
+
+        </div>
+
+      </section>
+
+
+      <section class="dashboard-grid finance-summary-grid">
 
         <article class="stat-card">
 
@@ -286,13 +714,15 @@
 
           <span class="stat-label">
             ${c.lang==='ar'
-              ?'دخل اليوم'
-              :'Income today'}
+              ?'الدخل'
+              :'Income'}
+            •
+            ${financePeriodLabel()}
           </span>
 
           <strong>
             ${c.formatMoney(
-              incomeSummary.total_income||0
+              selectedIncomeTotal
             )}
           </strong>
 
@@ -347,12 +777,39 @@
 
           <span class="stat-label">
             ${c.lang==='ar'
-              ?'عمليات دخل اليوم'
-              :'Income entries today'}
+              ?'المصروفات'
+              :'Expenses'}
+            •
+            ${financePeriodLabel()}
           </span>
 
           <strong>
-            ${incomeSummary.income_count||0}
+            ${c.formatMoney(
+              selectedExpenseTotal
+            )}
+          </strong>
+
+        </article>
+
+
+        <article class="stat-card">
+
+          <span class="stat-icon">
+            📊
+          </span>
+
+          <span class="stat-label">
+            ${c.lang==='ar'
+              ?'الصافي'
+              :'Net'}
+            •
+            ${financePeriodLabel()}
+          </span>
+
+          <strong>
+            ${c.formatMoney(
+              selectedNetTotal
+            )}
           </strong>
 
         </article>
@@ -436,9 +893,104 @@
       );
 
 
+    function routeFinancePeriod(
+      mode,
+      date=financePeriodDate
+    ){
+      localStorage.setItem(
+        'clinic_finance_period_mode',
+        mode
+      );
+
+      localStorage.setItem(
+        'clinic_finance_period_date',
+        date
+      );
+
+      c.route(
+        'finance',
+        {
+          periodMode:
+            mode,
+
+          periodDate:
+            date
+        }
+      );
+    }
+
+
+    document
+      .querySelectorAll(
+        '[data-finance-period]'
+      )
+      .forEach(button=>{
+
+        button.addEventListener(
+          'click',
+          ()=>{
+
+            const mode=
+              button.dataset
+                .financePeriod;
+
+            routeFinancePeriod(
+              mode,
+              financePeriodDate
+            );
+          }
+        );
+
+      });
+
+
+    document
+      .getElementById(
+        'financePeriodDateInput'
+      )
+      ?.addEventListener(
+        'change',
+        event=>{
+
+          if(
+            !event.target.value
+          ){
+            return;
+          }
+
+          routeFinancePeriod(
+            'day',
+            event.target.value
+          );
+        }
+      );
+
+
+    document
+      .getElementById(
+        'financePeriodMonthInput'
+      )
+      ?.addEventListener(
+        'change',
+        event=>{
+
+          if(
+            !event.target.value
+          ){
+            return;
+          }
+
+          routeFinancePeriod(
+            'month',
+            `${event.target.value}-01`
+          );
+        }
+      );
+
+
     function showCheckedInCases(){
 
-      area.innerHTML=checkedInCases.length
+      area.innerHTML=filteredCheckedInCases.length
         ? `
           <div class="section-head">
             <div>
@@ -450,8 +1002,8 @@
 
               <h3>
                 ${c.lang==='ar'
-                  ?'كل المرضى الذين تم تسجيل وصولهم'
-                  :'All checked-in patients'}
+                  ?`الحالات المسجلة وصولها • ${financePeriodLabel()}`
+                  :`Checked-in patients • ${financePeriodLabel()}`}
               </h3>
 
               <p class="muted">
@@ -480,7 +1032,7 @@
               </thead>
 
               <tbody>
-                ${checkedInCases.map(a=>{
+                ${filteredCheckedInCases.map(a=>{
                   const p=
                     pm.get(a.patient_id)||{};
 
@@ -602,7 +1154,7 @@
           button.onclick=()=>{
 
             const appointment=
-              checkedInCases.find(
+              filteredCheckedInCases.find(
                 x=>x.id===
                   button.dataset.editCheckinFee
               );
@@ -857,7 +1409,7 @@
 
     function showIncome(){
 
-      area.innerHTML=bookingIncome.length
+      area.innerHTML=filteredBookingIncome.length
         ? `
 
           <div class="section-head">
@@ -872,8 +1424,8 @@
 
               <h3>
                 ${c.lang==='ar'
-                  ?'الدخل'
-                  :'Income'}
+                  ?`الدخل • ${financePeriodLabel()}`
+                  :`Income • ${financePeriodLabel()}`}
               </h3>
 
             </div>
@@ -934,7 +1486,7 @@
 
               <tbody>
 
-                ${bookingIncome.map(entry=>{
+                ${filteredBookingIncome.map(entry=>{
 
                   const p=
                     pm.get(entry.patient_id)||{};
@@ -1259,7 +1811,7 @@
 
 
         ${
-          clinicExpenses.length
+          filteredClinicExpenses.length
 
           ? `
 
@@ -1320,7 +1872,7 @@
 
                 <tbody>
 
-                  ${clinicExpenses.map(expense=>`
+                  ${filteredClinicExpenses.map(expense=>`
 
                     <tr>
 
@@ -1764,7 +2316,7 @@
 
     function showInvoices(){
 
-      area.innerHTML=invoices.length
+      area.innerHTML=filteredInvoices.length
         ? `
 
           <div class="table-wrap">
@@ -1820,7 +2372,7 @@
 
               <tbody>
 
-                ${invoices.map(invoice=>{
+                ${filteredInvoices.map(invoice=>{
 
                   const p=
                     pm.get(invoice.patient_id)||{};
@@ -2450,7 +3002,7 @@
           'created_at',
           {ascending:false}
         )
-        .limit(300),
+        .limit(1000),
 
       c.sb
         .from('appointments')
@@ -2461,7 +3013,7 @@
           'scheduled_start',
           {ascending:false}
         )
-        .limit(200)
+        .limit(1000)
     ]);
 
 
