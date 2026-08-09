@@ -3323,3 +3323,103 @@ html[dir="rtl"] .dashboard-notification-row.unread {
 .hour-patient-seat.occupied.status-arrived .seat-copy small {
   color: #be123c;
 }
+
+
+/* ========================================================
+   ALL-WEEK CALENDAR NAVIGATION
+======================================================== */
+
+.calendar-nav-button {
+  white-space: nowrap;
+}
+
+.calendar-jump-control {
+  min-width: 150px;
+  display: grid;
+  gap: 3px;
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 750;
+}
+
+.calendar-jump-control .control {
+  min-height: 39px;
+}
+
+
+/* ========================================================
+   DASHBOARD LIVE DATA
+======================================================== */
+
+.dashboard-live-badge {
+  align-self: flex-start;
+  border: 1px solid #a7f3d0;
+  border-radius: 999px;
+  padding: 6px 9px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 9px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+
+/* ========================================================
+   OWNER ADMIN RECORDS
+======================================================== */
+
+.admin-records-filter-bar {
+  margin-bottom: 12px;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 9px;
+}
+
+.admin-record-table td,
+.admin-record-table th {
+  vertical-align: middle;
+}
+
+.admin-record-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin-source-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+
+/* ========================================================
+   SECRETARY ATTENDANCE WITHOUT PRECONFIGURED SCHEDULE
+======================================================== */
+
+.attendance-clock-card .form-actions {
+  margin-top: 12px;
+}
+
+
+@media (max-width: 760px) {
+
+  .calendar-jump-control {
+    width: 100%;
+  }
+
+  .calendar-jump-control .control {
+    width: 100%;
+  }
+
+  .admin-records-filter-bar {
+    grid-template-columns: 1fr;
+  }
+}

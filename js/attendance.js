@@ -85,16 +85,14 @@
       const today=c.cairoDate();
 
       const [
-        {data:record,error:recordError},
+        todayResult,
         scheduleResult,
         historyResult
       ] = await Promise.all([
-        c.sb
-          .from('attendance_records')
-          .select('*')
-          .eq('staff_id',staffId)
-          .eq('work_date',today)
-          .maybeSingle(),
+        c.sb.rpc(
+          'frontend_get_staff_attendance_today',
+          {p_staff_id:staffId}
+        ),
 
         c.sb.rpc(
           'frontend_get_staff_work_schedule',
@@ -110,9 +108,14 @@
         )
       ]);
 
-      if(recordError){
-        c.toast(recordError.message,'error');
+      if(todayResult.error){
+        c.toast(todayResult.error.message,'error');
       }
+
+      const record=
+        firstRow(
+          todayResult.data
+        );
 
       const schedules=scheduleResult.data||[];
       const history=historyResult.data||[];
@@ -208,7 +211,7 @@
             </div>
 
             ${
-              isSecretarySelf && sch
+              isSecretarySelf
                 ? (
                     desktopAllowed
                       ? `
@@ -416,7 +419,7 @@
             }
 
             const {error}=await c.sb.rpc(
-              'staff_check_in',
+              'frontend_staff_check_in',
               {p_note:null}
             );
 
@@ -449,7 +452,7 @@
             }
 
             const {error}=await c.sb.rpc(
-              'staff_check_out',
+              'frontend_staff_check_out',
               {p_note:null}
             );
 

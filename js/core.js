@@ -14,14 +14,14 @@ const Clinic = window.Clinic = {
     en: {
       clinic: 'Operation Clinic', logout: 'Logout', dashboard: 'Dashboard', patients: 'Patients', appointments: 'Appointments',
       schedules: "Doctors' Schedules", finance: 'Finance', logistics: 'Logistics', attendance: 'Attendance', reports: 'Reports',
-      users: 'Users', audit: 'Audit Log', settings: 'Settings', todayClinic: "Today's Clinic", queue: 'My Queue',
+      users: 'Users', records: 'Admin Records', audit: 'Audit Log', settings: 'Settings', todayClinic: "Today's Clinic", queue: 'My Queue',
       referrals: 'Referrals', mySchedule: 'My Schedule', profile: 'My Profile', technical: 'Technical Administration',
       reception: 'Reception Desk', notifications: 'Notifications', clinicManagement: 'Clinic Management', loading: 'Loading...', noData: 'No data found'
     },
     ar: {
       clinic: 'إدارة العيادة', logout: 'تسجيل الخروج', dashboard: 'الرئيسية', patients: 'المرضى', appointments: 'الحجوزات',
       schedules: 'جداول الأطباء', finance: 'المالية', logistics: 'احتياجات العيادة', attendance: 'الحضور والانصراف', reports: 'التقارير',
-      users: 'المستخدمون', audit: 'سجل النشاط', settings: 'الإعدادات', todayClinic: 'عيادة اليوم', queue: 'قائمة الانتظار',
+      users: 'المستخدمون', records: 'السجلات الإدارية', audit: 'سجل النشاط', settings: 'الإعدادات', todayClinic: 'عيادة اليوم', queue: 'قائمة الانتظار',
       referrals: 'التحويلات', mySchedule: 'جدولي', profile: 'ملفي الشخصي', technical: 'الإدارة التقنية',
       reception: 'الاستقبال', notifications: 'الإشعارات', clinicManagement: 'إدارة العيادة', loading: 'جاري التحميل...', noData: 'لا توجد بيانات'
     }
@@ -209,6 +209,18 @@ const Clinic = window.Clinic = {
       menu += this.navItem('👤','profile','profile');
     }
 
+    // Secretary's operational home is BOOKINGS, not Dashboard.
+    else if (this.hasRole('secretary') && !this.isManagement()) {
+      menu += this.navItem('📅','appointments','appointments');
+      menu += this.navItem('👥','patients','patients');
+      menu += this.navItem('🛎','reception','reception');
+      menu += this.navItem('💳','finance','finance');
+      menu += this.navItem('📦','logistics','logistics');
+      menu += this.navItem('✓','attendance','attendance');
+      menu += this.navItem('⌂','dashboard','dashboard');
+      menu += this.navItem('👤','profile','profile');
+    }
+
     else {
       menu += this.navItem('⌂','dashboard','dashboard');
 
@@ -224,20 +236,11 @@ const Clinic = window.Clinic = {
         menu += this.navItem('👤','profile','profile');
 
         if (this.hasRole('owner')) {
+          menu += this.navItem('🗂','records','admin-records');
           menu += this.navItem('👥','users','users');
           menu += this.navItem('◷','audit','audit');
           menu += this.navItem('⚙','settings','settings');
         }
-      }
-
-      else if (this.hasRole('secretary')) {
-        menu += this.navItem('📅','appointments','appointments');
-        menu += this.navItem('👥','patients','patients');
-        menu += this.navItem('🛎','reception','reception');
-        menu += this.navItem('💳','finance','finance');
-        menu += this.navItem('📦','logistics','logistics');
-        menu += this.navItem('✓','attendance','attendance');
-        menu += this.navItem('👤','profile','profile');
       }
     }
 
@@ -353,7 +356,11 @@ const Clinic = window.Clinic = {
     await this.route(
       this.isDoctor() && !this.hasRole('owner')
         ? 'today-clinic'
-        : 'dashboard'
+        : (
+            this.hasRole('secretary') && !this.isManagement()
+              ? 'appointments'
+              : 'dashboard'
+          )
     );
 
     window.ClinicNotifications?.refresh?.();

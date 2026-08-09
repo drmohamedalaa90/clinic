@@ -1202,13 +1202,13 @@
               ${offset===0
                 ? (
                     C.lang==='ar'
-                      ?'هذا الأسبوع'
-                      :'CURRENT WEEK'
+                      ?'الأسبوع الأول'
+                      :'WEEK 1'
                   )
                 : (
                     C.lang==='ar'
-                      ?'الأسبوع القادم'
-                      :'NEXT WEEK'
+                      ?'الأسبوع الثاني'
+                      :'WEEK 2'
                   )
               }
             </span>
@@ -1765,8 +1765,8 @@
 
           <p class="muted">
             ${C.lang==='ar'
-              ?'يعرض هذا الأسبوع والأسبوع القادم. اضغط على أي فترة متاحة لإنشاء المريض والحجز مباشرة.'
-              :'Current week and next week. Each one-hour slot accepts up to 4 patients. Click any empty patient place to book.'}
+              ?'يمكنك التنقل بين جميع الأسابيع السابقة والقادمة أو الذهاب مباشرةً إلى أي تاريخ. كل ساعة تستوعب 4 مرضى.'
+              :'Browse any past or future week, or jump directly to a date. Each one-hour slot accepts up to 4 patients.'}
           </p>
         </div>
 
@@ -1790,13 +1790,45 @@
           }
 
           <button
+            id="calendarPrevious"
+            class="secondary-button calendar-nav-button"
+            type="button"
+            title="${C.lang==='ar'?'الأسبوع السابق':'Previous week'}"
+          >
+            ${C.lang==='ar'?'← السابق':'← Previous'}
+          </button>
+
+          <button
             id="calendarToday"
-            class="secondary-button"
+            class="secondary-button calendar-nav-button"
+            type="button"
           >
             ${C.lang==='ar'
               ?'الأسبوع الحالي'
-              :'Current 2 weeks'}
+              :'Current week'}
           </button>
+
+          <button
+            id="calendarNext"
+            class="secondary-button calendar-nav-button"
+            type="button"
+            title="${C.lang==='ar'?'الأسبوع التالي':'Next week'}"
+          >
+            ${C.lang==='ar'?'التالي →':'Next →'}
+          </button>
+
+          <label class="calendar-jump-control">
+            <span>
+              ${C.lang==='ar'?'اذهب إلى':'Jump to'}
+            </span>
+
+            <input
+              id="calendarJumpDate"
+              type="date"
+              class="control"
+              value="${C.cairoDate()}"
+            >
+          </label>
 
           ${canBook
             ? `<button
@@ -1973,8 +2005,30 @@
       doctorSelect.onchange=refresh;
     }
 
+    document.getElementById('calendarPrevious').onclick=()=>{
+      anchor=addDays(anchor,-7);
+      document.getElementById('calendarJumpDate').value=anchor;
+      refresh();
+    };
+
     document.getElementById('calendarToday').onclick=()=>{
       anchor=C.cairoDate();
+      document.getElementById('calendarJumpDate').value=anchor;
+      refresh();
+    };
+
+    document.getElementById('calendarNext').onclick=()=>{
+      anchor=addDays(anchor,7);
+      document.getElementById('calendarJumpDate').value=anchor;
+      refresh();
+    };
+
+    document.getElementById('calendarJumpDate').onchange=(event)=>{
+      if(!event.target.value){
+        return;
+      }
+
+      anchor=event.target.value;
       refresh();
     };
 

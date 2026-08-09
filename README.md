@@ -1,96 +1,99 @@
-# Operation Clinic — Five Requested Changes
+# Operation Clinic — Round 2 Five Fixes
 
-This patch contains the five requested updates.
+This package addresses the five items from the 09/08/2026 review.
 
-## 1. Arabic clinic name
+## 1. Calendar — all weeks
 
-`Operation Clinic` now displays in Arabic as:
+Appointments is no longer limited to only the current two weeks.
 
-**إدارة العيادة**
+The calendar now has:
 
-## 2. Sara attendance
+- Previous
+- Current week
+- Next
+- Jump to any date
 
-Secretary attendance now includes:
+The existing two-week block remains, but the block can be shifted indefinitely
+backward or forward, so old and future weeks are accessible.
 
-- Check in
-- Check out
-- Check-in time
-- Check-out time
-- Duration in clinic
-- Daily attendance history
-- Weekly work schedule
+## 2. Home dashboard — live / cancellation-correct
 
-Check-in / check-out buttons are shown only on laptop/desktop layout
-(`>= 900px`). On mobile Sara sees her attendance information but cannot use
-the attendance buttons.
+A new Supabase RPC calculates the dashboard from the database every time.
 
-Owner, Manager and Deputy Manager can open Attendance, choose the secretary,
-see the weekly schedule, daily history, and manually adjust records.
+Cancelled/rescheduled appointments are no longer counted as active today's
+appointments.
 
-## 3. Compact laptop booking popup
+Today's income comes from non-voided booking income actually received today.
 
-The internal booking window is now laid out in two columns on laptop:
+While the Dashboard is open it refreshes approximately every 12 seconds, so:
+- cancellation
+- check-in
+- waiting/completed status
+- today's income
+- pending logistics
 
-- Appointment details + notes on one side
-- Patient details on the other
+do not remain stale.
 
-Spacing, input height and headings are reduced on laptop so the normal booking
-flow fits without vertical scrolling on ordinary laptop screens.
+## 3. Sara home page
 
-Mobile remains single-column.
+Secretary users now enter directly into:
 
-## 4. Finance: all checked-in cases
+Appointments / Booking
 
-Finance gets a first tab:
+after login.
 
-**Checked-in cases**
+Her side menu also starts with Appointments. Dashboard remains available later
+in the menu.
 
-Every appointment with `checked_in_at` appears there even if the case later
-moves to Waiting, With Doctor or Completed.
+## 4. Owner — all historical patients/bookings
 
-Each row shows:
+Owner navigation gets:
 
-- Patient
-- Doctor
-- Check-in date/time
-- Current status
-- Fee
-- Payment method
-- Last edit reason
+Admin Records / السجلات الإدارية
 
-Each row has **Edit**.
+It displays:
+- all historical appointments
+- all historical patients
+- search by patient / MRN / appointment number / mobile
 
-Editing:
-- can change fee
-- can change payment method
-- can change finance note
-- MUST include a reason
+Owner can individually:
+- edit a patient
+- edit appointment doctor/date/time/type/status
+- delete one test appointment
+- delete one test patient and its linked test records
 
-Every edit is saved in `booking_income_edits` with old/new values, user and
-timestamp.
+Edit and delete actions require a reason and are written to the audit log when
+the audit table is present.
 
-The existing Owner-only **Reset finance** control is preserved.
+The old bulk test resets remain unchanged.
 
-## 5. Duplicate booking notifications
+## 5. Sara attendance repair
 
-The SQL:
-- removes duplicate appointment status-history triggers
-- creates exactly one canonical trigger
-- removes existing duplicate status-history rows
+The screenshot error:
 
-The frontend also performs defensive booking de-duplication.
+`permission denied for function can_manage_attendance`
 
-## 6. Checked-in color
+is addressed in SQL.
 
-Appointment status `arrived` / checked-in is now **red**, not violet.
+The patch:
+- grants the attendance RLS helper the EXECUTE privilege required by its own
+  RLS policies
+- exposes a secure Today attendance RPC
+- stops the frontend from directly querying today's attendance row
+- adds dedicated Secretary self-service check-in/check-out RPCs
+- removes the failing direct RLS read from the Today card
 
-## Installation
+Sara's desktop Check In / Check Out controls are shown even when a weekly
+schedule has not yet been configured. If no schedule exists, she can still
+check in/out and late/early minutes remain zero. Mobile remains view-only.
+
+## Install
 
 ### Supabase
 
-Run the full contents of:
+Run the entire file:
 
-`sql/clinic-five-changes.sql`
+`sql/clinic-round2-five-fixes.sql`
 
 ### GitHub
 
@@ -98,12 +101,15 @@ Replace:
 
 - `js/core.js`
 - `js/appointments.js`
+- `js/dashboard.js`
 - `js/attendance.js`
-- `js/finance.js`
-- `js/notifications.js`
+- `js/patients.js`
 - `css/style.css`
 - `sw.js`
 
-Then commit, wait for GitHub Pages deployment, and press:
+No app.html change is needed because dashboard.js and patients.js are already
+loaded by your current app.html.
+
+After GitHub Pages deploys, press:
 
 `Ctrl + Shift + R`
