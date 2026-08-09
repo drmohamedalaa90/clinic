@@ -388,6 +388,25 @@
                 </label>
 
                 <label>
+                  ${C.lang==='ar'?'العمر بالسنوات':'Age in years'}
+                  <input
+                    id="bookingAgeYears"
+                    type="number"
+                    inputmode="numeric"
+                    min="0"
+                    max="126"
+                    step="1"
+                    placeholder="${C.lang==='ar'?'مثال: 36':'Example: 36'}"
+                    class="control"
+                  >
+                  <small class="booking-age-hint">
+                    ${C.lang==='ar'
+                      ?'يحوّل تلقائياً إلى سنة الميلاد'
+                      :'Automatically converts to birth year'}
+                  </small>
+                </label>
+
+                <label>
                   ${C.lang==='ar'?'النوع':'Gender'}
                   <select
                     id="bookingGender"
@@ -486,6 +505,33 @@
         const dateInput=root.querySelector('#bookingDate');
         const slot=root.querySelector('#bookingSlot');
         const hint=root.querySelector('#slotHint');
+
+        const birthYearInput=root.querySelector('#bookingBirthYear');
+        const ageYearsInput=root.querySelector('#bookingAgeYears');
+        let syncingAgeBirthYear=false;
+
+        function syncBirthYearFromAge(){
+          if(syncingAgeBirthYear) return;
+          const age=Number(ageYearsInput.value);
+          if(!Number.isInteger(age)||age<0||age>126) return;
+
+          syncingAgeBirthYear=true;
+          birthYearInput.value=String(currentYear-age);
+          syncingAgeBirthYear=false;
+        }
+
+        function syncAgeFromBirthYear(){
+          if(syncingAgeBirthYear) return;
+          const year=Number(birthYearInput.value);
+          if(!Number.isInteger(year)||year<1900||year>currentYear) return;
+
+          syncingAgeBirthYear=true;
+          ageYearsInput.value=String(currentYear-year);
+          syncingAgeBirthYear=false;
+        }
+
+        ageYearsInput?.addEventListener('input',syncBirthYearFromAge);
+        birthYearInput?.addEventListener('input',syncAgeFromBirthYear);
 
         let patientMode = prefill.patientId ? 'existing' : 'new';
 
@@ -850,17 +896,27 @@
   }
 
 
-  async function loadTwoWeekData(doctorId, anchorDate){
+  async function loadCalendarData(
+    doctorId,
+    anchorDate,
+    weekCount=2
+  ){
     const C=Clinic;
 
     const weekStart=saturdayStart(anchorDate);
+
+    const normalizedWeekCount=Math.max(
+      1,
+      Math.min(4,Number(weekCount)||2)
+    );
+
     const dates=Array.from(
-      {length:14},
+      {length:normalizedWeekCount*7},
       (_,index)=>addDays(weekStart,index)
     );
 
     const from=dates[0];
-    const to=dates[13];
+    const to=dates[dates.length-1];
 
     const [appointments,exceptions] =
       await Promise.all([
@@ -1111,7 +1167,9 @@
     return `
       <article
         class="scheduler-day-card ${
-          dayIndex<7 ? 'current-week-day' : 'next-week-day'
+          parseYmd(date).getUTCDay()===6
+            ? 'saturday-column'
+            : ''
         }"
       >
         <header class="scheduler-day-header">
@@ -1198,22 +1256,7 @@
       <section class="scheduler-week-section">
         <div class="scheduler-week-heading">
           <div>
-            <span class="eyebrow">
-              ${offset===0
-                ? (
-                    C.lang==='ar'
-                      ?'الأسبوع الأول'
-                      :'WEEK 1'
-                  )
-                : (
-                    C.lang==='ar'
-                      ?'الأسبوع الثاني'
-                      :'WEEK 2'
-                  )
-              }
-            </span>
-
-            <h3>${title}</h3>
+            <h3 dir="ltr">${title}</h3>
           </div>
         </div>
 
@@ -1723,6 +1766,19 @@
     await C.loadDoctors(true);
 
     const canBook=C.isReception() || doctorOnly;
+
+    const initialWeekCount=Math.max(
+      1,
+      Math.min(
+        4,
+        Number(
+          localStorage.getItem(
+            'clinic_calendar_weeks_per_page'
+          )||2
+        )
+      )
+    );
+
     const defaultDoctor=doctorOnly
       ? C.user.id
       : (
@@ -1771,6 +1827,29 @@
         </div>
 
         <div class="toolbar-actions appointment-calendar-controls">
+
+          <label class="calendar-weeks-control">
+            <span>
+              ${C.lang==='ar'
+                ?'عدد الأسابيع في الصفحة'
+                :'Weeks per page'}
+            </span>
+
+            <select
+              id="calendarWeekCount"
+              class="control"
+            >
+              ${[1,2,3,4].map(n=>`
+                <option
+                  value="${n}"
+                  ${n===initialWeekCount?'selected':''}
+                >
+                  ${n}
+                </option>
+              `).join('')}
+            </select>
+          </label>
+
           ${!doctorOnly
             ? `<select
                  id="calendarDoctor"
@@ -1889,6 +1968,7 @@
     `;
 
     let anchor=C.cairoDate();
+    let weekCount=initialWeekCount;
     let lastData=null;
 
     const doctorSelect=
@@ -1929,34 +2009,32 @@
       `;
 
       try{
-        lastData=await loadTwoWeekData(
+        lastData=await loadCalendarData(
           doctorId,
-          anchor
+          anchor,
+          weekCount
         );
 
-        const currentWeek=
-          lastData.dates.slice(0,7);
+        const weeks=Array.from(
+          {length:weekCount},
+          (_,weekIndex)=>
+            lastData.dates.slice(
+              weekIndex*7,
+              (weekIndex+1)*7
+            )
+        );
 
-        const nextWeek=
-          lastData.dates.slice(7,14);
-
-        root.innerHTML=`
-          ${renderWeekBlock(
-            `${C.formatDate(currentWeek[0])} – ${C.formatDate(currentWeek[6])}`,
-            currentWeek,
-            lastData,
-            canBook,
-            0
-          )}
-
-          ${renderWeekBlock(
-            `${C.formatDate(nextWeek[0])} – ${C.formatDate(nextWeek[6])}`,
-            nextWeek,
-            lastData,
-            canBook,
-            7
-          )}
-        `;
+        root.innerHTML=
+          weeks.map(
+            (week,weekIndex)=>
+              renderWeekBlock(
+                `${C.formatDate(week[0])} – ${C.formatDate(week[6])}`,
+                week,
+                lastData,
+                canBook,
+                weekIndex*7
+              )
+          ).join('');
 
         root
           .querySelectorAll('[data-book-slot]')
@@ -2005,8 +2083,30 @@
       doctorSelect.onchange=refresh;
     }
 
+    document
+      .getElementById('calendarWeekCount')
+      .addEventListener(
+        'change',
+        event=>{
+          weekCount=Math.max(
+            1,
+            Math.min(
+              4,
+              Number(event.target.value)||2
+            )
+          );
+
+          localStorage.setItem(
+            'clinic_calendar_weeks_per_page',
+            String(weekCount)
+          );
+
+          refresh();
+        }
+      );
+
     document.getElementById('calendarPrevious').onclick=()=>{
-      anchor=addDays(anchor,-7);
+      anchor=addDays(anchor,-(weekCount*7));
       document.getElementById('calendarJumpDate').value=anchor;
       refresh();
     };
@@ -2018,7 +2118,7 @@
     };
 
     document.getElementById('calendarNext').onclick=()=>{
-      anchor=addDays(anchor,7);
+      anchor=addDays(anchor,weekCount*7);
       document.getElementById('calendarJumpDate').value=anchor;
       refresh();
     };

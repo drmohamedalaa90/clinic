@@ -289,8 +289,147 @@ const Clinic = window.Clinic = {
     this.buildNavigation();
   },
 
+  routeStateKey() {
+    return this.user?.id
+      ? `clinic_route_state_${this.user.id}`
+      : 'clinic_route_state';
+  },
+
+  saveRouteState(page, params={}) {
+    if (!this.user?.id) return;
+    try {
+      sessionStorage.setItem(
+        this.routeStateKey(),
+        JSON.stringify({page,params:params||{}})
+      );
+    } catch (error) {
+      console.warn('Could not save clinic route state', error);
+    }
+  },
+
+  loadRouteState() {
+    if (!this.user?.id) return null;
+    try {
+      const raw=sessionStorage.getItem(this.routeStateKey());
+      if (!raw) return null;
+      const parsed=JSON.parse(raw);
+      if (!parsed || typeof parsed.page!=='string') return null;
+      return {
+        page:parsed.page,
+        params:
+          parsed.params && typeof parsed.params==='object'
+            ? parsed.params
+            : {}
+      };
+    } catch (error) {
+      console.warn('Could not restore clinic route state', error);
+      return null;
+    }
+  },
+
+  clearSessionState() {
+    if (!this.user?.id) return;
+    try {
+      sessionStorage.removeItem(this.routeStateKey());
+      sessionStorage.removeItem(
+        `clinic_attendance_reminder_${this.user.id}_${this.cairoDate()}`
+      );
+    } catch (error) {
+      console.warn('Could not clear clinic session state', error);
+    }
+  },
+
+  async maybeShowSecretaryCheckInReminder({freshLogin=false}={}) {
+    if (
+      !freshLogin
+      || !this.hasRole('secretary')
+      || this.isManagement()
+      || !window.matchMedia('(min-width: 900px)').matches
+    ) {
+      return;
+    }
+
+    const reminderKey=
+      `clinic_attendance_reminder_${this.user.id}_${this.cairoDate()}`;
+
+    if (sessionStorage.getItem(reminderKey)) return;
+
+    const {data,error}=await this.sb.rpc(
+      'frontend_get_staff_attendance_today',
+      {p_staff_id:this.user.id}
+    );
+
+    if (error) {
+      console.warn('Could not check secretary attendance reminder state',error);
+      return;
+    }
+
+    const record=Array.isArray(data)?(data[0]||null):data;
+    if (record?.check_in_at) return;
+
+    sessionStorage.setItem(reminderKey,'shown');
+
+    this.showModal({
+      title:this.lang==='ar'?'تذكير تسجيل الحضور':'Check-in reminder',
+      body:`
+        <div class="secretary-login-reminder">
+          <div class="secretary-login-reminder-icon">✓</div>
+          <div>
+            <strong>
+              ${this.lang==='ar'
+                ?'لم يتم تسجيل حضورك اليوم بعد'
+                :'You have not checked in today'}
+            </strong>
+            <p>
+              ${this.lang==='ar'
+                ?'أنتِ تستخدمين نسخة اللابتوب. يمكنك تسجيل الحضور الآن قبل بدء العمل.'
+                :'You are on the laptop site. You can check in now before starting work.'}
+            </p>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button id="loginReminderCheckIn" class="primary-button compact" type="button">
+            ${this.lang==='ar'?'تسجيل الحضور الآن':'Check in now'}
+          </button>
+
+          <button id="loginReminderLater" class="secondary-button" type="button">
+            ${this.lang==='ar'?'لاحقاً':'Later'}
+          </button>
+        </div>
+      `,
+      onOpen:(root)=>{
+        root.querySelector('#loginReminderLater')
+          ?.addEventListener('click',()=>this.closeModal());
+
+        root.querySelector('#loginReminderCheckIn')
+          ?.addEventListener('click',async()=>{
+            const button=root.querySelector('#loginReminderCheckIn');
+            button.disabled=true;
+
+            const {error}=await this.sb.rpc(
+              'frontend_staff_check_in',
+              {p_note:'Check-in from login reminder'}
+            );
+
+            button.disabled=false;
+
+            if (error) return this.toast(error.message,'error');
+
+            this.closeModal();
+            this.toast(
+              this.lang==='ar'
+                ?'تم تسجيل الحضور بنجاح.'
+                :'Checked in successfully.'
+            );
+          });
+      }
+    });
+  },
+
   async route(page, params={}) {
     this.currentPage = page;
+    this.saveRouteState(page, params);
     this.buildNavigation();
     this.closeMobileSidebar();
     const renderer = window.ClinicPages[page];
@@ -353,17 +492,31 @@ const Clinic = window.Clinic = {
     document.getElementById('appLoading').classList.add('hidden');
     document.getElementById('appRoot').classList.remove('hidden');
 
+    const savedRoute=this.loadRouteState();
+    const freshLogin=!savedRoute;
+
+    const initialRoute=savedRoute||{
+      page:
+        this.isDoctor() && !this.hasRole('owner')
+          ? 'today-clinic'
+          : (
+              this.hasRole('secretary') && !this.isManagement()
+                ? 'appointments'
+                : 'dashboard'
+            ),
+      params:{}
+    };
+
     await this.route(
-      this.isDoctor() && !this.hasRole('owner')
-        ? 'today-clinic'
-        : (
-            this.hasRole('secretary') && !this.isManagement()
-              ? 'appointments'
-              : 'dashboard'
-          )
+      initialRoute.page,
+      initialRoute.params
     );
 
     window.ClinicNotifications?.refresh?.();
+
+    await this.maybeShowSecretaryCheckInReminder({
+      freshLogin
+    });
   }
 };
 
@@ -376,7 +529,11 @@ window.addEventListener('DOMContentLoaded', () => {
     await Clinic.route(Clinic.currentPage);
   }));
 
-  document.getElementById('logoutButton').addEventListener('click', async () => { await sb.auth.signOut(); location.href='index.html'; });
+  document.getElementById('logoutButton').addEventListener('click', async () => {
+    Clinic.clearSessionState();
+    await sb.auth.signOut();
+    location.href='index.html';
+  });
   document.getElementById('menuButton').addEventListener('click', () => {
     document.getElementById('sidebar').classList.toggle('open');
     document.getElementById('sidebarOverlay').classList.toggle('show');

@@ -3423,3 +3423,123 @@ html[dir="rtl"] .dashboard-notification-row.unread {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* ========================================================
+   SAME-PAGE REFRESH + SECRETARY LOGIN REMINDER
+======================================================== */
+
+.secretary-login-reminder {
+  padding: 12px;
+  border: 1px solid #a7f3d0;
+  border-radius: 14px;
+  background: #ecfdf5;
+  display: grid;
+  grid-template-columns: 44px minmax(0,1fr);
+  gap: 11px;
+  align-items: center;
+}
+
+.secretary-login-reminder-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: white;
+  color: #047857;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.secretary-login-reminder > div:last-child {
+  display: grid;
+  gap: 4px;
+}
+
+.secretary-login-reminder strong {
+  color: #065f46;
+  font-size: 14px;
+}
+
+.secretary-login-reminder p {
+  margin: 0;
+  color: #047857;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+
+/* ========================================================
+   CALENDAR — SATURDAY START + WEEKS PER PAGE
+======================================================== */
+
+.calendar-weeks-control {
+  min-width: 145px;
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.calendar-weeks-control .control {
+  min-height: 43px;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.calendar-jump-control {
+  min-width: 185px;
+  font-size: 10px;
+}
+
+.calendar-jump-control .control {
+  min-height: 45px;
+  padding-inline: 12px;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: .02em;
+}
+
+.scheduler-day-card.saturday-column {
+  background: #eefaf7 !important;
+  box-shadow: inset 0 4px 0 #0e8a78;
+}
+
+.scheduler-day-card.saturday-column .scheduler-day-header strong {
+  color: #087161;
+}
+
+.scheduler-day-card.saturday-column .scheduler-day-header {
+  border-bottom-color: #bce7dd;
+}
+
+.scheduler-week-heading h3 {
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* ========================================================
+   BOOKING — AGE ↔ BIRTH YEAR
+======================================================== */
+
+.booking-age-hint {
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 1.35;
+  font-weight: 500;
+}
+
+@media (max-width: 760px) {
+  .calendar-weeks-control,
+  .calendar-jump-control {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .calendar-weeks-control .control,
+  .calendar-jump-control .control {
+    width: 100%;
+  }
+}
