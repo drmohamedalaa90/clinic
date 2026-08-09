@@ -19,7 +19,7 @@ const Clinic = window.Clinic = {
       reception: 'Reception Desk', notifications: 'Notifications', clinicManagement: 'Clinic Management', loading: 'Loading...', noData: 'No data found'
     },
     ar: {
-      clinic: 'عيادة العمليات', logout: 'تسجيل الخروج', dashboard: 'الرئيسية', patients: 'المرضى', appointments: 'الحجوزات',
+      clinic: 'إدارة العيادة', logout: 'تسجيل الخروج', dashboard: 'الرئيسية', patients: 'المرضى', appointments: 'الحجوزات',
       schedules: 'جداول الأطباء', finance: 'المالية', logistics: 'احتياجات العيادة', attendance: 'الحضور والانصراف', reports: 'التقارير',
       users: 'المستخدمون', audit: 'سجل النشاط', settings: 'الإعدادات', todayClinic: 'عيادة اليوم', queue: 'قائمة الانتظار',
       referrals: 'التحويلات', mySchedule: 'جدولي', profile: 'ملفي الشخصي', technical: 'الإدارة التقنية',

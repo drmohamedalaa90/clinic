@@ -28,6 +28,37 @@
   }
   const firstRow=data=>Array.isArray(data)?(data[0]||null):data;
 
+  function isDesktopAttendanceDevice(){
+    return window.matchMedia('(min-width: 900px)').matches;
+  }
+
+  function attendanceDuration(record){
+    if(!record?.check_in_at) return '—';
+
+    const start=new Date(record.check_in_at).getTime();
+    const end=record.check_out_at
+      ? new Date(record.check_out_at).getTime()
+      : Date.now();
+
+    if(!Number.isFinite(start) || !Number.isFinite(end) || end < start){
+      return '—';
+    }
+
+    const total=Math.floor((end-start)/60000);
+    const h=Math.floor(total/60);
+    const m=total%60;
+
+    return `${h} h ${m} min`;
+  }
+
+  function displayWorkDate(value){
+    if(!value) return '—';
+    const parts=String(value).slice(0,10).split('-');
+    return parts.length===3
+      ? `${parts[2]}/${parts[1]}/${parts[0]}`
+      : value;
+  }
+
   async function render(){
     const c=C(); if(!(c.hasRole('secretary')||c.isManagement())) return c.route('dashboard');
     c.setTitle(c.t('attendance'));
@@ -46,19 +77,409 @@
     if(staffSelect) staffSelect.onchange=()=>{staffId=staffSelect.value;showToday();};
 
     async function showToday(){
-      if(!staffId){area.innerHTML=`<div class="empty-state">${c.lang==='ar'?'لا توجد سكرتارية نشطة.':'No active secretary account.'}</div>`;return;}
+      if(!staffId){
+        area.innerHTML=`<div class="empty-state">${c.lang==='ar'?'لا توجد سكرتارية نشطة.':'No active secretary account.'}</div>`;
+        return;
+      }
+
       const today=c.cairoDate();
-      const [{data:record},{data:schedules}] = await Promise.all([
-        c.sb.from('attendance_records').select('*').eq('staff_id',staffId).eq('work_date',today).maybeSingle(),
-        c.sb.from('staff_work_schedules').select('*').eq('staff_id',staffId).eq('is_active',true).order('weekday')
+
+      const [
+        {data:record,error:recordError},
+        scheduleResult,
+        historyResult
+      ] = await Promise.all([
+        c.sb
+          .from('attendance_records')
+          .select('*')
+          .eq('staff_id',staffId)
+          .eq('work_date',today)
+          .maybeSingle(),
+
+        c.sb.rpc(
+          'frontend_get_staff_work_schedule',
+          {p_staff_id:staffId}
+        ),
+
+        c.sb.rpc(
+          'frontend_get_staff_attendance_history',
+          {
+            p_staff_id:staffId,
+            p_days:45
+          }
+        )
       ]);
-      const weekday=((new Date(`${today}T12:00:00+03:00`).getDay()+6)%7)+1;
-      const sch=(schedules||[]).find(x=>Number(x.weekday)===weekday && today>=x.effective_from && (!x.effective_until||today<=x.effective_until));
-      area.innerHTML=`<div class="attendance-today-grid"><article class="attendance-clock-card"><span class="eyebrow">${c.formatDate(today)}</span><h3>${sch?`${sch.start_time.slice(0,5)} → ${sch.end_time.slice(0,5)}`:(c.lang==='ar'?'لا يوجد جدول اليوم':'No schedule today')}</h3><div class="attendance-state">${record?`${c.statusPill(record.check_out_at?'completed':'active')}<strong>${c.lang==='ar'?'دخول':'In'}: ${c.formatTime(record.check_in_at)}</strong><strong>${c.lang==='ar'?'خروج':'Out'}: ${c.formatTime(record.check_out_at)}</strong><span>${c.lang==='ar'?'تأخير':'Late'} ${record.late_minutes||0} min • ${c.lang==='ar'?'خروج مبكر':'Early'} ${record.early_leave_minutes||0} min</span>`:`<span class="muted">${c.lang==='ar'?'لم يتم تسجيل الحضور بعد.':'No attendance recorded yet.'}</span>`}</div>${!c.isManagement()&&sch?`<div class="form-actions">${!record?`<button id="staffCheckIn" class="primary-button compact">${c.lang==='ar'?'تسجيل حضور':'Check in'}</button>`:!record.check_out_at?`<button id="staffCheckOut" class="primary-button compact">${c.lang==='ar'?'تسجيل انصراف':'Check out'}</button>`:''}</div>`:''}${c.isManagement()?`<div class="form-actions"><button id="manualAttendance" class="secondary-button">${record?(c.lang==='ar'?'تصحيح السجل':'Adjust record'):(c.lang==='ar'?'إدخال يدوي':'Manual attendance')}</button><button id="addStaffSchedule" class="secondary-button">+ ${c.lang==='ar'?'جدول عمل':'Work schedule'}</button></div>`:''}</article><article><h3>${c.lang==='ar'?'الجدول الأسبوعي':'Weekly schedule'}</h3><div class="stack-list space-top">${(schedules||[]).length?sortClinicWeek(schedules||[]).map(s=>`<div class="list-card"><div><strong>${weekdayLabel(s.weekday)}</strong><div class="small-note">${s.start_time.slice(0,5)} → ${s.end_time.slice(0,5)} • ${c.lang==='ar'?'سماح':'Grace'} ${s.late_grace_minutes} min</div></div>${c.statusPill(s.is_active?'active':'inactive')}</div>`).join(''):`<div class="empty-state">${c.t('noData')}</div>`}</div></article></div>`;
-      document.getElementById('staffCheckIn')?.addEventListener('click',async()=>{const {error}=await c.sb.rpc('staff_check_in',{p_note:null});if(error)return c.toast(error.message,'error');c.toast('Checked in');showToday();});
-      document.getElementById('staffCheckOut')?.addEventListener('click',async()=>{const {error}=await c.sb.rpc('staff_check_out',{p_note:null});if(error)return c.toast(error.message,'error');c.toast('Checked out');showToday();});
-      document.getElementById('manualAttendance')?.addEventListener('click',()=>manualModal(staffId,record));
-      document.getElementById('addStaffSchedule')?.addEventListener('click',()=>scheduleModal(staffId));
+
+      if(recordError){
+        c.toast(recordError.message,'error');
+      }
+
+      const schedules=scheduleResult.data||[];
+      const history=historyResult.data||[];
+
+      if(scheduleResult.error){
+        c.toast(scheduleResult.error.message,'error');
+      }
+
+      if(historyResult.error){
+        c.toast(historyResult.error.message,'error');
+      }
+
+      const weekday=
+        ((new Date(`${today}T12:00:00+03:00`).getDay()+6)%7)+1;
+
+      const sch=(schedules||[]).find(
+        x=>
+          Number(x.weekday)===weekday
+          &&
+          today>=x.effective_from
+          &&
+          (!x.effective_until||today<=x.effective_until)
+      );
+
+      const desktopAllowed=isDesktopAttendanceDevice();
+      const isSecretarySelf=
+        !c.isManagement()
+        &&
+        c.hasRole('secretary')
+        &&
+        staffId===c.user.id;
+
+      area.innerHTML=`
+        <div class="attendance-today-grid">
+
+          <article class="attendance-clock-card">
+
+            <span class="eyebrow">
+              ${c.formatDate(today)}
+            </span>
+
+            <h3>
+              ${
+                sch
+                  ? `${sch.start_time.slice(0,5)} → ${sch.end_time.slice(0,5)}`
+                  : (
+                      c.lang==='ar'
+                        ?'لا يوجد جدول اليوم'
+                        :'No schedule today'
+                    )
+              }
+            </h3>
+
+            <div class="attendance-state">
+
+              ${
+                record
+                  ? `
+                    ${c.statusPill(record.check_out_at?'completed':'active')}
+
+                    <strong>
+                      ${c.lang==='ar'?'دخول':'In'}:
+                      ${c.formatTime(record.check_in_at)}
+                    </strong>
+
+                    <strong>
+                      ${c.lang==='ar'?'خروج':'Out'}:
+                      ${c.formatTime(record.check_out_at)}
+                    </strong>
+
+                    <strong>
+                      ${c.lang==='ar'?'مدة البقاء':'Duration'}:
+                      ${attendanceDuration(record)}
+                    </strong>
+
+                    <span>
+                      ${c.lang==='ar'?'تأخير':'Late'}
+                      ${record.late_minutes||0} min
+                      •
+                      ${c.lang==='ar'?'خروج مبكر':'Early'}
+                      ${record.early_leave_minutes||0} min
+                    </span>
+                  `
+                  : `
+                    <span class="muted">
+                      ${c.lang==='ar'
+                        ?'لم يتم تسجيل الحضور بعد.'
+                        :'No attendance recorded yet.'}
+                    </span>
+                  `
+              }
+
+            </div>
+
+            ${
+              isSecretarySelf && sch
+                ? (
+                    desktopAllowed
+                      ? `
+                        <div class="form-actions">
+                          ${
+                            !record
+                              ? `
+                                <button
+                                  id="staffCheckIn"
+                                  class="primary-button compact"
+                                >
+                                  ${c.lang==='ar'?'تسجيل حضور':'Check in'}
+                                </button>
+                              `
+                              : !record.check_out_at
+                                ? `
+                                  <button
+                                    id="staffCheckOut"
+                                    class="primary-button compact"
+                                  >
+                                    ${c.lang==='ar'?'تسجيل انصراف':'Check out'}
+                                  </button>
+                                `
+                                : ''
+                          }
+                        </div>
+                      `
+                      : `
+                        <div class="attendance-desktop-only-note">
+                          💻
+                          ${c.lang==='ar'
+                            ?'تسجيل الحضور والانصراف متاح من نسخة اللابتوب فقط.'
+                            :'Check-in and check-out are available from the laptop site only.'}
+                        </div>
+                      `
+                  )
+                : ''
+            }
+
+            ${
+              c.isManagement()
+                ? `
+                  <div class="form-actions">
+                    <button
+                      id="manualAttendance"
+                      class="secondary-button"
+                    >
+                      ${
+                        record
+                          ? (
+                              c.lang==='ar'
+                                ?'تصحيح السجل'
+                                :'Adjust record'
+                            )
+                          : (
+                              c.lang==='ar'
+                                ?'إدخال يدوي'
+                                :'Manual attendance'
+                            )
+                      }
+                    </button>
+
+                    <button
+                      id="addStaffSchedule"
+                      class="secondary-button"
+                    >
+                      + ${c.lang==='ar'?'جدول عمل':'Work schedule'}
+                    </button>
+                  </div>
+                `
+                : ''
+            }
+
+          </article>
+
+
+          <article>
+
+            <h3>
+              ${c.lang==='ar'
+                ?'الجدول الأسبوعي'
+                :'Weekly schedule'}
+            </h3>
+
+            <div class="stack-list space-top">
+
+              ${
+                (schedules||[]).length
+                  ? sortClinicWeek(schedules||[]).map(s=>`
+                      <div class="list-card">
+                        <div>
+                          <strong>
+                            ${weekdayLabel(s.weekday)}
+                          </strong>
+
+                          <div class="small-note">
+                            ${s.start_time.slice(0,5)}
+                            →
+                            ${s.end_time.slice(0,5)}
+                            •
+                            ${c.lang==='ar'?'سماح':'Grace'}
+                            ${s.late_grace_minutes}
+                            min
+                          </div>
+                        </div>
+
+                        ${c.statusPill(s.is_active?'active':'inactive')}
+                      </div>
+                    `).join('')
+                  : `<div class="empty-state">${c.t('noData')}</div>`
+              }
+
+            </div>
+
+          </article>
+
+        </div>
+
+
+        <section class="attendance-history-section">
+
+          <div class="section-head">
+            <div>
+              <span class="eyebrow">
+                ${c.lang==='ar'
+                  ?'السجل اليومي'
+                  :'DAILY ATTENDANCE'}
+              </span>
+
+              <h3>
+                ${c.lang==='ar'
+                  ?'الحضور والانصراف ومدة البقاء'
+                  :'Check-in, check-out & clinic duration'}
+              </h3>
+            </div>
+          </div>
+
+          ${
+            history.length
+              ? `
+                <div class="table-wrap">
+                  <table class="data-table attendance-history-table">
+                    <thead>
+                      <tr>
+                        <th>${c.lang==='ar'?'التاريخ':'Date'}</th>
+                        <th>${c.lang==='ar'?'دخول':'Check in'}</th>
+                        <th>${c.lang==='ar'?'خروج':'Check out'}</th>
+                        <th>${c.lang==='ar'?'مدة البقاء':'Duration'}</th>
+                        <th>${c.lang==='ar'?'الحالة':'Status'}</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      ${history.map(r=>`
+                        <tr>
+                          <td>
+                            <strong>${displayWorkDate(r.work_date)}</strong>
+                          </td>
+
+                          <td>${c.formatTime(r.check_in_at)}</td>
+
+                          <td>${c.formatTime(r.check_out_at)}</td>
+
+                          <td>
+                            <strong>${attendanceDuration(r)}</strong>
+                          </td>
+
+                          <td>
+                            ${
+                              r.check_out_at
+                                ? c.statusPill('completed')
+                                : c.statusPill('active')
+                            }
+                          </td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              `
+              : `
+                <div class="empty-state">
+                  ${c.lang==='ar'
+                    ?'لا يوجد سجل حضور حتى الآن.'
+                    :'No attendance history yet.'}
+                </div>
+              `
+          }
+
+        </section>
+      `;
+
+      document
+        .getElementById('staffCheckIn')
+        ?.addEventListener(
+          'click',
+          async()=>{
+            if(!isDesktopAttendanceDevice()){
+              return c.toast(
+                c.lang==='ar'
+                  ?'تسجيل الحضور متاح من اللابتوب فقط.'
+                  :'Check-in is available from the laptop site only.',
+                'error'
+              );
+            }
+
+            const {error}=await c.sb.rpc(
+              'staff_check_in',
+              {p_note:null}
+            );
+
+            if(error){
+              return c.toast(error.message,'error');
+            }
+
+            c.toast(
+              c.lang==='ar'
+                ?'تم تسجيل الحضور'
+                :'Checked in'
+            );
+
+            showToday();
+          }
+        );
+
+      document
+        .getElementById('staffCheckOut')
+        ?.addEventListener(
+          'click',
+          async()=>{
+            if(!isDesktopAttendanceDevice()){
+              return c.toast(
+                c.lang==='ar'
+                  ?'تسجيل الانصراف متاح من اللابتوب فقط.'
+                  :'Check-out is available from the laptop site only.',
+                'error'
+              );
+            }
+
+            const {error}=await c.sb.rpc(
+              'staff_check_out',
+              {p_note:null}
+            );
+
+            if(error){
+              return c.toast(error.message,'error');
+            }
+
+            c.toast(
+              c.lang==='ar'
+                ?'تم تسجيل الانصراف'
+                :'Checked out'
+            );
+
+            showToday();
+          }
+        );
+
+      document
+        .getElementById('manualAttendance')
+        ?.addEventListener(
+          'click',
+          ()=>manualModal(staffId,record)
+        );
+
+      document
+        .getElementById('addStaffSchedule')
+        ?.addEventListener(
+          'click',
+          ()=>scheduleModal(staffId)
+        );
     }
 
     async function showLeave(){

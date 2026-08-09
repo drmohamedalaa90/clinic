@@ -478,6 +478,10 @@
       `,
 
       onOpen:(root)=>{
+        root
+          .querySelector('.modal-card')
+          ?.classList.add('booking-modal-card');
+
         const doctor=root.querySelector('#bookingDoctor');
         const dateInput=root.querySelector('#bookingDate');
         const slot=root.querySelector('#bookingSlot');
@@ -1030,7 +1034,7 @@
 
                 return `
                   <button
-                    class="hour-patient-seat occupied status-${C.escape(appointment.status)} ${appointment.booking_source==='public' ? 'public-booking' : ''}"
+                    class="hour-patient-seat occupied status-${C.escape(appointment.status)}"
                     data-appointment-id="${appointment.id}"
                     type="button"
                   >

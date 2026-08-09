@@ -44,7 +44,9 @@
       closingResult,
       logisticsRequestResult,
       clinicExpenseResult,
-      expenseCategoryResult
+      expenseCategoryResult,
+      checkedInResult,
+      feeEditsResult
     ] = await Promise.all([
 
       c.sb.rpc(
@@ -120,7 +122,32 @@
           'is_active',
           true
         )
-        .order('name_en')
+        .order('name_en'),
+
+      c.sb
+        .from('appointments')
+        .select(
+          'id,appointment_number,patient_id,doctor_id,status,scheduled_start,checked_in_at'
+        )
+        .not(
+          'checked_in_at',
+          'is',
+          null
+        )
+        .order(
+          'checked_in_at',
+          {ascending:false}
+        )
+        .limit(300),
+
+      c.sb
+        .from('booking_income_edits')
+        .select('*')
+        .order(
+          'edited_at',
+          {ascending:false}
+        )
+        .limit(500)
     ]);
 
 
@@ -155,10 +182,43 @@
         )
       );
 
+    const checkedInCases=
+      checkedInResult.data||[];
+
+    const feeEdits=
+      feeEditsResult.data||[];
+
+    const incomeByAppointment=
+      new Map(
+        bookingIncome
+          .filter(x=>!x.is_voided)
+          .map(x=>[
+            x.appointment_id,
+            x
+          ])
+      );
+
+    const latestFeeEditByAppointment=
+      new Map();
+
+    feeEdits.forEach(edit=>{
+      if(
+        !latestFeeEditByAppointment.has(
+          edit.appointment_id
+        )
+      ){
+        latestFeeEditByAppointment.set(
+          edit.appointment_id,
+          edit
+        );
+      }
+    });
+
 
     const allPatientIds=[
       ...bookingIncome.map(x=>x.patient_id),
-      ...invoices.map(x=>x.patient_id)
+      ...invoices.map(x=>x.patient_id),
+      ...checkedInCases.map(x=>x.patient_id)
     ];
 
     const pm=
@@ -198,6 +258,18 @@
               ?'فاتورة'
               :'Invoice'}
           </button>
+
+          ${c.hasRole('owner')
+            ? `<button
+                 id="resetFinanceTest"
+                 class="danger-button compact"
+               >
+                 ${c.lang==='ar'
+                   ?'إعادة ضبط المالية'
+                   :'Reset finance'}
+               </button>`
+            : ''
+          }
 
         </div>
 
@@ -295,6 +367,15 @@
 
         <button
           class="tab active"
+          data-tab="checked-in"
+        >
+          ${c.lang==='ar'
+            ?'الحالات المسجلة وصولها'
+            :'Checked-in cases'}
+        </button>
+
+        <button
+          class="tab"
           data-tab="income"
         >
           ${c.lang==='ar'
@@ -353,6 +434,425 @@
       document.getElementById(
         'financeArea'
       );
+
+
+    function showCheckedInCases(){
+
+      area.innerHTML=checkedInCases.length
+        ? `
+          <div class="section-head">
+            <div>
+              <span class="eyebrow">
+                ${c.lang==='ar'
+                  ?'الحالات التي تم تسجيل وصولها'
+                  :'CHECKED-IN CASES'}
+              </span>
+
+              <h3>
+                ${c.lang==='ar'
+                  ?'كل المرضى الذين تم تسجيل وصولهم'
+                  :'All checked-in patients'}
+              </h3>
+
+              <p class="muted">
+                ${c.lang==='ar'
+                  ?'يمكن تعديل الرسوم أو طريقة الدفع، ويجب كتابة سبب كل تعديل.'
+                  :'Fee or payment method can be edited, and every edit requires a reason.'}
+              </p>
+            </div>
+          </div>
+
+
+          <div class="table-wrap">
+            <table class="data-table finance-checkin-table">
+
+              <thead>
+                <tr>
+                  <th>${c.lang==='ar'?'المريض':'Patient'}</th>
+                  <th>${c.lang==='ar'?'الطبيب':'Doctor'}</th>
+                  <th>${c.lang==='ar'?'تسجيل الوصول':'Check-in'}</th>
+                  <th>${c.lang==='ar'?'الحالة':'Status'}</th>
+                  <th>${c.lang==='ar'?'الرسوم':'Fee'}</th>
+                  <th>${c.lang==='ar'?'الدفع':'Method'}</th>
+                  <th>${c.lang==='ar'?'آخر سبب تعديل':'Last edit reason'}</th>
+                  <th></th>
+                </tr>
+              </thead>
+
+              <tbody>
+                ${checkedInCases.map(a=>{
+                  const p=
+                    pm.get(a.patient_id)||{};
+
+                  const income=
+                    incomeByAppointment.get(a.id);
+
+                  const lastEdit=
+                    latestFeeEditByAppointment.get(a.id);
+
+                  return `
+                    <tr>
+                      <td>
+                        <strong>
+                          ${c.escape(
+                            p.english_name||
+                            p.arabic_name||
+                            'Patient'
+                          )}
+                        </strong>
+
+                        <div class="subline">
+                          ${c.escape(
+                            p.medical_record_number||
+                            a.appointment_number||
+                            ''
+                          )}
+                        </div>
+                      </td>
+
+                      <td>
+                        ${c.escape(
+                          c.doctorName(
+                            a.doctor_id
+                          )
+                        )}
+                      </td>
+
+                      <td>
+                        ${c.formatDate(
+                          a.checked_in_at,
+                          {
+                            hour:'2-digit',
+                            minute:'2-digit'
+                          }
+                        )}
+                      </td>
+
+                      <td>
+                        ${c.statusPill(
+                          a.status
+                        )}
+                      </td>
+
+                      <td>
+                        <strong>
+                          ${
+                            income
+                              ? c.formatMoney(
+                                  income.amount
+                                )
+                              : (
+                                  c.lang==='ar'
+                                    ?'غير مسجل'
+                                    :'Not recorded'
+                                )
+                          }
+                        </strong>
+                      </td>
+
+                      <td>
+                        ${c.escape(
+                          income?.payment_method||
+                          '—'
+                        )}
+                      </td>
+
+                      <td>
+                        <small>
+                          ${c.escape(
+                            lastEdit?.reason||
+                            '—'
+                          )}
+                        </small>
+                      </td>
+
+                      <td>
+                        <button
+                          class="table-action"
+                          data-edit-checkin-fee="${a.id}"
+                        >
+                          ${c.lang==='ar'
+                            ?'تعديل'
+                            :'Edit'}
+                        </button>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+
+            </table>
+          </div>
+        `
+        : `
+          <div class="empty-state">
+            ${c.lang==='ar'
+              ?'لا توجد حالات تم تسجيل وصولها حتى الآن.'
+              :'No checked-in cases yet.'}
+          </div>
+        `;
+
+
+      area
+        .querySelectorAll(
+          '[data-edit-checkin-fee]'
+        )
+        .forEach(button=>{
+
+          button.onclick=()=>{
+
+            const appointment=
+              checkedInCases.find(
+                x=>x.id===
+                  button.dataset.editCheckinFee
+              );
+
+            const income=
+              incomeByAppointment.get(
+                appointment.id
+              );
+
+            editCheckedInFeeModal(
+              appointment,
+              income
+            );
+          };
+
+        });
+    }
+
+
+    function editCheckedInFeeModal(
+      appointment,
+      income
+    ){
+      const patient=
+        pm.get(
+          appointment.patient_id
+        )||{};
+
+      c.showModal({
+        title:
+          c.lang==='ar'
+            ?'تعديل بيانات الرسوم'
+            :'Edit check-in fee',
+
+        body:`
+          <form
+            id="editCheckinFeeForm"
+            class="form-grid"
+          >
+
+            <div class="finance-patient-edit-summary full-span">
+              <div>
+                <strong>
+                  ${c.escape(
+                    patient.english_name||
+                    patient.arabic_name||
+                    'Patient'
+                  )}
+                </strong>
+
+                <small>
+                  ${c.escape(
+                    patient.medical_record_number||
+                    appointment.appointment_number||
+                    ''
+                  )}
+                  •
+                  ${c.formatDate(
+                    appointment.checked_in_at,
+                    {
+                      hour:'2-digit',
+                      minute:'2-digit'
+                    }
+                  )}
+                </small>
+              </div>
+            </div>
+
+
+            <label>
+              ${c.lang==='ar'
+                ?'الرسوم'
+                :'Fee'}
+
+              <input
+                id="editFeeAmount"
+                class="control"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value="${income?.amount||''}"
+                required
+              >
+            </label>
+
+
+            <label>
+              ${c.lang==='ar'
+                ?'طريقة الدفع'
+                :'Payment method'}
+
+              <select
+                id="editFeeMethod"
+                class="control"
+                required
+              >
+                ${[
+                  ['cash','Cash'],
+                  ['instapay','InstaPay'],
+                  ['card','Card'],
+                  ['bank_transfer','Bank transfer'],
+                  ['other','Other']
+                ].map(([value,label])=>`
+                  <option
+                    value="${value}"
+                    ${
+                      (income?.payment_method||'cash')===value
+                        ?'selected'
+                        :''
+                    }
+                  >
+                    ${label}
+                  </option>
+                `).join('')}
+              </select>
+            </label>
+
+
+            <label class="full-span">
+              ${c.lang==='ar'
+                ?'سبب التعديل'
+                :'Reason for edit'}
+
+              <textarea
+                id="editFeeReason"
+                class="control"
+                required
+                placeholder="${
+                  c.lang==='ar'
+                    ?'اكتب سبب التعديل بوضوح'
+                    :'Write the reason for this edit'
+                }"
+              ></textarea>
+            </label>
+
+
+            <label class="full-span">
+              ${c.lang==='ar'
+                ?'ملاحظة مالية (اختياري)'
+                :'Finance note (optional)'}
+
+              <textarea
+                id="editFeeNote"
+                class="control"
+              >${c.escape(
+                income?.note||
+                ''
+              )}</textarea>
+            </label>
+
+
+            <div class="form-actions full-span">
+              <button
+                type="submit"
+                class="primary-button compact"
+              >
+                ${c.lang==='ar'
+                  ?'حفظ التعديل'
+                  :'Save edit'}
+              </button>
+            </div>
+
+          </form>
+        `,
+
+        onOpen:(root)=>{
+
+          root
+            .querySelector(
+              '#editCheckinFeeForm'
+            )
+            .onsubmit=async event=>{
+
+              event.preventDefault();
+
+              const reason=
+                root
+                  .querySelector(
+                    '#editFeeReason'
+                  )
+                  .value
+                  .trim();
+
+              if(!reason){
+                return c.toast(
+                  c.lang==='ar'
+                    ?'سبب التعديل مطلوب.'
+                    :'Edit reason is required.',
+                  'error'
+                );
+              }
+
+
+              const {error}=await c.sb.rpc(
+                'finance_edit_checkin_fee',
+                {
+                  p_appointment_id:
+                    appointment.id,
+
+                  p_amount:
+                    Number(
+                      root
+                        .querySelector(
+                          '#editFeeAmount'
+                        )
+                        .value
+                    ),
+
+                  p_payment_method:
+                    root
+                      .querySelector(
+                        '#editFeeMethod'
+                      )
+                      .value,
+
+                  p_reason:
+                    reason,
+
+                  p_note:
+                    root
+                      .querySelector(
+                        '#editFeeNote'
+                      )
+                      .value||
+                    null
+                }
+              );
+
+
+              if(error){
+                return c.toast(
+                  error.message,
+                  'error'
+                );
+              }
+
+
+              c.closeModal();
+
+              c.toast(
+                c.lang==='ar'
+                  ?'تم حفظ التعديل وسبب التعديل.'
+                  :'Fee edit and reason saved.'
+              );
+
+              c.route('finance');
+            };
+        }
+      });
+    }
 
 
     function showIncome(){
@@ -1843,6 +2343,12 @@
 
 
           if(
+            button.dataset.tab==='checked-in'
+          ){
+            showCheckedInCases();
+          }
+
+          if(
             button.dataset.tab==='income'
           ){
             showIncome();
@@ -1881,7 +2387,48 @@
       .onclick=newInvoiceModal;
 
 
-    showIncome();
+    document
+      .getElementById('resetFinanceTest')
+      ?.addEventListener(
+        'click',
+        async()=>{
+          const phrase=prompt(
+            c.lang==='ar'
+              ?'هذا سيحذف كل معاملات المالية التجريبية: الدخل، الفواتير، المدفوعات، الإغلاق النقدي والمصروفات. قائمة أسعار الخدمات ستبقى. اكتب RESET FINANCE للمتابعة.'
+              :'This deletes all test finance transactions: income, invoices, payments, cash closings and expenses. The service price list is preserved. Type RESET FINANCE to continue.'
+          );
+
+          if(phrase!=='RESET FINANCE'){
+            return;
+          }
+
+          const {error}=await c.sb.rpc(
+            'owner_reset_finance_test_data',
+            {
+              p_confirmation:
+                phrase
+            }
+          );
+
+          if(error){
+            return c.toast(
+              error.message,
+              'error'
+            );
+          }
+
+          c.toast(
+            c.lang==='ar'
+              ?'تمت إعادة ضبط البيانات المالية التجريبية.'
+              :'Test finance data reset.'
+          );
+
+          c.route('finance');
+        }
+      );
+
+
+    showCheckedInCases();
   }
 
 

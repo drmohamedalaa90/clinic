@@ -84,7 +84,7 @@ window.ClinicNotifications = {
       );
     }
 
-    const data = [
+    const sortedData = [
       ...(baseResult.data || []),
       ...(logisticsManagementResult.data || [])
     ]
@@ -92,7 +92,39 @@ window.ClinicNotifications = {
         Number(b.priority || 0) - Number(a.priority || 0)
         ||
         new Date(b.event_time || 0) - new Date(a.event_time || 0)
-      )
+      );
+
+    // Defensive booking de-duplication.
+    // Some older database builds had the appointment status-history
+    // trigger installed twice, so the same booking could produce two
+    // status-history rows a fraction of a second apart.
+    const seen = new Set();
+
+    const data = sortedData
+      .filter(item => {
+        let key = item.notification_key;
+
+        if(item.category === 'booking'){
+          const bucket =
+            Math.floor(
+              new Date(item.event_time || 0).getTime() / 5000
+            );
+
+          key = [
+            'booking',
+            item.entity_id || '',
+            item.title_en || item.title_ar || '',
+            bucket
+          ].join(':');
+        }
+
+        if(seen.has(key)){
+          return false;
+        }
+
+        seen.add(key);
+        return true;
+      })
       .slice(0, 100);
 
     this.items = data.map(x => ({

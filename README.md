@@ -1,114 +1,109 @@
-# Operation Clinic — Owner Logistics Master List
+# Operation Clinic — Five Requested Changes
 
-This patch changes Logistics into the requested operational workflow.
+This patch contains the five requested updates.
 
-## Owner
+## 1. Arabic clinic name
 
-The Owner controls a permanent **Clinic items** master list.
+`Operation Clinic` now displays in Arabic as:
 
-Each item can contain:
-- English name
-- Arabic name
-- expense category
-- usual quantity
-- unit
-- notes
-- display order
-- active / inactive
+**إدارة العيادة**
 
-Example items:
-- Water bottles
-- Paper cups
-- Printer paper
-- Toner
-- Cleaning products
-- Tissues
-- ECG paper
+## 2. Sara attendance
 
-The owner can add, edit, activate or disable items.
+Secretary attendance now includes:
 
-## Secretary
+- Check in
+- Check out
+- Check-in time
+- Check-out time
+- Duration in clinic
+- Daily attendance history
+- Weekly work schedule
 
-The secretary does NOT type random logistics requests anymore.
+Check-in / check-out buttons are shown only on laptop/desktop layout
+(`>= 900px`). On mobile Sara sees her attendance information but cannot use
+the attendance buttons.
 
-She opens:
+Owner, Manager and Deputy Manager can open Attendance, choose the secretary,
+see the weekly schedule, daily history, and manually adjust records.
 
-**Logistics -> Clinic items**
+## 3. Compact laptop booking popup
 
-and selects:
+The internal booking window is now laid out in two columns on laptop:
 
-**Missing — order**
+- Appointment details + notes on one side
+- Patient details on the other
 
-She enters:
-- required quantity
-- routine / urgent
-- needed-by date
-- note
+Spacing, input height and headings are reduced on laptop so the normal booking
+flow fits without vertical scrolling on ordinary laptop screens.
 
-The order is created from the Owner's approved master list.
+Mobile remains single-column.
 
-## Management notification
+## 4. Finance: all checked-in cases
 
-When the secretary sends a missing-item order:
+Finance gets a first tab:
 
-- Owner
-- Manager
-- Deputy manager
+**Checked-in cases**
 
-receive an orange Logistics notification:
+Every appointment with `checked_in_at` appears there even if the case later
+moves to Waiting, With Doctor or Completed.
 
-**Logistics order awaiting approval**
+Each row shows:
 
-Management can open Logistics and:
-- Approve
-- Reject
+- Patient
+- Doctor
+- Check-in date/time
+- Current status
+- Fee
+- Payment method
+- Last edit reason
 
-The existing deficiency notification remains available too.
+Each row has **Edit**.
 
-## Price / Finance
+Editing:
+- can change fee
+- can change payment method
+- can change finance note
+- MUST include a reason
 
-The secretary does NOT enter the purchase price when reporting the missing item.
+Every edit is saved in `booking_income_edits` with old/new values, user and
+timestamp.
 
-After management approves the request:
+The existing Owner-only **Reset finance** control is preserved.
 
-**Finance -> Logistics expenses**
+## 5. Duplicate booking notifications
 
-shows the approved item with:
+The SQL:
+- removes duplicate appointment status-history triggers
+- creates exactly one canonical trigger
+- removes existing duplicate status-history rows
 
-**Enter price**
+The frontend also performs defensive booking de-duplication.
 
-The secretary records:
-- actual price
-- payment method
-- vendor
-- receipt/reference
-- date/time
-- notes
+## 6. Checked-in color
 
-This calls the existing `record_clinic_expense` workflow, links the financial
-expense to the logistics request, and the amount appears in the Finance
-expense ledger.
+Appointment status `arrived` / checked-in is now **red**, not violet.
 
-The logistics request then moves to the purchased/paid stage and can be marked
-Received / Complete.
-
-## Install
+## Installation
 
 ### Supabase
 
 Run the full contents of:
 
-`sql/logistics-master-list.sql`
+`sql/clinic-five-changes.sql`
 
 ### GitHub
 
 Replace:
-- `js/logistics.js`
+
+- `js/core.js`
+- `js/appointments.js`
+- `js/attendance.js`
 - `js/finance.js`
 - `js/notifications.js`
 - `css/style.css`
 - `sw.js`
 
-Then wait for GitHub Pages deployment and press:
+Then commit, wait for GitHub Pages deployment, and press:
 
 `Ctrl + Shift + R`

@@ -1176,7 +1176,7 @@ textarea.control { min-height:90px; resize:vertical; }
 .status-pill { display:inline-flex; align-items:center; text-transform:capitalize; }
 .status-booked,.status-open,.status-pending,.status-draft { background:#f1f5f9; color:#475569; }
 .status-confirmed,.status-approved { background:#eff6ff; color:#1d4ed8; }
-.status-arrived { background:#f5f3ff; color:#7c3aed; }
+.status-arrived { background:#fff1f2; color:#be123c; }
 .status-waiting,.status-partially-paid { background:#fff7ed; color:#c2410c; }
 .status-with-doctor,.status-in-progress,.status-active { background:#ecfeff; color:#0f766e; }
 .status-completed,.status-paid,.status-finalized { background:#ecfdf5; color:#15803d; }
@@ -2406,8 +2406,8 @@ html[dir="rtl"] .dashboard-notification-row.unread {
 }
 
 .hour-patient-seat.occupied.status-arrived {
-  background: #f5f3ff;
-  color: #6d28d9;
+  background: #fff1f2;
+  color: #be123c;
 }
 
 .hour-patient-seat.occupied.status-waiting {
@@ -3106,21 +3106,220 @@ html[dir="rtl"] .dashboard-notification-row.unread {
     width: 100%;
   }
 }
-/* Public patient-form bookings = light violet */
-.hour-patient-seat.occupied.status-booked.public-booking {
-  background: #f3edff !important;
-  color: #6d3bbd !important;
+
+
+/* ========================================================
+   BOOKING MODAL — COMPACT ON LAPTOP
+======================================================== */
+
+@media (min-width: 900px) {
+
+  .booking-modal-card {
+    width: min(1080px, 96vw);
+    max-height: calc(100vh - 24px);
+    overflow: hidden;
+  }
+
+  .booking-modal-card .modal-header {
+    padding: 11px 15px;
+  }
+
+  .booking-modal-card .modal-body {
+    padding: 11px 13px 13px;
+    overflow: hidden;
+  }
+
+  .booking-modal-card .booking-form-v2 {
+    display: grid;
+    grid-template-columns:
+      minmax(330px, .9fr)
+      minmax(520px, 1.35fr);
+    gap: 9px 11px;
+    align-items: start;
+  }
+
+  .booking-modal-card
+  .booking-form-v2
+  > .booking-form-section {
+    margin: 0;
+    padding: 10px 11px;
+    border-radius: 12px;
+  }
+
+  .booking-modal-card
+  .booking-form-v2
+  > .booking-form-section:nth-of-type(1) {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .booking-modal-card
+  .booking-form-v2
+  > .booking-form-section:nth-of-type(2) {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .booking-modal-card
+  .booking-form-v2
+  > .booking-form-section:nth-of-type(3) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .booking-modal-card
+  .booking-submit-row {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    margin-top: 0;
+  }
+
+  .booking-modal-card
+  .booking-section-heading {
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+
+  .booking-modal-card
+  .booking-section-heading h3 {
+    font-size: 13px;
+  }
+
+  .booking-modal-card
+  .eyebrow {
+    font-size: 9px;
+  }
+
+  .booking-modal-card
+  .booking-summary-grid {
+    gap: 7px 8px;
+  }
+
+  .booking-modal-card
+  .booking-form-section
+  .form-grid {
+    gap: 7px 8px;
+  }
+
+  .booking-modal-card
+  .booking-summary-grid label,
+  .booking-modal-card
+  .booking-form-section > label,
+  .booking-modal-card
+  .booking-form-section
+  .form-grid label {
+    gap: 4px;
+    font-size: 10px;
+  }
+
+  .booking-modal-card .control {
+    min-height: 36px;
+    padding: 6px 9px;
+  }
+
+  .booking-modal-card textarea.control {
+    min-height: 50px;
+    max-height: 58px;
+  }
+
+  .booking-modal-card
+  .patient-mode-panel {
+    min-height: 0;
+  }
+
+  .booking-modal-card
+  .patient-mode-switch {
+    padding: 2px;
+  }
+
+  .booking-modal-card
+  .patient-mode-btn {
+    padding: 5px 8px;
+    font-size: 9px;
+  }
+
+  .booking-modal-card
+  .existing-patient-results {
+    max-height: 190px;
+  }
+
+  .booking-modal-card
+  .booking-submit-row
+  .primary-button {
+    min-height: 38px;
+    padding-block: 8px;
+  }
 }
 
-.hour-patient-seat.occupied.status-booked.public-booking:hover {
-  background: #ece3ff !important;
+
+/* ========================================================
+   SECRETARY ATTENDANCE
+======================================================== */
+
+.attendance-desktop-only-note {
+  margin-top: 12px;
+  padding: 10px 11px;
+  border: 1px solid #dbe4ee;
+  border-radius: 11px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 10px;
+  line-height: 1.55;
 }
 
-.hour-patient-seat.occupied.status-booked.public-booking .seat-number {
-  background: #e6d9ff !important;
-  color: #6d3bbd !important;
+.attendance-history-section {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
 }
 
-.hour-patient-seat.occupied.status-booked.public-booking .seat-copy small {
-  color: #7b57b4 !important;
+.attendance-history-table td,
+.attendance-history-table th {
+  white-space: nowrap;
+}
+
+
+/* ========================================================
+   FINANCE — CHECKED-IN CASES
+======================================================== */
+
+.finance-patient-edit-summary {
+  padding: 11px 12px;
+  border: 1px solid #fecdd3;
+  border-radius: 12px;
+  background: #fff1f2;
+}
+
+.finance-patient-edit-summary > div {
+  display: grid;
+  gap: 3px;
+}
+
+.finance-patient-edit-summary strong {
+  color: #9f1239;
+  font-size: 13px;
+}
+
+.finance-patient-edit-summary small {
+  color: #be123c;
+  font-size: 9px;
+}
+
+.finance-checkin-table .status-arrived {
+  background: #ffe4e6;
+  color: #be123c;
+}
+
+
+/* ========================================================
+   CHECKED-IN / ARRIVED = RED THEME
+======================================================== */
+
+.hour-patient-seat.occupied.status-arrived .seat-number {
+  background: #ffe4e6;
+  color: #be123c;
+}
+
+.hour-patient-seat.occupied.status-arrived .seat-copy small {
+  color: #be123c;
 }

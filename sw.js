@@ -1,4 +1,4 @@
-const CACHE = 'operation-clinic-v14-logistics-master-finance-2026-08-08';
+const CACHE = 'operation-clinic-v15-five-changes-2026-08-09';
 const STATIC = [
   './', './index.html', './app.html', './css/style.css', './manifest.webmanifest',
   './js/supabase-client.js', './js/auth.js', './js/core.js', './js/dashboard.js', './js/schedules.js',
