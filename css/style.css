@@ -3617,3 +3617,190 @@ html[dir="rtl"] #bookingDoctor,
 html[dir="rtl"] #calendarDoctor {
   font-weight: 750;
 }
+
+
+/* ========================================================
+   BRAND — ONE TITLE ONLY
+======================================================== */
+
+.sidebar-subtitle {
+  display: none !important;
+}
+
+
+/* ========================================================
+   MAIN APPOINTMENT WEEK
+   Arabic: Saturday is FIRST and appears on the RIGHT.
+   English: Saturday is FIRST and appears on the LEFT.
+======================================================== */
+
+.scheduler-week-grid {
+  direction: ltr;
+}
+
+html[dir="rtl"] .scheduler-week-grid {
+  direction: rtl;
+}
+
+html[dir="rtl"] .scheduler-day-card {
+  direction: rtl;
+  text-align: right;
+}
+
+
+/* Saturday highlight */
+.scheduler-day-card.saturday-column {
+  background: #eaf3ff !important;
+  box-shadow:
+    inset 0 5px 0 #2563eb;
+}
+
+.scheduler-day-card.saturday-column
+.scheduler-day-header {
+  border-bottom-color: #bfd5ff;
+}
+
+.scheduler-day-card.saturday-column
+.scheduler-day-header strong {
+  color: #1d4ed8;
+}
+
+
+/* ========================================================
+   CUSTOM "GO TO" MINI CALENDAR
+   Week is always Saturday → Friday.
+======================================================== */
+
+.calendar-jump-control {
+  position: relative;
+}
+
+.calendar-jump-button {
+  min-width: 188px;
+  min-height: 45px;
+  padding-inline: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  background: white;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.clinic-mini-calendar {
+  position: absolute;
+  z-index: 200;
+  top: calc(100% + 7px);
+  inset-inline-end: 0;
+  width: min(355px, 92vw);
+  padding: 11px;
+  border: 1px solid #d8e1eb;
+  border-radius: 14px;
+  background: white;
+  box-shadow:
+    0 18px 48px rgba(15,35,58,.18);
+}
+
+.clinic-mini-calendar.hidden {
+  display: none;
+}
+
+.mini-calendar-header {
+  display: grid;
+  grid-template-columns: 34px 1fr 34px;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 9px;
+}
+
+.mini-calendar-header strong {
+  text-align: center;
+  font-size: 12px;
+}
+
+.mini-calendar-nav {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #dce4ed;
+  border-radius: 9px;
+  background: white;
+  cursor: pointer;
+  color: #10263f;
+  font-size: 21px;
+}
+
+.mini-calendar-weekdays,
+.mini-calendar-days {
+  display: grid;
+  grid-template-columns:
+    repeat(7,minmax(0,1fr));
+  gap: 4px;
+}
+
+/* In Arabic, first calendar item (Saturday) is on the RIGHT. */
+html[dir="rtl"] .mini-calendar-weekdays,
+html[dir="rtl"] .mini-calendar-days {
+  direction: rtl;
+}
+
+.mini-calendar-weekdays {
+  margin-bottom: 5px;
+}
+
+.mini-calendar-weekdays span {
+  padding-block: 5px;
+  text-align: center;
+  color: #64748b;
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.mini-calendar-weekdays span:first-child {
+  color: #1d4ed8;
+}
+
+.mini-calendar-day {
+  min-height: 35px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #10233c;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.mini-calendar-day:hover {
+  background: #eff6ff;
+}
+
+.mini-calendar-day.outside {
+  opacity: .34;
+}
+
+.mini-calendar-day.today {
+  box-shadow:
+    inset 0 0 0 1px #60a5fa;
+}
+
+.mini-calendar-day.selected {
+  background: #2563eb;
+  color: white;
+}
+
+.mini-calendar-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+}
+
+.mini-calendar-today {
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 850;
+}

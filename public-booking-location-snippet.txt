@@ -1,0 +1,152 @@
+PUBLIC BOOKING — LOCATION SECTION
+=================================
+
+I need the exact Google Maps link/address from you before filling this with a real
+clinic location. Do NOT publish an invented location.
+
+In book.html, add this near your other top JavaScript constants:
+
+const CLINIC_LOCATION = {
+  mapsUrl: "",
+  addressAr: "",
+  directionsAr: [
+    // Example after you send the real details:
+    // "الدخول من ...",
+    // "العيادة في الدور ...",
+    // "أقرب علامة مميزة ..."
+  ]
+};
+
+Then, in the SUCCESS summary, immediately after bookingSummary, add:
+
+<div
+  id="clinicLocationSummary"
+  class="clinic-location-summary"
+  style="display:none;"
+></div>
+
+Then, immediately after you build bookingSummary.innerHTML, add:
+
+const locationBox =
+  document.getElementById(
+    'clinicLocationSummary'
+  );
+
+if(
+  CLINIC_LOCATION.mapsUrl
+  ||
+  CLINIC_LOCATION.addressAr
+  ||
+  CLINIC_LOCATION.directionsAr.length
+){
+  locationBox.style.display = 'grid';
+
+  locationBox.innerHTML = `
+    <div class="clinic-location-heading">
+      <span>📍</span>
+      <div>
+        <strong>مكان العيادة</strong>
+        ${
+          CLINIC_LOCATION.addressAr
+            ? `<small>${escapeHtml(CLINIC_LOCATION.addressAr)}</small>`
+            : ''
+        }
+      </div>
+    </div>
+
+    ${
+      CLINIC_LOCATION.directionsAr.length
+        ? `
+          <div class="clinic-directions">
+            <strong>كيفية الوصول إلى العيادة</strong>
+            <ol>
+              ${CLINIC_LOCATION.directionsAr.map(step=>
+                `<li>${escapeHtml(step)}</li>`
+              ).join('')}
+            </ol>
+          </div>
+        `
+        : ''
+    }
+
+    ${
+      CLINIC_LOCATION.mapsUrl
+        ? `
+          <a
+            class="clinic-maps-button"
+            href="${escapeHtml(CLINIC_LOCATION.mapsUrl)}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            فتح الموقع على Google Maps
+          </a>
+        `
+        : ''
+    }
+  `;
+}
+
+Add this CSS inside the <style> of book.html:
+
+.clinic-location-summary {
+  margin: 0 auto 18px;
+  max-width: 430px;
+  gap: 11px;
+  text-align: right;
+}
+
+.clinic-location-heading {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 9px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #dce4ed;
+  border-radius: 12px;
+  background: #fafcfd;
+}
+
+.clinic-location-heading > span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #e9f7f3;
+}
+
+.clinic-location-heading > div {
+  display: grid;
+  gap: 3px;
+}
+
+.clinic-location-heading small {
+  color: #6e7c91;
+  line-height: 1.6;
+}
+
+.clinic-directions {
+  padding: 12px;
+  border: 1px solid #dce4ed;
+  border-radius: 12px;
+  background: white;
+}
+
+.clinic-directions ol {
+  margin: 8px 0 0;
+  padding-inline-start: 22px;
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.clinic-maps-button {
+  min-height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #10263f;
+  color: white;
+  text-decoration: none;
+  font-weight: 900;
+}

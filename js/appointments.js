@@ -1825,6 +1825,281 @@
   }
 
 
+  function miniCalendarMonthTitle(value){
+    const C=Clinic;
+    const d=parseYmd(value);
+
+    return new Intl.DateTimeFormat(
+      C.lang==='ar'
+        ?'ar-EG'
+        :'en-GB',
+      {
+        timeZone:'UTC',
+        month:'long',
+        year:'numeric'
+      }
+    ).format(d);
+  }
+
+
+  function miniCalendarMonthStart(value){
+    const d=parseYmd(value);
+    d.setUTCDate(1);
+    return toYmd(d);
+  }
+
+
+  function addMonths(value,months){
+    const d=parseYmd(value);
+    const day=d.getUTCDate();
+
+    d.setUTCDate(1);
+    d.setUTCMonth(
+      d.getUTCMonth()+months
+    );
+
+    const lastDay=
+      new Date(
+        Date.UTC(
+          d.getUTCFullYear(),
+          d.getUTCMonth()+1,
+          0
+        )
+      )
+      .getUTCDate();
+
+    d.setUTCDate(
+      Math.min(
+        day,
+        lastDay
+      )
+    );
+
+    return toYmd(d);
+  }
+
+
+  function renderMiniCalendar(
+    root,
+    {
+      viewMonth,
+      selectedDate,
+      onSelect
+    }
+  ){
+    const C=Clinic;
+
+    const monthStart=
+      miniCalendarMonthStart(
+        viewMonth
+      );
+
+    const monthDate=
+      parseYmd(monthStart);
+
+    const month=
+      monthDate.getUTCMonth();
+
+    // 0 = Saturday, 1 = Sunday ... 6 = Friday
+    const firstDow=
+      monthDate.getUTCDay();
+
+    const leadingDays=
+      (firstDow+1)%7;
+
+    const gridStart=
+      addDays(
+        monthStart,
+        -leadingDays
+      );
+
+    const weekdays=
+      C.lang==='ar'
+        ?[
+            'السبت',
+            'الأحد',
+            'الاثنين',
+            'الثلاثاء',
+            'الأربعاء',
+            'الخميس',
+            'الجمعة'
+          ]
+        :[
+            'Sat',
+            'Sun',
+            'Mon',
+            'Tue',
+            'Wed',
+            'Thu',
+            'Fri'
+          ];
+
+    root.innerHTML=`
+      <div class="mini-calendar-header">
+
+        <button
+          type="button"
+          class="mini-calendar-nav"
+          data-mini-prev
+          aria-label="${C.lang==='ar'?'الشهر السابق':'Previous month'}"
+        >
+          ‹
+        </button>
+
+        <strong>
+          ${miniCalendarMonthTitle(
+            monthStart
+          )}
+        </strong>
+
+        <button
+          type="button"
+          class="mini-calendar-nav"
+          data-mini-next
+          aria-label="${C.lang==='ar'?'الشهر التالي':'Next month'}"
+        >
+          ›
+        </button>
+
+      </div>
+
+
+      <div class="mini-calendar-weekdays">
+        ${weekdays.map(day=>`
+          <span>${day}</span>
+        `).join('')}
+      </div>
+
+
+      <div class="mini-calendar-days">
+        ${Array.from(
+          {length:42},
+          (_,index)=>{
+            const date=
+              addDays(
+                gridStart,
+                index
+              );
+
+            const d=
+              parseYmd(
+                date
+              );
+
+            const isOutside=
+              d.getUTCMonth()!==month;
+
+            const isSelected=
+              date===selectedDate;
+
+            const isToday=
+              date===C.cairoDate();
+
+            return `
+              <button
+                type="button"
+                class="
+                  mini-calendar-day
+                  ${isOutside?'outside':''}
+                  ${isSelected?'selected':''}
+                  ${isToday?'today':''}
+                "
+                data-mini-date="${date}"
+              >
+                ${d.getUTCDate()}
+              </button>
+            `;
+          }
+        ).join('')}
+      </div>
+
+      <div class="mini-calendar-footer">
+
+        <button
+          type="button"
+          class="mini-calendar-today"
+          data-mini-today
+        >
+          ${C.lang==='ar'
+            ?'اليوم'
+            :'Today'}
+        </button>
+
+      </div>
+    `;
+
+
+    root
+      .querySelector(
+        '[data-mini-prev]'
+      )
+      .onclick=()=>{
+        renderMiniCalendar(
+          root,
+          {
+            viewMonth:
+              addMonths(
+                monthStart,
+                -1
+              ),
+
+            selectedDate,
+
+            onSelect
+          }
+        );
+      };
+
+
+    root
+      .querySelector(
+        '[data-mini-next]'
+      )
+      .onclick=()=>{
+        renderMiniCalendar(
+          root,
+          {
+            viewMonth:
+              addMonths(
+                monthStart,
+                1
+              ),
+
+            selectedDate,
+
+            onSelect
+          }
+        );
+      };
+
+
+    root
+      .querySelector(
+        '[data-mini-today]'
+      )
+      .onclick=()=>{
+        onSelect(
+          C.cairoDate()
+        );
+      };
+
+
+    root
+      .querySelectorAll(
+        '[data-mini-date]'
+      )
+      .forEach(button=>{
+
+        button.onclick=()=>{
+          onSelect(
+            button.dataset.miniDate
+          );
+        };
+
+      });
+  }
+
+
   async function renderAppointmentsPage({
     patientId=null,
     openBooking=false,
@@ -1966,18 +2241,34 @@
             ${C.lang==='ar'?'التالي →':'Next →'}
           </button>
 
-          <label class="calendar-jump-control">
+          <div class="calendar-jump-control">
             <span>
               ${C.lang==='ar'?'اذهب إلى':'Jump to'}
             </span>
 
-            <input
-              id="calendarJumpDate"
-              type="date"
-              class="control"
-              value="${C.cairoDate()}"
+            <button
+              id="calendarJumpButton"
+              type="button"
+              class="control calendar-jump-button"
+              aria-haspopup="dialog"
+              aria-expanded="false"
             >
-          </label>
+              <span id="calendarJumpButtonText">
+                ${C.formatDate(C.cairoDate())}
+              </span>
+
+              <span aria-hidden="true">
+                📅
+              </span>
+            </button>
+
+            <div
+              id="calendarJumpPopover"
+              class="clinic-mini-calendar hidden"
+              role="dialog"
+              aria-label="${C.lang==='ar'?'اختيار التاريخ':'Choose date'}"
+            ></div>
+          </div>
 
           ${canBook
             ? `<button
@@ -2175,30 +2466,128 @@
         }
       );
 
+    const jumpButton=
+      document.getElementById(
+        'calendarJumpButton'
+      );
+
+    const jumpButtonText=
+      document.getElementById(
+        'calendarJumpButtonText'
+      );
+
+    const jumpPopover=
+      document.getElementById(
+        'calendarJumpPopover'
+      );
+
+
+    function updateJumpButton(){
+      jumpButtonText.textContent=
+        C.formatDate(anchor);
+    }
+
+
+    function closeJumpCalendar(){
+      jumpPopover.classList.add(
+        'hidden'
+      );
+
+      jumpButton.setAttribute(
+        'aria-expanded',
+        'false'
+      );
+    }
+
+
+    function chooseJumpDate(date){
+      anchor=date;
+
+      updateJumpButton();
+
+      closeJumpCalendar();
+
+      refresh();
+    }
+
+
+    function openJumpCalendar(){
+      jumpPopover.classList.remove(
+        'hidden'
+      );
+
+      jumpButton.setAttribute(
+        'aria-expanded',
+        'true'
+      );
+
+      renderMiniCalendar(
+        jumpPopover,
+        {
+          viewMonth:anchor,
+          selectedDate:anchor,
+          onSelect:chooseJumpDate
+        }
+      );
+    }
+
+
+    jumpButton.onclick=event=>{
+      event.stopPropagation();
+
+      if(
+        jumpPopover.classList.contains(
+          'hidden'
+        )
+      ){
+        openJumpCalendar();
+      }
+      else{
+        closeJumpCalendar();
+      }
+    };
+
+
+    jumpPopover.onclick=
+      event=>
+        event.stopPropagation();
+
+
+    document.addEventListener(
+      'click',
+      closeJumpCalendar
+    );
+
+
     document.getElementById('calendarPrevious').onclick=()=>{
-      anchor=addDays(anchor,-(weekCount*7));
-      document.getElementById('calendarJumpDate').value=anchor;
+      anchor=addDays(
+        anchor,
+        -(weekCount*7)
+      );
+
+      updateJumpButton();
+      closeJumpCalendar();
       refresh();
     };
+
 
     document.getElementById('calendarToday').onclick=()=>{
       anchor=C.cairoDate();
-      document.getElementById('calendarJumpDate').value=anchor;
+
+      updateJumpButton();
+      closeJumpCalendar();
       refresh();
     };
+
 
     document.getElementById('calendarNext').onclick=()=>{
-      anchor=addDays(anchor,weekCount*7);
-      document.getElementById('calendarJumpDate').value=anchor;
-      refresh();
-    };
+      anchor=addDays(
+        anchor,
+        weekCount*7
+      );
 
-    document.getElementById('calendarJumpDate').onchange=(event)=>{
-      if(!event.target.value){
-        return;
-      }
-
-      anchor=event.target.value;
+      updateJumpButton();
+      closeJumpCalendar();
       refresh();
     };
 

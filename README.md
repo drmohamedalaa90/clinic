@@ -1,67 +1,63 @@
-# Operation Clinic — 11 UI / Attendance / Booking Fixes
+# Operation Clinic — Calendar / Attendance / Title Fix
 
-## Implemented
+## 1. Public patient confirmation: clinic location
 
-1. Arabic doctor names:
-   - Dr Ahmed Alaa -> د أحمد علاء
-   - Dr Mohamed Alaa -> د محمد علاء
-   Centralized in core.js and applied to doctor dropdowns/profile display.
+A ready-to-paste location section is included as:
 
-2. Arabic dates are written naturally:
-   - الأحد 8 أغسطس 2026
-   Calendar cells use weekday + long Arabic date.
-   Booking date also has a long-date line under the date input.
+`public-booking-location-snippet.txt`
 
-3. Escape closes:
-   - modal windows
-   - notification drawer
-   - mobile sidebar
+I did not invent the clinic address. Send the exact Google Maps link + Arabic
+address + directions and the location block can be filled with the real values.
 
-4. Birth year is removed from the NEW-PATIENT booking window.
-   Only Age in years is entered.
-   The system converts age to birth_year at save time, so stored age keeps
-   updating automatically in future years.
+## 2. Main app brand
 
-5. Existing-patient search birth year is deliberately very faint.
-   Age is displayed more prominently.
+The duplicate lower `إدارة العيادة` subtitle is hidden. Only one clinic title
+remains.
 
-6. Check-in fee box no longer starts with 0.
-   It starts empty with an Enter fee placeholder.
+## 3. Calendar
 
-7. Sara attendance:
-   The exact created_by NOT NULL error is fixed.
-   Check-in writes created_by and updated_by using Sara's authenticated UUID.
-   The previous scheduled_start/scheduled_end fix is preserved.
+### Main appointment week
+Arabic returns to the requested visual order:
+- Saturday is the FIRST day
+- Saturday appears on the RIGHT
+- Saturday remains blue-highlighted
 
-8. Appointment calendar:
-   Saturday is forced to be the LEFT-most column even in Arabic RTL.
-   Saturday has a light BLUE background and blue accent.
+### Small "اذهب إلى" calendar
+The browser-native date picker has been replaced for this control with a custom
+clinic date picker.
 
-9. Patient search is dynamic.
-   Typing the first character triggers results automatically; results continue
-   updating as more characters are entered. The Search button still works.
+Its week explicitly starts:
+Saturday → Sunday → Monday → Tuesday → Wednesday → Thursday → Friday
 
-10. Visit type removed from the RIGHT appointment-details half.
+In Arabic, Saturday is shown on the RIGHT.
 
-11. Visit type added to the LEFT patient half as:
-   - كشف
-   - استشارة
+This is necessary because Chrome/Windows does not let the website reliably
+change the first day of the native `<input type="date">` calendar.
 
-   The database continues using its existing technical values to avoid a
-   migration that could break prior appointments.
+## 4. Sara attendance — hard fix
 
-## Install
-
-### Supabase
 Run:
-`sql/sara-attendance-created-by-fix.sql`
 
-### GitHub
+`sql/sara-attendance-hard-fix.sql`
+
+The patch:
+- gives safe defaults to required schedule/audit fields
+- recreates frontend_staff_check_in
+- recreates frontend_staff_check_out
+- always writes created_by / updated_by
+- always writes scheduled_start / scheduled_end
+- keeps check-in working even before a management schedule is configured
+- repairs EXECUTE permission required by attendance RLS
+
+The final SQL query lists any unexpected legacy NOT NULL column that still has
+no default. Ideally it returns zero rows.
+
+## GitHub files
+
 Replace:
-- js/core.js
 - js/appointments.js
 - js/attendance.js
 - css/style.css
 - sw.js
 
-Then wait for GitHub Pages deployment and press Ctrl + Shift + R once.
+Then wait for GitHub Pages and press Ctrl + Shift + R.
