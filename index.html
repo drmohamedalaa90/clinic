@@ -15,8 +15,16 @@
     rel="stylesheet"
     href="css/style.css"
   />
-  <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#112238" />
+
+  <link
+    rel="manifest"
+    href="manifest.webmanifest"
+  />
+
+  <meta
+    name="theme-color"
+    content="#112238"
+  />
 </head>
 
 <body class="login-body">
@@ -178,8 +186,11 @@
   ></script>
 
   <script src="js/supabase-client.js"></script>
-
   <script src="js/auth.js"></script>
+
+  <!-- Small language/title override. Loaded after auth.js intentionally. -->
+  <script src="js/login-hotfix.js"></script>
+
   <script src="js/pwa.js"></script>
 
 </body>

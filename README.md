@@ -1,63 +1,48 @@
-# Operation Clinic — Calendar / Attendance / Title Fix
+# Clinic hotfix — 09 Aug 2026
 
-## 1. Public patient confirmation: clinic location
+This patch is intentionally small and loads after the current clinic modules,
+so it does not replace the large clinic codebase.
 
-A ready-to-paste location section is included as:
+## Changes
 
-`public-booking-location-snippet.txt`
+### Booking
+- English name is labelled optional.
+- Arabic name is required for a new patient.
+- The age box has no Example / مثال placeholder.
+- Any booking placeholder beginning with Example / مثال is removed.
 
-I did not invent the clinic address. Send the exact Google Maps link + Arabic
-address + directions and the location block can be filled with the real values.
+### Login Arabic title
+- Arabic title becomes: إدارة العيادة
+- Subtitle becomes: نظام إدارة العيادة
+- Doctor names become: د أحمد علاء / د محمد علاء
 
-## 2. Main app brand
-
-The duplicate lower `إدارة العيادة` subtitle is hidden. Only one clinic title
-remains.
-
-## 3. Calendar
-
-### Main appointment week
-Arabic returns to the requested visual order:
-- Saturday is the FIRST day
-- Saturday appears on the RIGHT
-- Saturday remains blue-highlighted
-
-### Small "اذهب إلى" calendar
-The browser-native date picker has been replaced for this control with a custom
-clinic date picker.
-
-Its week explicitly starts:
-Saturday → Sunday → Monday → Tuesday → Wednesday → Thursday → Friday
-
-In Arabic, Saturday is shown on the RIGHT.
-
-This is necessary because Chrome/Windows does not let the website reliably
-change the first day of the native `<input type="date">` calendar.
-
-## 4. Sara attendance — hard fix
-
+### Sara attendance
 Run:
+`sql/sara-attendance-column-aware-fix.sql`
 
-`sql/sara-attendance-hard-fix.sql`
+The fix is column-aware:
+- created_by is written because the current table requires it.
+- updated_by is written ONLY if that column exists.
+- checkout also checks which audit columns actually exist.
 
-The patch:
-- gives safe defaults to required schedule/audit fields
-- recreates frontend_staff_check_in
-- recreates frontend_staff_check_out
-- always writes created_by / updated_by
-- always writes scheduled_start / scheduled_end
-- keeps check-in working even before a management schedule is configured
-- repairs EXECUTE permission required by attendance RLS
+This directly addresses:
+`column "updated_by" of relation "attendance_records" does not exist`
 
-The final SQL query lists any unexpected legacy NOT NULL column that still has
-no default. Ideally it returns zero rows.
+### Performance
+The hotfix reduces avoidable network traffic:
+- Doctor list is cached in memory for 5 minutes instead of being fetched on every booking popup.
+- Dashboard silent auto-refresh changes from 12 sec to 30 sec.
+- Silent dashboard refresh no longer re-fetches notifications.
+- Notifications keep their existing independent 60-sec refresh.
+- Dashboard background refresh pauses while the browser tab is hidden.
 
-## GitHub files
+## Upload
 
-Replace:
-- js/appointments.js
-- js/attendance.js
-- css/style.css
-- sw.js
-
-Then wait for GitHub Pages and press Ctrl + Shift + R.
+1. Run the SQL in Supabase.
+2. Upload/replace:
+   - index.html
+   - app.html
+   - js/login-hotfix.js
+   - js/clinic-hotfix.js
+3. Wait for GitHub Pages deployment.
+4. Press Ctrl + Shift + R once.
