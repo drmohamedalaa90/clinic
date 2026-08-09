@@ -361,6 +361,11 @@
                         <th>${c.lang==='ar'?'خروج':'Check out'}</th>
                         <th>${c.lang==='ar'?'مدة البقاء':'Duration'}</th>
                         <th>${c.lang==='ar'?'الحالة':'Status'}</th>
+                        ${
+                          c.hasRole('owner')
+                            ? `<th>${c.lang==='ar'?'اختبار':'Test'}</th>`
+                            : ''
+                        }
                       </tr>
                     </thead>
 
@@ -386,6 +391,25 @@
                                 : c.statusPill('active')
                             }
                           </td>
+
+                          ${
+                            c.hasRole('owner')
+                              ? `
+                                <td>
+                                  <button
+                                    type="button"
+                                    class="table-action danger-outline"
+                                    data-delete-attendance="${r.id}"
+                                    data-delete-attendance-date="${r.work_date}"
+                                  >
+                                    ${c.lang==='ar'
+                                      ?'حذف سجل الاختبار'
+                                      :'Delete test record'}
+                                  </button>
+                                </td>
+                              `
+                              : ''
+                          }
                         </tr>
                       `).join('')}
                     </tbody>
@@ -403,6 +427,71 @@
 
         </section>
       `;
+
+      area
+        .querySelectorAll(
+          '[data-delete-attendance]'
+        )
+        .forEach(button=>{
+
+          button.addEventListener(
+            'click',
+            async()=>{
+
+              if(!c.hasRole('owner')){
+                return;
+              }
+
+              const date=
+                button.dataset
+                  .deleteAttendanceDate;
+
+              const confirmed=
+                confirm(
+                  c.lang==='ar'
+                    ? `حذف سجل حضور سارة بتاريخ ${displayWorkDate(date)}؟\n\nهذا مخصص لفترة الاختبار فقط، وبعد الحذف يمكن تسجيل الحضور لهذا اليوم من جديد.`
+                    : `Delete Sara's attendance record for ${displayWorkDate(date)}?\n\nThis is for the test period only. After deletion, attendance can be recorded again for that day.`
+                );
+
+              if(!confirmed){
+                return;
+              }
+
+              button.disabled=true;
+
+              const {error}=await c.sb.rpc(
+                'owner_delete_attendance_test_record',
+                {
+                  p_attendance_id:
+                    button.dataset
+                      .deleteAttendance,
+
+                  p_reason:
+                    'Owner test-period cleanup'
+                }
+              );
+
+              button.disabled=false;
+
+              if(error){
+                return c.toast(
+                  error.message,
+                  'error'
+                );
+              }
+
+              c.toast(
+                c.lang==='ar'
+                  ?'تم حذف سجل الحضور التجريبي.'
+                  :'Test attendance record deleted.'
+              );
+
+              showToday();
+            }
+          );
+
+        });
+
 
       document
         .getElementById('staffCheckIn')
