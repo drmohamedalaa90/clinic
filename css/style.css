@@ -3502,18 +3502,6 @@ html[dir="rtl"] .dashboard-notification-row.unread {
   letter-spacing: .02em;
 }
 
-.scheduler-day-card.saturday-column {
-  background: #eefaf7 !important;
-  box-shadow: inset 0 4px 0 #0e8a78;
-}
-
-.scheduler-day-card.saturday-column .scheduler-day-header strong {
-  color: #087161;
-}
-
-.scheduler-day-card.saturday-column .scheduler-day-header {
-  border-bottom-color: #bce7dd;
-}
 
 .scheduler-week-heading h3 {
   font-variant-numeric: tabular-nums;
@@ -3542,4 +3530,90 @@ html[dir="rtl"] .dashboard-notification-row.unread {
   .calendar-jump-control .control {
     width: 100%;
   }
+}
+
+
+/* ========================================================
+   CALENDAR — SATURDAY MUST BE THE LEFT-MOST COLUMN
+======================================================== */
+
+/* Keep week columns physically Saturday → Friday from LEFT to RIGHT,
+   even when the rest of the Arabic interface is RTL. */
+.scheduler-week-grid {
+  direction: ltr;
+}
+
+html[dir="rtl"] .scheduler-day-card {
+  direction: rtl;
+  text-align: right;
+}
+
+.scheduler-day-card.saturday-column {
+  background: #eaf3ff !important;
+  box-shadow:
+    inset 0 5px 0 #2563eb;
+}
+
+.scheduler-day-card.saturday-column
+.scheduler-day-header {
+  border-bottom-color: #bfd5ff;
+}
+
+.scheduler-day-card.saturday-column
+.scheduler-day-header strong {
+  color: #1d4ed8;
+}
+
+.scheduler-day-card.saturday-column
+.today-chip {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+
+/* ========================================================
+   BOOKING WINDOW
+======================================================== */
+
+.booking-date-long {
+  display: block;
+  margin-top: 4px;
+  color: #66758c;
+  font-size: 9px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.booking-visit-kind {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.patient-birth-year-faint {
+  opacity: .22;
+  font-size: .88em;
+  font-weight: 400;
+}
+
+.booking-age-hint {
+  opacity: .62;
+}
+
+
+/* Make native/typed year-like secondary text visually very quiet. */
+.birth-year-faint,
+[data-birth-year] {
+  opacity: .22;
+}
+
+
+/* ========================================================
+   ARABIC DOCTOR LABELS
+======================================================== */
+
+html[dir="rtl"] .selected-doctor-chip,
+html[dir="rtl"] #bookingDoctor,
+html[dir="rtl"] #calendarDoctor {
+  font-weight: 750;
 }

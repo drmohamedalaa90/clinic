@@ -160,7 +160,17 @@
 
                 <small>
                   ${C.escape(p.medical_record_number)}
-                  ${p.birth_year ? ` • ${p.birth_year}` : ''}
+                  ${p.birth_year
+                    ? ` • ${
+                        C.lang==='ar'
+                          ?'العمر'
+                          :'Age'
+                      } ${C.ageFromBirthYear(p.birth_year)}
+                       <span class="patient-birth-year-faint">
+                         (${p.birth_year})
+                       </span>`
+                    : ''
+                  }
                   ${p.mobile ? ` • ${C.escape(p.mobile)}` : ''}
                 </small>
               </span>
@@ -244,7 +254,7 @@
                       value="${d.id}"
                       ${d.id===doctorId?'selected':''}
                     >
-                      ${C.escape(d.display_name||d.username)}
+                      ${C.escape(C.doctorName(d.id))}
                     </option>
                   `).join('')}
                 </select>
@@ -261,21 +271,13 @@
                   class="control"
                   required
                 >
-              </label>
 
-              <label>
-                ${C.lang==='ar'?'نوع الزيارة':'Type'}
-                <select
-                  name="appointment_type"
-                  class="control"
+                <small
+                  id="bookingDateLong"
+                  class="booking-date-long"
                 >
-                  <option value="new">
-                    ${C.lang==='ar'?'جديد':'New'}
-                  </option>
-                  <option value="follow_up">
-                    ${C.lang==='ar'?'متابعة':'Follow-up'}
-                  </option>
-                </select>
+                  ${C.formatFullDate(date,true)}
+                </small>
               </label>
 
               <label>
@@ -346,6 +348,29 @@
               </div>
             </div>
 
+            <label class="booking-visit-kind">
+              ${C.lang==='ar'
+                ?'كشف أو استشارة'
+                :'Examination or consultation'}
+
+              <select
+                name="appointment_type"
+                class="control"
+              >
+                <option value="new">
+                  ${C.lang==='ar'
+                    ?'كشف'
+                    :'Examination'}
+                </option>
+
+                <option value="follow_up">
+                  ${C.lang==='ar'
+                    ?'استشارة'
+                    :'Consultation'}
+                </option>
+              </select>
+            </label>
+
             <input
               id="selectedExistingPatient"
               type="hidden"
@@ -374,20 +399,6 @@
                 </label>
 
                 <label>
-                  ${C.lang==='ar'?'سنة الميلاد':'Year of birth'}
-                  <input
-                    id="bookingBirthYear"
-                    type="number"
-                    inputmode="numeric"
-                    min="1900"
-                    max="${currentYear}"
-                    step="1"
-                    placeholder="1985"
-                    class="control"
-                  >
-                </label>
-
-                <label>
                   ${C.lang==='ar'?'العمر بالسنوات':'Age in years'}
                   <input
                     id="bookingAgeYears"
@@ -401,8 +412,8 @@
                   >
                   <small class="booking-age-hint">
                     ${C.lang==='ar'
-                      ?'يحوّل تلقائياً إلى سنة الميلاد'
-                      :'Automatically converts to birth year'}
+                      ?'سيُحفظ داخلياً كسنة ميلاد ليُحسب العمر تلقائياً كل سنة'
+                      :'Saved internally as birth year so age updates automatically each year'}
                   </small>
                 </label>
 
@@ -506,32 +517,31 @@
         const slot=root.querySelector('#bookingSlot');
         const hint=root.querySelector('#slotHint');
 
-        const birthYearInput=root.querySelector('#bookingBirthYear');
-        const ageYearsInput=root.querySelector('#bookingAgeYears');
-        let syncingAgeBirthYear=false;
+        const ageYearsInput=
+          root.querySelector(
+            '#bookingAgeYears'
+          );
 
-        function syncBirthYearFromAge(){
-          if(syncingAgeBirthYear) return;
-          const age=Number(ageYearsInput.value);
-          if(!Number.isInteger(age)||age<0||age>126) return;
+        const dateLong =
+          root.querySelector(
+            '#bookingDateLong'
+          );
 
-          syncingAgeBirthYear=true;
-          birthYearInput.value=String(currentYear-age);
-          syncingAgeBirthYear=false;
+        function updateLongBookingDate(){
+          if(!dateLong){
+            return;
+          }
+
+          dateLong.textContent =
+            dateInput.value
+              ? C.formatFullDate(
+                  dateInput.value,
+                  true
+                )
+              : '—';
         }
 
-        function syncAgeFromBirthYear(){
-          if(syncingAgeBirthYear) return;
-          const year=Number(birthYearInput.value);
-          if(!Number.isInteger(year)||year<1900||year>currentYear) return;
-
-          syncingAgeBirthYear=true;
-          ageYearsInput.value=String(currentYear-year);
-          syncingAgeBirthYear=false;
-        }
-
-        ageYearsInput?.addEventListener('input',syncBirthYearFromAge);
-        birthYearInput?.addEventListener('input',syncAgeFromBirthYear);
+        updateLongBookingDate();
 
         let patientMode = prefill.patientId ? 'existing' : 'new';
 
@@ -655,20 +665,61 @@
         }
 
         doctor.onchange=loadSlots;
-        dateInput.onchange=loadSlots;
+
+        dateInput.onchange=()=>{
+          updateLongBookingDate();
+          loadSlots();
+        };
 
         root
           .querySelector('#existingPatientSearchBtn')
-          .onclick=()=>loadPatientSearch(root);
+          .onclick=
+            ()=>loadPatientSearch(root);
 
-        root
-          .querySelector('#existingPatientSearch')
-          .addEventListener('keydown',event=>{
-            if(event.key==='Enter'){
-              event.preventDefault();
-              loadPatientSearch(root);
+        const existingSearchInput =
+          root.querySelector(
+            '#existingPatientSearch'
+          );
+
+        let patientSearchTimer=null;
+
+        existingSearchInput
+          .addEventListener(
+            'input',
+            ()=>{
+              clearTimeout(
+                patientSearchTimer
+              );
+
+              patientSearchTimer=
+                setTimeout(
+                  ()=>{
+                    loadPatientSearch(
+                      root
+                    );
+                  },
+                  140
+                );
             }
-          });
+          );
+
+        existingSearchInput
+          .addEventListener(
+            'keydown',
+            event=>{
+              if(event.key==='Enter'){
+                event.preventDefault();
+
+                clearTimeout(
+                  patientSearchTimer
+                );
+
+                loadPatientSearch(
+                  root
+                );
+              }
+            }
+          );
 
         if(prefill.patientId){
           patientMode='existing';
@@ -745,8 +796,27 @@
               );
             }
 
-            const birthYearText=
-              root.querySelector('#bookingBirthYear').value.trim();
+            const ageText=
+              root
+                .querySelector(
+                  '#bookingAgeYears'
+                )
+                .value
+                .trim();
+
+            const ageYears=
+              ageText
+                ? Number(ageText)
+                : null;
+
+            const calculatedBirthYear=
+              Number.isInteger(ageYears)
+              &&
+              ageYears>=0
+              &&
+              ageYears<=126
+                ? currentYear-ageYears
+                : null;
 
             result=await C.sb.rpc(
               'frontend_create_patient_and_book',
@@ -758,9 +828,8 @@
                 p_note:note,
                 p_arabic_name:arabicName||null,
                 p_english_name:englishName||null,
-                p_birth_year:birthYearText
-                  ? Number(birthYearText)
-                  : null,
+                p_birth_year:
+                  calculatedBirthYear,
                 p_gender:
                   root.querySelector('#bookingGender').value||null,
                 p_mobile:
@@ -1318,7 +1387,8 @@
               type="number"
               min="0"
               step="1"
-              value="0"
+              value=""
+              placeholder="${C.lang==='ar'?'اكتب الرسوم':'Enter fee'}"
               required
             >
           </label>
@@ -1857,7 +1927,7 @@
                >
                  ${C.doctors.map(d=>`
                    <option value="${d.id}">
-                     ${C.escape(d.display_name||d.username)}
+                     ${C.escape(C.doctorName(d.id))}
                    </option>
                  `).join('')}
                </select>`
@@ -2879,7 +2949,7 @@
 
             ${C.doctors.map(d=>`
               <option value="${d.id}">
-                ${C.escape(d.display_name||d.username)}
+                ${C.escape(C.doctorName(d.id))}
               </option>
             `).join('')}
           </select>

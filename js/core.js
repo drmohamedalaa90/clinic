@@ -46,19 +46,143 @@ const Clinic = window.Clinic = {
   formatDate(value, options={}) {
     if (!value) return '—';
 
-    // Clinic-wide display rule:
-    // DD/MM/YYYY, while preserving optional time fields.
-    // We intentionally use en-GB for the numeric date so both
-    // Arabic and English screens show the same 08/08/2026 format.
     const d = new Date(value);
 
-    return new Intl.DateTimeFormat('en-GB', {
-      timeZone: 'Africa/Cairo',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      ...options
-    }).format(d);
+    if (this.lang === 'ar') {
+      const monthNames = [
+        'يناير',
+        'فبراير',
+        'مارس',
+        'أبريل',
+        'مايو',
+        'يونيو',
+        'يوليو',
+        'أغسطس',
+        'سبتمبر',
+        'أكتوبر',
+        'نوفمبر',
+        'ديسمبر'
+      ];
+
+      const parts =
+        new Intl.DateTimeFormat(
+          'en-CA',
+          {
+            timeZone:'Africa/Cairo',
+            year:'numeric',
+            month:'2-digit',
+            day:'2-digit'
+          }
+        )
+        .formatToParts(d);
+
+      const valueOf = type =>
+        parts.find(
+          x=>x.type===type
+        )?.value || '';
+
+      const day =
+        Number(
+          valueOf('day')
+        );
+
+      const month =
+        Number(
+          valueOf('month')
+        );
+
+      const year =
+        valueOf('year');
+
+      const dateText =
+        `${day} ${monthNames[month-1] || ''} ${year}`;
+
+      const wantsTime =
+        Object.prototype.hasOwnProperty.call(
+          options,
+          'hour'
+        )
+        ||
+        Object.prototype.hasOwnProperty.call(
+          options,
+          'minute'
+        )
+        ||
+        Object.prototype.hasOwnProperty.call(
+          options,
+          'second'
+        );
+
+      if (!wantsTime) {
+        return dateText;
+      }
+
+      const timeText =
+        new Intl.DateTimeFormat(
+          'ar-EG',
+          {
+            timeZone:'Africa/Cairo',
+            hour:
+              options.hour || '2-digit',
+            minute:
+              options.minute || '2-digit',
+            hour12:true
+          }
+        )
+        .format(d);
+
+      return `${dateText}، ${timeText}`;
+    }
+
+    return new Intl.DateTimeFormat(
+      'en-GB',
+      {
+        timeZone:'Africa/Cairo',
+        day:'2-digit',
+        month:'2-digit',
+        year:'numeric',
+        ...options
+      }
+    ).format(d);
+  },
+
+  formatFullDate(value, includeWeekday=true) {
+    if (!value) return '—';
+
+    const d = new Date(value);
+
+    if (this.lang === 'ar') {
+      const weekday =
+        new Intl.DateTimeFormat(
+          'ar-EG',
+          {
+            timeZone:'Africa/Cairo',
+            weekday:'long'
+          }
+        )
+        .format(d);
+
+      const dateOnly =
+        this.formatDate(d);
+
+      return includeWeekday
+        ? `${weekday} ${dateOnly}`
+        : dateOnly;
+    }
+
+    const weekday =
+      new Intl.DateTimeFormat(
+        'en-GB',
+        {
+          timeZone:'Africa/Cairo',
+          weekday:'long'
+        }
+      )
+      .format(d);
+
+    return includeWeekday
+      ? `${weekday}, ${this.formatDate(d)}`
+      : this.formatDate(d);
   },
 
   formatDateOnly(value) {
@@ -171,23 +295,162 @@ const Clinic = window.Clinic = {
     document.getElementById('mainContent').innerHTML = `<section class="content-card centered"><div class="loader"></div><p class="muted">${this.escape(message || this.t('loading'))}</p></section>`;
   },
 
+  localizedPersonName(person={}) {
+    const username =
+      String(
+        person.username || ''
+      ).toLowerCase();
+
+    const email =
+      String(
+        person.email || ''
+      ).toLowerCase();
+
+    const raw =
+      String(
+        person.raw_display_name
+        ||
+        person.display_name
+        ||
+        person.username
+        ||
+        person.email
+        ||
+        ''
+      );
+
+    const rawLower =
+      raw.toLowerCase();
+
+    const isAhmed =
+      username === 'ahmed.alaa'
+      ||
+      email === 'ahalamo@yahoo.com'
+      ||
+      email === 'ahalam0@yahoo.com'
+      ||
+      rawLower === 'dr ahmed alaa'
+      ||
+      rawLower.includes('ahmed alaa');
+
+    const isMohamed =
+      username === 'mohamed.alaa'
+      ||
+      username === 'mohamed.alaa.owner'
+      ||
+      email === 'drmohamedalaa90@gmail.com'
+      ||
+      email === 'drmohamedalaa90@icloud.com'
+      ||
+      rawLower === 'dr mohamed alaa'
+      ||
+      rawLower.includes('mohamed alaa');
+
+    if (this.lang === 'ar') {
+      if (isAhmed) {
+        return 'د أحمد علاء';
+      }
+
+      if (isMohamed) {
+        return 'د محمد علاء';
+      }
+    }
+
+    if (isAhmed) {
+      return 'Dr Ahmed Alaa';
+    }
+
+    if (isMohamed) {
+      return 'Dr Mohamed Alaa';
+    }
+
+    return raw || 'User';
+  },
+
   async loadDoctors(force=false) {
-    if (this.doctors.length && !force) return this.doctors;
-    const { data, error } = await sb.rpc('list_active_doctors');
+    if (this.doctors.length && !force) {
+      return this.doctors;
+    }
+
+    const { data, error } =
+      await sb.rpc(
+        'list_active_doctors'
+      );
+
     if (!error && Array.isArray(data)) {
-      this.doctors = data;
-      return data;
+      this.doctors =
+        data.map(doctor=>{
+          const rawDisplay =
+            doctor.raw_display_name
+            ||
+            doctor.display_name
+            ||
+            doctor.username;
+
+          const record = {
+            ...doctor,
+            raw_display_name:
+              rawDisplay
+          };
+
+          return {
+            ...record,
+            display_name:
+              this.localizedPersonName(
+                record
+              )
+          };
+        });
+
+      return this.doctors;
     }
-    // Graceful fallback: current doctor remains available if helper SQL has not yet been run.
+
     if (this.isDoctor()) {
-      this.doctors = [{ id: this.user.id, display_name: this.profile.display_name, username: this.profile.username, photo_url: this.profile.photo_url }];
+      const fallback = {
+        id:this.user.id,
+        username:this.profile.username,
+        email:this.profile.email,
+        raw_display_name:
+          this.profile.display_name,
+        display_name:
+          this.profile.display_name,
+        photo_url:
+          this.profile.photo_url
+      };
+
+      fallback.display_name =
+        this.localizedPersonName(
+          fallback
+        );
+
+      this.doctors = [
+        fallback
+      ];
     }
-    console.warn('list_active_doctors unavailable. Run sql/task-13b-13f-helper.sql', error);
+
+    console.warn(
+      'list_active_doctors unavailable.',
+      error
+    );
+
     return this.doctors;
   },
 
   doctorName(id) {
-    return this.doctors.find(d => d.id === id)?.display_name || 'Doctor';
+    const doctor =
+      this.doctors.find(
+        d=>d.id===id
+      );
+
+    return doctor
+      ? this.localizedPersonName(
+          doctor
+        )
+      : (
+          this.lang==='ar'
+            ?'الطبيب'
+            :'Doctor'
+        );
   },
 
   navItem(icon, key, page) {
@@ -283,9 +546,28 @@ const Clinic = window.Clinic = {
       { timeZone:'Africa/Cairo', weekday:'long' }
     ).format(now);
 
-    // Example: Saturday, 08/08/2026
-    document.getElementById('todayDate').textContent =
-      `${weekday}, ${this.formatDate(now)}`;
+    document
+      .getElementById('todayDate')
+      .textContent =
+        this.formatFullDate(
+          now,
+          true
+        );
+
+    if (this.profile) {
+      document
+        .getElementById('profileName')
+        .textContent =
+          this.localizedPersonName(
+            this.profile
+          );
+
+      document
+        .getElementById('profileRole')
+        .textContent =
+          this.primaryRoleLabel();
+    }
+
     this.buildNavigation();
   },
 
@@ -482,7 +764,10 @@ const Clinic = window.Clinic = {
 
     if (!localStorage.getItem('clinic_language') && profile.preferred_language) this.lang = profile.preferred_language;
 
-    document.getElementById('profileName').textContent = profile.display_name || profile.username || profile.email;
+    document.getElementById('profileName').textContent =
+      this.localizedPersonName(
+        profile
+      );
     document.getElementById('profileRole').textContent = this.primaryRoleLabel();
     document.getElementById('profileAvatar').textContent = (profile.display_name || profile.username || 'U').trim().charAt(0).toUpperCase();
     await this.refreshAvatar();
@@ -522,9 +807,62 @@ const Clinic = window.Clinic = {
 
 // Global UI wiring
 window.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener(
+    'keydown',
+    event=>{
+      if(event.key!=='Escape'){
+        return;
+      }
+
+      const modalRoot =
+        document.getElementById(
+          'modalRoot'
+        );
+
+      if(
+        modalRoot
+        &&
+        !modalRoot.classList.contains(
+          'hidden'
+        )
+      ){
+        Clinic.closeModal();
+        return;
+      }
+
+      if(
+        document
+          .getElementById(
+            'notificationDrawer'
+          )
+          ?.classList.contains(
+            'open'
+          )
+      ){
+        window
+          .ClinicNotifications
+          ?.close?.();
+        return;
+      }
+
+      if(
+        document
+          .getElementById(
+            'sidebar'
+          )
+          ?.classList.contains(
+            'open'
+          )
+      ){
+        Clinic.closeMobileSidebar();
+      }
+    }
+  );
+
   document.querySelectorAll('.app-lang-btn').forEach(btn => btn.addEventListener('click', async () => {
     Clinic.lang = btn.dataset.lang;
     localStorage.setItem('clinic_language', Clinic.lang);
+    await Clinic.loadDoctors(true);
     Clinic.applyLanguage();
     await Clinic.route(Clinic.currentPage);
   }));
