@@ -1,0 +1,9 @@
+In app.html, find:
+
+<script src="js/notifications.js"></script>
+
+Immediately AFTER it add:
+
+<script src="js/push-notifications.js"></script>
+
+Do not remove any of your existing scripts.
