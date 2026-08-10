@@ -509,6 +509,407 @@
       background: #e3f6f1;
     }
 
+    /* ======================================================
+       NEW animated step-by-step directions feature card
+    ====================================================== */
+
+    .directions-feature-card {
+      position: relative;
+      display: grid;
+      grid-template-columns: 64px minmax(0,1fr) auto;
+      align-items: center;
+      gap: 14px;
+
+      min-height: 112px;
+      padding: 16px 16px 16px 14px;
+
+      border: 2px solid #0e8a78;
+      border-radius: 18px;
+
+      background:
+        linear-gradient(
+          125deg,
+          #e9faf5 0%,
+          #f9fffd 48%,
+          #e8f5ff 100%
+        );
+
+      color: var(--text);
+      text-decoration: none;
+
+      box-shadow:
+        0 14px 34px rgba(14,138,120,.17);
+
+      overflow: hidden;
+
+      animation:
+        directionsCardPulse 2.8s ease-in-out infinite;
+    }
+
+    .directions-feature-card::after {
+      content: "";
+      position: absolute;
+      inset: -80% -35%;
+      width: 38%;
+      transform: rotate(18deg);
+      background:
+        linear-gradient(
+          90deg,
+          transparent,
+          rgba(255,255,255,.78),
+          transparent
+        );
+      animation:
+        directionsShimmer 3.6s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .directions-feature-badge {
+      position: absolute;
+      top: 8px;
+      left: 10px;
+
+      z-index: 2;
+
+      padding: 4px 9px;
+
+      border-radius: 999px;
+
+      background: #ef4444;
+      color: white;
+
+      font-size: 9px;
+      font-weight: 950;
+      letter-spacing: .5px;
+
+      box-shadow:
+        0 5px 12px rgba(239,68,68,.25);
+
+      animation:
+        newBadgeBounce 1.5s ease-in-out infinite;
+    }
+
+    .directions-feature-icon {
+      position: relative;
+      width: 60px;
+      height: 60px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 18px;
+
+      background: white;
+
+      font-size: 29px;
+
+      box-shadow:
+        0 7px 18px rgba(16,38,63,.09);
+
+      animation:
+        compassFloat 2.1s ease-in-out infinite;
+    }
+
+    .directions-feature-copy {
+      min-width: 0;
+      padding-left: 24px;
+    }
+
+    .directions-feature-copy strong {
+      display: block;
+      margin-bottom: 5px;
+
+      color: #087161;
+
+      font-size: 17px;
+      font-weight: 950;
+      line-height: 1.45;
+    }
+
+    .directions-feature-copy p {
+      margin: 0;
+
+      color: #526579;
+
+      font-size: 11px;
+      line-height: 1.8;
+    }
+
+    .directions-route-motion {
+      position: relative;
+
+      height: 18px;
+      margin-top: 9px;
+
+      overflow: hidden;
+    }
+
+    .directions-route-motion::before {
+      content: "";
+      position: absolute;
+      top: 8px;
+      right: 0;
+      left: 0;
+
+      height: 2px;
+
+      border-radius: 999px;
+
+      background:
+        repeating-linear-gradient(
+          90deg,
+          #0e8a78 0 13px,
+          transparent 13px 21px
+        );
+
+      opacity: .38;
+    }
+
+    .directions-moving-dot {
+      position: absolute;
+      top: 3px;
+      right: -12px;
+
+      width: 11px;
+      height: 11px;
+
+      border: 2px solid white;
+      border-radius: 50%;
+
+      background: #0e8a78;
+
+      box-shadow:
+        0 2px 8px rgba(14,138,120,.28);
+
+      animation:
+        routeDotMove 3s linear infinite;
+    }
+
+    .directions-feature-arrow {
+      position: relative;
+      z-index: 2;
+
+      width: 38px;
+      height: 38px;
+
+      display: grid;
+      place-items: center;
+
+      border-radius: 50%;
+
+      background: var(--navy);
+      color: white;
+
+      font-size: 21px;
+      font-weight: 950;
+
+      box-shadow:
+        0 7px 16px rgba(16,38,63,.18);
+
+      animation:
+        arrowNudge 1.15s ease-in-out infinite;
+    }
+
+    @keyframes directionsCardPulse {
+      0%,100% {
+        transform: translateY(0);
+        box-shadow:
+          0 14px 34px rgba(14,138,120,.16);
+      }
+
+      50% {
+        transform: translateY(-2px);
+        box-shadow:
+          0 19px 40px rgba(14,138,120,.23);
+      }
+    }
+
+    @keyframes directionsShimmer {
+      0%,45% {
+        transform:
+          translateX(190%)
+          rotate(18deg);
+      }
+
+      75%,100% {
+        transform:
+          translateX(-250%)
+          rotate(18deg);
+      }
+    }
+
+    @keyframes newBadgeBounce {
+      0%,100% {
+        transform:
+          scale(1)
+          rotate(-2deg);
+      }
+
+      50% {
+        transform:
+          scale(1.08)
+          rotate(2deg);
+      }
+    }
+
+    @keyframes compassFloat {
+      0%,100% {
+        transform:
+          translateY(0)
+          rotate(0deg);
+      }
+
+      50% {
+        transform:
+          translateY(-4px)
+          rotate(-5deg);
+      }
+    }
+
+    @keyframes routeDotMove {
+      from {
+        right: -12px;
+      }
+
+      to {
+        right: calc(100% + 12px);
+      }
+    }
+
+    @keyframes arrowNudge {
+      0%,100% {
+        transform:
+          translateX(0);
+      }
+
+      50% {
+        transform:
+          translateX(-5px);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .directions-feature-card,
+      .directions-feature-card::after,
+      .directions-feature-badge,
+      .directions-feature-icon,
+      .directions-moving-dot,
+      .directions-feature-arrow {
+        animation: none !important;
+      }
+    }
+
+    /* ======================================================
+       Save booking summary as image
+    ====================================================== */
+
+    .success-action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+
+      margin:
+        4px auto 0;
+
+      max-width: 430px;
+    }
+
+    .save-summary-photo {
+      min-height: 50px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+
+      border: 0;
+      border-radius: 13px;
+
+      background:
+        linear-gradient(
+          135deg,
+          #0e8a78,
+          #0a7364
+        );
+
+      color: white;
+
+      cursor: pointer;
+
+      font-size: 13px;
+      font-weight: 950;
+
+      box-shadow:
+        0 9px 22px rgba(14,138,120,.19);
+    }
+
+    .save-summary-photo:disabled {
+      opacity: .62;
+      cursor: wait;
+    }
+
+    .save-summary-photo-status {
+      display: none;
+
+      max-width: 430px;
+      margin: 9px auto 0;
+
+      color: var(--green);
+
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.7;
+      text-align: center;
+    }
+
+    .save-summary-photo-status.show {
+      display: block;
+    }
+
+    @media (max-width: 560px) {
+      .directions-feature-card {
+        grid-template-columns:
+          52px minmax(0,1fr) 34px;
+
+        gap: 10px;
+
+        min-height: 108px;
+        padding: 15px 12px;
+      }
+
+      .directions-feature-icon {
+        width: 50px;
+        height: 50px;
+
+        border-radius: 15px;
+
+        font-size: 24px;
+      }
+
+      .directions-feature-copy {
+        padding-left: 18px;
+      }
+
+      .directions-feature-copy strong {
+        font-size: 14px;
+      }
+
+      .directions-feature-copy p {
+        font-size: 10px;
+      }
+
+      .directions-feature-arrow {
+        width: 32px;
+        height: 32px;
+
+        font-size: 18px;
+      }
+
+      .success-action-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .book-another {
       min-height: 48px;
       border: 1px solid var(--border);
@@ -1101,21 +1502,82 @@
           </a>
 
           <a
-            class="directions-page-button"
+            class="directions-feature-card"
             href="directions.html"
+            aria-label="دليل الوصول للعيادة خطوة بخطوة - جديد"
           >
-            <span>🧭</span>
-            ازاي تروح للعيادة خطوة بخطوة؟
+
+            <span class="directions-feature-badge">
+              NEW! جديد
+            </span>
+
+
+            <span
+              class="directions-feature-icon"
+              aria-hidden="true"
+            >
+              🧭
+            </span>
+
+
+            <span class="directions-feature-copy">
+
+              <strong>
+                ازاي تروح للعيادة خطوة بخطوة؟
+              </strong>
+
+              <p>
+                اختار الطريق اللي جاي منه،
+                وهتشوف خطوات الوصول والمعالم في الطريق.
+              </p>
+
+              <span
+                class="directions-route-motion"
+                aria-hidden="true"
+              >
+                <span class="directions-moving-dot"></span>
+              </span>
+
+            </span>
+
+
+            <span
+              class="directions-feature-arrow"
+              aria-hidden="true"
+            >
+              ←
+            </span>
+
           </a>
         </div>
 
-        <button
-          id="bookAnother"
-          class="book-another"
-          type="button"
-        >
-          حجز موعد آخر
-        </button>
+        <div class="success-action-grid">
+
+          <button
+            id="saveBookingPhoto"
+            class="save-summary-photo"
+            type="button"
+          >
+            <span>🖼️</span>
+            حفظ ملخص الحجز كصورة
+          </button>
+
+
+          <button
+            id="bookAnother"
+            class="book-another"
+            type="button"
+          >
+            حجز موعد آخر
+          </button>
+
+        </div>
+
+
+        <div
+          id="saveBookingPhotoStatus"
+          class="save-summary-photo-status"
+        ></div>
       </section>
 
     </section>
@@ -1196,6 +1658,22 @@
       document.getElementById(
         'bookingSummary'
       );
+
+
+    const saveBookingPhoto =
+      document.getElementById(
+        'saveBookingPhoto'
+      );
+
+
+    const saveBookingPhotoStatus =
+      document.getElementById(
+        'saveBookingPhotoStatus'
+      );
+
+
+    let lastSuccessfulBooking =
+      null;
 
 
     const newPatientPanel =
@@ -2009,6 +2487,734 @@
       );
 
 
+    function drawRoundedRect(
+      ctx,
+      x,
+      y,
+      width,
+      height,
+      radius
+    ) {
+
+      const r =
+        Math.min(
+          radius,
+          width/2,
+          height/2
+        );
+
+
+      ctx.beginPath();
+
+      ctx.moveTo(
+        x+r,
+        y
+      );
+
+      ctx.arcTo(
+        x+width,
+        y,
+        x+width,
+        y+height,
+        r
+      );
+
+      ctx.arcTo(
+        x+width,
+        y+height,
+        x,
+        y+height,
+        r
+      );
+
+      ctx.arcTo(
+        x,
+        y+height,
+        x,
+        y,
+        r
+      );
+
+      ctx.arcTo(
+        x,
+        y,
+        x+width,
+        y,
+        r
+      );
+
+      ctx.closePath();
+    }
+
+
+    function canvasWrappedText(
+      ctx,
+      text,
+      x,
+      y,
+      maxWidth,
+      lineHeight
+    ) {
+
+      const words =
+        String(
+          text || ''
+        )
+        .split(/\s+/)
+        .filter(Boolean);
+
+
+      const lines =
+        [];
+
+      let line =
+        '';
+
+
+      for(
+        const word
+        of words
+      ){
+
+        const test =
+          line
+            ? `${line} ${word}`
+            : word;
+
+
+        if(
+          ctx.measureText(
+            test
+          ).width
+          >
+          maxWidth
+          &&
+          line
+        ){
+
+          lines.push(
+            line
+          );
+
+          line =
+            word;
+
+        }
+        else{
+
+          line =
+            test;
+        }
+      }
+
+
+      if(line){
+        lines.push(
+          line
+        );
+      }
+
+
+      lines.forEach(
+        (
+          current,
+          index
+        )=>{
+
+          ctx.fillText(
+            current,
+            x,
+            y
+            +
+            index*lineHeight
+          );
+        }
+      );
+
+
+      return (
+        lines.length
+        *
+        lineHeight
+      );
+    }
+
+
+    function loadCanvasImage(
+      src
+    ) {
+
+      return new Promise(
+        (
+          resolve,
+          reject
+        )=>{
+
+          const image =
+            new Image();
+
+
+          image.onload =
+            ()=>resolve(
+              image
+            );
+
+
+          image.onerror =
+            reject;
+
+
+          image.src =
+            src;
+        }
+      );
+    }
+
+
+    async function createBookingSummaryImage() {
+
+      const booking =
+        lastSuccessfulBooking;
+
+
+      if(!booking){
+
+        throw new Error(
+          'No booking summary available'
+        );
+      }
+
+
+      const canvas =
+        document.createElement(
+          'canvas'
+        );
+
+
+      /*
+       * Portrait format works well for:
+       * - iPhone/Android gallery
+       * - WhatsApp
+       * - screenshots
+       */
+      canvas.width =
+        1080;
+
+      canvas.height =
+        1420;
+
+
+      const ctx =
+        canvas.getContext(
+          '2d'
+        );
+
+
+      ctx.textBaseline =
+        'top';
+
+      ctx.direction =
+        'rtl';
+
+      ctx.textAlign =
+        'right';
+
+
+      /*
+       * Background
+       */
+      ctx.fillStyle =
+        '#f4f7fb';
+
+      ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+
+      /*
+       * Main white card
+       */
+      drawRoundedRect(
+        ctx,
+        60,
+        55,
+        960,
+        1310,
+        42
+      );
+
+      ctx.fillStyle =
+        '#ffffff';
+
+      ctx.fill();
+
+
+      /*
+       * Green confirmation header
+       */
+      drawRoundedRect(
+        ctx,
+        95,
+        92,
+        890,
+        190,
+        28
+      );
+
+      ctx.fillStyle =
+        '#eaf8f4';
+
+      ctx.fill();
+
+
+      try{
+
+        const logo =
+          await loadCanvasImage(
+            'assets/alaa-clinic-logo.png'
+          );
+
+
+        const ratio =
+          Math.min(
+            420/logo.width,
+            130/logo.height
+          );
+
+
+        const w =
+          logo.width*ratio;
+
+        const h =
+          logo.height*ratio;
+
+
+        ctx.drawImage(
+          logo,
+          540-w/2,
+          110,
+          w,
+          h
+        );
+
+      }
+      catch(error){
+
+        console.warn(
+          'Could not draw booking image logo',
+          error
+        );
+      }
+
+
+      /*
+       * Confirmation
+       */
+      ctx.fillStyle =
+        '#0e8a78';
+
+      ctx.font =
+        '900 46px Tahoma, Arial, sans-serif';
+
+      ctx.textAlign =
+        'center';
+
+      ctx.fillText(
+        '✓ تم الحجز بنجاح',
+        540,
+        305
+      );
+
+
+      ctx.fillStyle =
+        '#718096';
+
+      ctx.font =
+        '600 24px Tahoma, Arial, sans-serif';
+
+      ctx.fillText(
+        'احتفظ بالصورة للرجوع إلى تفاصيل موعدك',
+        540,
+        370
+      );
+
+
+      /*
+       * Details
+       */
+      const detailRows = [
+        ['الاسم', booking.name],
+        ['الطبيب', booking.doctor],
+        ['واتساب', booking.whatsapp],
+        ['اليوم', booking.date],
+        ['الساعة', booking.time],
+        ['رقم الحجز', booking.appointmentNumber],
+        ['الحالة', 'محجوز']
+      ];
+
+
+      let y =
+        435;
+
+
+      for(
+        const [
+          label,
+          value
+        ]
+        of detailRows
+      ){
+
+        drawRoundedRect(
+          ctx,
+          115,
+          y,
+          850,
+          92,
+          20
+        );
+
+        ctx.fillStyle =
+          '#f8fafc';
+
+        ctx.fill();
+
+        ctx.strokeStyle =
+          '#dce4ed';
+
+        ctx.lineWidth =
+          2;
+
+        ctx.stroke();
+
+
+        ctx.textAlign =
+          'right';
+
+        ctx.fillStyle =
+          '#7a8798';
+
+        ctx.font =
+          '600 22px Tahoma, Arial, sans-serif';
+
+        ctx.fillText(
+          label,
+          925,
+          y+29
+        );
+
+
+        ctx.fillStyle =
+          '#10233c';
+
+        ctx.font =
+          '800 25px Tahoma, Arial, sans-serif';
+
+
+        const valueText =
+          String(
+            value || '—'
+          );
+
+
+        /*
+         * Keep the patient name inside the row.
+         */
+        if(
+          label==='الاسم'
+          &&
+          ctx.measureText(
+            valueText
+          ).width>560
+        ){
+
+          ctx.font =
+            '800 21px Tahoma, Arial, sans-serif';
+        }
+
+
+        ctx.textAlign =
+          'left';
+
+        ctx.direction =
+          label==='واتساب'
+            ? 'ltr'
+            : 'rtl';
+
+
+        ctx.fillText(
+          valueText,
+          155,
+          y+29
+        );
+
+
+        ctx.direction =
+          'rtl';
+
+
+        y +=
+          104;
+      }
+
+
+      /*
+       * Location footer
+       */
+      drawRoundedRect(
+        ctx,
+        115,
+        1170,
+        850,
+        135,
+        22
+      );
+
+      ctx.fillStyle =
+        '#10263f';
+
+      ctx.fill();
+
+
+      ctx.textAlign =
+        'center';
+
+      ctx.fillStyle =
+        '#ffffff';
+
+      ctx.font =
+        '900 27px Tahoma, Arial, sans-serif';
+
+      ctx.fillText(
+        '📍 مكان العيادة',
+        540,
+        1191
+      );
+
+
+      ctx.font =
+        '700 22px Tahoma, Arial, sans-serif';
+
+      ctx.fillText(
+        '125 شارع بورسعيد، الإبراهيمية',
+        540,
+        1236
+      );
+
+
+      ctx.fillStyle =
+        '#dbe8f5';
+
+      ctx.font =
+        '600 18px Tahoma, Arial, sans-serif';
+
+      ctx.fillText(
+        'فوق مراتب يانسن',
+        540,
+        1275
+      );
+
+
+      return canvas;
+    }
+
+
+    async function saveBookingSummaryAsPhoto() {
+
+      if(
+        !lastSuccessfulBooking
+      ){
+
+        return;
+      }
+
+
+      saveBookingPhoto.disabled =
+        true;
+
+
+      saveBookingPhotoStatus.textContent =
+        'جاري تجهيز صورة ملخص الحجز...';
+
+      saveBookingPhotoStatus.classList.add(
+        'show'
+      );
+
+
+      try{
+
+        const canvas =
+          await createBookingSummaryImage();
+
+
+        const blob =
+          await new Promise(
+            resolve=>
+              canvas.toBlob(
+                resolve,
+                'image/png',
+                1
+              )
+          );
+
+
+        if(!blob){
+
+          throw new Error(
+            'Could not create PNG'
+          );
+        }
+
+
+        const safeNumber =
+          String(
+            lastSuccessfulBooking
+              .appointmentNumber
+            ||
+            'booking'
+          )
+          .replace(
+            /[^a-zA-Z0-9_-]/g,
+            '-'
+          );
+
+
+        const file =
+          new File(
+            [
+              blob
+            ],
+            `${safeNumber}.png`,
+            {
+              type:
+                'image/png'
+            }
+          );
+
+
+        /*
+         * On iPhone/mobile this opens the native share sheet.
+         * "Save Image" / Photos can be chosen there.
+         */
+        if(
+          navigator.share
+          &&
+          navigator.canShare
+          &&
+          navigator.canShare({
+            files:[
+              file
+            ]
+          })
+        ){
+
+          await navigator.share({
+            files:[
+              file
+            ],
+
+            title:
+              'ملخص حجز العيادة',
+
+            text:
+              'ملخص موعدك في عيادة د. أحمد علاء'
+          });
+
+
+          saveBookingPhotoStatus.textContent =
+            'تم تجهيز الصورة ✓';
+
+          return;
+        }
+
+
+        /*
+         * Desktop / browsers without file sharing.
+         */
+        const url =
+          URL.createObjectURL(
+            blob
+          );
+
+
+        const link =
+          document.createElement(
+            'a'
+          );
+
+
+        link.href =
+          url;
+
+        link.download =
+          `${safeNumber}.png`;
+
+
+        document.body.appendChild(
+          link
+        );
+
+
+        link.click();
+
+
+        link.remove();
+
+
+        window.setTimeout(
+          ()=>URL.revokeObjectURL(
+            url
+          ),
+          1500
+        );
+
+
+        saveBookingPhotoStatus.textContent =
+          'تم حفظ ملخص الحجز كصورة ✓';
+
+      }
+      catch(error){
+
+        /*
+         * Canceling the native share sheet is not a booking error.
+         */
+        if(
+          error?.name==='AbortError'
+        ){
+
+          saveBookingPhotoStatus.textContent =
+            'تم إلغاء حفظ الصورة.';
+
+        }
+        else{
+
+          console.error(
+            'Save booking photo failed',
+            error
+          );
+
+
+          saveBookingPhotoStatus.textContent =
+            'تعذر حفظ الصورة. حاول مرة أخرى.';
+        }
+      }
+      finally{
+
+        saveBookingPhoto.disabled =
+          false;
+      }
+    }
+
+
+    saveBookingPhoto.addEventListener(
+      'click',
+      saveBookingSummaryAsPhoto
+    );
+
+
     async function loadDoctor() {
       clearError();
 
@@ -2551,32 +3757,86 @@
           );
 
 
+        const successName =
+          data?.patient_name
+          ||
+          arabicName
+          ||
+          '—';
+
+
+        const successDoctor =
+          (
+            data?.doctor_name
+            ||
+            selectedDoctorName
+            ||
+            ''
+          )
+          .replace(
+            /^Dr\.?\s*Ahmed\s+Alaa$/i,
+            'د أحمد علاء'
+          );
+
+
+        const successWhatsapp =
+          data?.whatsapp
+          ||
+          whatsapp
+          ||
+          returningWhatsapp?.value
+          ||
+          '—';
+
+
+        const successTime =
+          `${cairoTimeLabel(slotStart)} - ${cairoTimeLabel(slotEnd)}`;
+
+
+        const successAppointmentNumber =
+          data?.appointment_number
+          ||
+          '—';
+
+
+        lastSuccessfulBooking = {
+          name:
+            successName,
+
+          doctor:
+            successDoctor,
+
+          whatsapp:
+            successWhatsapp,
+
+          date:
+            displayDate,
+
+          time:
+            successTime,
+
+          appointmentNumber:
+            successAppointmentNumber
+        };
+
+
         bookingSummary.innerHTML = `
           <div>
             <span>الاسم</span>
-            <strong>${escapeHtml(arabicName)}</strong>
+            <strong>${escapeHtml(successName)}</strong>
           </div>
 
           <div>
             <span>الطبيب</span>
             <strong>${escapeHtml(
-              (
-                data?.doctor_name ||
-                selectedDoctorName ||
-                ''
-              )
-              .replace(
-                /^Dr\.?\s*Ahmed\s+Alaa$/i,
-                'د أحمد علاء'
-              )
+              successDoctor
             )}</strong>
           </div>
 
           <div>
             <span>واتساب</span>
             <strong dir="ltr">${escapeHtml(
-              data?.whatsapp ||
-              whatsapp
+              successWhatsapp
             )}</strong>
           </div>
 
@@ -2588,17 +3848,16 @@
           <div>
             <span>الساعة</span>
             <strong>
-              ${cairoTimeLabel(slotStart)}
-              -
-              ${cairoTimeLabel(slotEnd)}
+              ${escapeHtml(
+                successTime
+              )}
             </strong>
           </div>
 
           <div>
             <span>رقم الحجز</span>
             <strong>${escapeHtml(
-              data?.appointment_number ||
-              '—'
+              successAppointmentNumber
             )}</strong>
           </div>
 
