@@ -1,459 +1,593 @@
-window.ClinicNotifications = {
-  items: [],
-  dashboardFilter: 'all',
+(() => {
 
-  categoryMeta: {
-    all:        { en:'All',             ar:'الكل',                 icon:'●'  },
-    booking:    { en:'Bookings',        ar:'الحجوزات',             icon:'📅' },
-    finance:    { en:'Finance',         ar:'المالية',              icon:'💳' },
-    logistics:  { en:'Logistics issue', ar:'نقص / مشكلة لوجستية',  icon:'📦' },
-    apology:    { en:'Apology',         ar:'الاعتذارات',           icon:'⚠'  },
-    referral:   { en:'Referrals',       ar:'التحويلات',            icon:'⇄'  },
-    attendance: { en:'Attendance',      ar:'الحضور والإجازات',     icon:'✓'  }
-  },
+  // =========================================================
+  // IMPORTANT:
+  // Paste ONLY your PUBLIC VAPID key below.
+  // Never put the private VAPID key in GitHub.
+  // =========================================================
 
-  label(category) {
-    const C = window.Clinic;
-    const meta = this.categoryMeta[category] || this.categoryMeta.all;
-    return C?.lang === 'ar' ? meta.ar : meta.en;
-  },
+  const VAPID_PUBLIC_KEY =
+    'BEuGMqiPq8ehEUJL1uxpWR_U5D5uu0dTxH-_sVz0B2exi0PIPy5ykfbj_sza2JFsVP19V1spwbSdTadeoFHMSvA';
 
-  icon(category) {
-    return (this.categoryMeta[category] || this.categoryMeta.all).icon;
-  },
 
-  unreadCount(category='all') {
-    return this.items.filter(x =>
-      !x.is_read &&
-      (category === 'all' || x.category === category)
-    ).length;
-  },
+  function clinic() {
+    return window.Clinic || null;
+  }
 
-  allowedCategories() {
-    const C = window.Clinic;
-    const cats = ['all'];
 
-    if (C?.isReception?.() || C?.isDoctor?.()) cats.push('booking');
-    if (C?.isReception?.()) cats.push('finance');
-
-    // Deficiency + approved apologies are intentionally visible
-    // to every active clinic member.
-    cats.push('logistics', 'apology');
-
-    if (C?.isDoctor?.()) cats.push('referral');
-    if (C?.isManagement?.() || C?.hasRole?.('secretary')) cats.push('attendance');
-
-    return [...new Set(cats)];
-  },
-
-  async refresh() {
-    const C = window.Clinic;
-    if (!C?.user) return;
-
-    const [
-      baseResult,
-      logisticsManagementResult
-    ] = await Promise.all([
-      C.sb.rpc(
-        'get_dashboard_notifications',
-        { p_limit: 80 }
-      ),
-
-      C.isManagement?.()
-        ? C.sb.rpc(
-            'get_logistics_management_notifications',
-            { p_limit: 30 }
-          )
-        : Promise.resolve({
-            data: [],
-            error: null
-          })
-    ]);
-
-    if (baseResult.error) {
-      console.warn(
-        'Dashboard notifications unavailable. Run the dashboard notification SQL patch.',
-        baseResult.error
-      );
-    }
-
-    if (logisticsManagementResult.error) {
-      console.warn(
-        'Management logistics notifications unavailable. Run sql/logistics-master-list.sql',
-        logisticsManagementResult.error
-      );
-    }
-
-    const sortedData = [
-      ...(baseResult.data || []),
-      ...(logisticsManagementResult.data || [])
-    ]
-      .sort((a,b) =>
-        Number(b.priority || 0) - Number(a.priority || 0)
-        ||
-        new Date(b.event_time || 0) - new Date(a.event_time || 0)
-      );
-
-    // Defensive booking de-duplication.
-    // Some older database builds had the appointment status-history
-    // trigger installed twice, so the same booking could produce two
-    // status-history rows a fraction of a second apart.
-    const seen = new Set();
-
-    const data = sortedData
-      .filter(item => {
-        let key = item.notification_key;
-
-        if(item.category === 'booking'){
-          const bucket =
-            Math.floor(
-              new Date(item.event_time || 0).getTime() / 5000
-            );
-
-          key = [
-            'booking',
-            item.entity_id || '',
-            item.title_en || item.title_ar || '',
-            bucket
-          ].join(':');
-        }
-
-        if(seen.has(key)){
-          return false;
-        }
-
-        seen.add(key);
-        return true;
-      })
-      .slice(0, 100);
-
-    this.items = data.map(x => ({
-      id: x.notification_key,
-      category: x.category,
-      priority: Number(x.priority || 0),
-      title: C.lang === 'ar' ? x.title_ar : x.title_en,
-      text: C.lang === 'ar' ? x.body_ar : x.body_en,
-      time: x.event_time,
-      page: x.target_page || 'dashboard',
-      entityId: x.entity_id,
-      is_read: !!x.is_read
-    }));
-
-    this.render();
-    this.renderDashboard();
-  },
-
-  async markSeen(id, { navigate=false, page='dashboard' } = {}) {
-    const C = window.Clinic;
-    const item = this.items.find(x => x.id === id);
-
-    if (item && !item.is_read) {
-      // Optimistic UI first.
-      item.is_read = true;
-      this.render();
-      this.renderDashboard();
-
-      const { error } = await C.sb.rpc(
-        'mark_dashboard_notification_read',
-        { p_notification_key: id }
-      );
-
-      if (error) {
-        item.is_read = false;
-        this.render();
-        this.renderDashboard();
-        C.toast(
-          C.lang === 'ar'
-            ? 'تعذر تحديث حالة الإشعار.'
-            : 'Could not update notification status.',
-          'error'
-        );
-        return;
-      }
-    }
-
-    if (navigate) {
-      this.close();
-      C.route(page || item?.page || 'dashboard');
-    }
-  },
-
-  async markAll() {
-    const C = window.Clinic;
-    const unread = this.items.filter(x => !x.is_read);
-
-    if (!unread.length) return;
-
-    const keys = unread.map(x => x.id);
-    unread.forEach(x => { x.is_read = true; });
-    this.render();
-    this.renderDashboard();
-
-    const { error } = await C.sb.rpc(
-      'mark_dashboard_notifications_read',
-      { p_notification_keys: keys }
+  function supabaseClient() {
+    return (
+      window.Clinic?.sb
+      ||
+      window.supabaseClient
+      ||
+      null
     );
+  }
+
+
+  function isArabic() {
+    return (
+      document.documentElement.lang === 'ar'
+      ||
+      document.documentElement.dir === 'rtl'
+      ||
+      window.Clinic?.lang === 'ar'
+    );
+  }
+
+
+  function text(ar,en) {
+    return isArabic()
+      ? ar
+      : en;
+  }
+
+
+  function urlBase64ToUint8Array(
+    base64String
+  ) {
+
+    const padding =
+      '='.repeat(
+        (
+          4
+          -
+          base64String.length % 4
+        )
+        % 4
+      );
+
+
+    const base64 =
+      (
+        base64String
+        + padding
+      )
+      .replace(/-/g,'+')
+      .replace(/_/g,'/');
+
+
+    const rawData =
+      atob(base64);
+
+
+    return Uint8Array.from(
+      [...rawData].map(
+        char=>
+          char.charCodeAt(0)
+      )
+    );
+  }
+
+
+  function toast(message,type='success') {
+
+    if (
+      window.Clinic?.toast
+    ) {
+
+      window.Clinic.toast(
+        message,
+        type
+      );
+
+      return;
+    }
+
+
+    alert(message);
+  }
+
+
+  async function waitForClinicUser() {
+
+    for (
+      let i=0;
+      i<40;
+      i++
+    ) {
+
+      if (
+        window.Clinic?.user?.id
+      ) {
+        return true;
+      }
+
+
+      await new Promise(
+        resolve=>
+          setTimeout(
+            resolve,
+            250
+          )
+      );
+    }
+
+
+    return false;
+  }
+
+
+  async function saveSubscription(
+    subscription
+  ) {
+
+    const client =
+      supabaseClient();
+
+
+    if (!client) {
+      throw new Error(
+        'Supabase client unavailable'
+      );
+    }
+
+
+    const json =
+      subscription.toJSON();
+
+
+    if (
+      !json.endpoint
+      ||
+      !json.keys?.p256dh
+      ||
+      !json.keys?.auth
+    ) {
+
+      throw new Error(
+        'Invalid browser push subscription'
+      );
+    }
+
+
+    const {
+      error
+    } =
+      await client.rpc(
+        'save_push_subscription',
+        {
+          p_endpoint:
+            json.endpoint,
+
+          p_p256dh:
+            json.keys.p256dh,
+
+          p_auth_key:
+            json.keys.auth,
+
+          p_user_agent:
+            navigator.userAgent
+        }
+      );
+
 
     if (error) {
-      unread.forEach(x => { x.is_read = false; });
-      this.render();
-      this.renderDashboard();
-      return C.toast(error.message, 'error');
+      throw error;
     }
-
-    C.toast(
-      C.lang === 'ar'
-        ? 'تم تعليم كل الإشعارات كمقروءة.'
-        : 'All notifications marked as read.'
-    );
-  },
-
-  render() {
-    const C = window.Clinic;
-    const badge = document.getElementById('notificationBadge');
-    const list = document.getElementById('notificationList');
-
-    if (!badge || !list) return;
-
-    const unread = this.unreadCount();
-
-    badge.textContent = unread > 99 ? '99+' : unread;
-    badge.classList.toggle('hidden', unread === 0);
-
-    list.innerHTML = this.items.length
-      ? this.items.map(x => `
-          <button
-            class="notification-item ${x.is_read ? 'read' : 'unread'}"
-            data-notification="${C.escape(x.id)}"
-            data-page="${C.escape(x.page || 'dashboard')}"
-          >
-            <span class="notification-icon">${this.icon(x.category)}</span>
-
-            <span>
-              <span class="notification-item-topline">
-                <span class="notification-category category-${C.escape(x.category)}">
-                  ${C.escape(this.label(x.category))}
-                </span>
-                ${!x.is_read ? '<i class="unread-dot" aria-label="Unread"></i>' : ''}
-              </span>
-
-              <strong>${C.escape(x.title)}</strong>
-              <small>${C.escape(x.text || '')}</small>
-              <em>
-                ${x.time
-                  ? C.formatDate(x.time, {
-                      day:'2-digit',
-                      month:'short',
-                      hour:'2-digit',
-                      minute:'2-digit'
-                    })
-                  : ''
-                }
-              </em>
-            </span>
-          </button>
-        `).join('')
-      : `<div class="empty-state">
-           ${C.lang === 'ar'
-             ? 'لا توجد إشعارات حالياً.'
-             : 'No notifications right now.'}
-         </div>`;
-
-    list.querySelectorAll('[data-notification]').forEach(button => {
-      button.onclick = () => this.markSeen(
-        button.dataset.notification,
-        {
-          navigate: true,
-          page: button.dataset.page
-        }
-      );
-    });
-  },
-
-  renderDashboard() {
-    const C = window.Clinic;
-    const root = document.getElementById('dashboardNotificationSection');
-    if (!root || !C) return;
-
-    const categories = this.allowedCategories();
-
-    if (!categories.includes(this.dashboardFilter)) {
-      this.dashboardFilter = 'all';
-    }
-
-    const unread = this.unreadCount();
-    const filtered = this.items
-      .filter(x =>
-        this.dashboardFilter === 'all' ||
-        x.category === this.dashboardFilter
-      )
-      .slice(0, 10);
-
-    root.innerHTML = `
-      <div class="section-head dashboard-notification-head">
-        <div>
-          <div class="notification-heading-line">
-            <span class="eyebrow">
-              ${C.lang === 'ar' ? 'التحديثات المهمة' : 'IMPORTANT UPDATES'}
-            </span>
-
-            <span
-              class="dashboard-unread-badge ${unread === 0 ? 'zero' : ''}"
-              title="${C.lang === 'ar' ? 'غير مقروء' : 'Unread'}"
-            >
-              ${unread > 99 ? '99+' : unread}
-            </span>
-          </div>
-
-          <h3>${C.lang === 'ar' ? 'الإشعارات' : 'Notifications'}</h3>
-
-          <p class="muted notification-intro">
-            ${C.lang === 'ar'
-              ? 'الاعتذارات، نقص احتياجات العيادة، الحجوزات والتحديثات المهمة الخاصة بدورك.'
-              : 'Apologies, clinic deficiencies, bookings and other role-relevant updates.'}
-          </p>
-        </div>
-
-        <button
-          id="dashboardMarkAllNotifications"
-          class="secondary-button compact"
-          ${unread === 0 ? 'disabled' : ''}
-        >
-          ${C.lang === 'ar' ? 'تعليم الكل كمقروء' : 'Mark all as read'}
-        </button>
-      </div>
-
-      <div class="notification-filters">
-        ${categories.map(category => {
-          const total = category === 'all'
-            ? this.items.length
-            : this.items.filter(x => x.category === category).length;
-
-          const catUnread = this.unreadCount(category);
-
-          return `
-            <button
-              class="notification-filter ${
-                this.dashboardFilter === category ? 'active' : ''
-              }"
-              data-notification-filter="${category}"
-            >
-              <span>${this.icon(category)}</span>
-              <span>${C.escape(this.label(category))}</span>
-              <b>${total}</b>
-              ${catUnread > 0
-                ? `<i>${catUnread > 99 ? '99+' : catUnread}</i>`
-                : ''
-              }
-            </button>
-          `;
-        }).join('')}
-      </div>
-
-      <div class="dashboard-notification-list">
-        ${filtered.length
-          ? filtered.map(x => `
-              <button
-                class="dashboard-notification-row ${
-                  x.is_read ? 'read' : 'unread'
-                }"
-                data-dashboard-notification="${C.escape(x.id)}"
-                data-page="${C.escape(x.page || 'dashboard')}"
-              >
-                <span class="dashboard-notification-icon category-bg-${C.escape(x.category)}">
-                  ${this.icon(x.category)}
-                </span>
-
-                <span class="dashboard-notification-copy">
-                  <span class="dashboard-notification-topline">
-                    <span class="notification-category category-${C.escape(x.category)}">
-                      ${C.escape(this.label(x.category))}
-                    </span>
-
-                    <span class="dashboard-notification-time">
-                      ${x.time
-                        ? C.formatDate(x.time, {
-                            day:'2-digit',
-                            month:'short',
-                            hour:'2-digit',
-                            minute:'2-digit'
-                          })
-                        : ''
-                      }
-                    </span>
-                  </span>
-
-                  <strong>${C.escape(x.title)}</strong>
-                  <small>${C.escape(x.text || '')}</small>
-                </span>
-
-                ${!x.is_read
-                  ? '<span class="dashboard-row-unread-dot"></span>'
-                  : '<span class="dashboard-row-chevron">›</span>'
-                }
-              </button>
-            `).join('')
-          : `<div class="empty-state dashboard-notification-empty">
-               ${C.lang === 'ar'
-                 ? 'لا توجد إشعارات في هذا التصنيف.'
-                 : 'No notifications in this category.'}
-             </div>`
-        }
-      </div>
-    `;
-
-    root
-      .querySelectorAll('[data-notification-filter]')
-      .forEach(button => {
-        button.onclick = () => {
-          this.dashboardFilter = button.dataset.notificationFilter;
-          this.renderDashboard();
-        };
-      });
-
-    root
-      .querySelectorAll('[data-dashboard-notification]')
-      .forEach(button => {
-        button.onclick = () => this.markSeen(
-          button.dataset.dashboardNotification,
-          {
-            navigate: button.dataset.page !== 'dashboard',
-            page: button.dataset.page
-          }
-        );
-      });
-
-    const markAll = document.getElementById('dashboardMarkAllNotifications');
-    if (markAll) markAll.onclick = () => this.markAll();
-  },
-
-  open() {
-    document.getElementById('notificationDrawer')?.classList.add('open');
-    document.getElementById('drawerOverlay')?.classList.add('show');
-    // Opening the drawer no longer automatically marks everything as read.
-    // Items are read when opened individually or via "Mark all as read".
-    this.render();
-  },
-
-  close() {
-    document.getElementById('notificationDrawer')?.classList.remove('open');
-    document.getElementById('drawerOverlay')?.classList.remove('show');
   }
-};
 
-window.addEventListener('DOMContentLoaded', () => {
-  document
-    .getElementById('notificationButton')
-    ?.addEventListener('click', () => ClinicNotifications.open());
 
-  document
-    .getElementById('closeNotifications')
-    ?.addEventListener('click', () => ClinicNotifications.close());
+  async function getCurrentSubscription() {
 
-  document
-    .getElementById('drawerOverlay')
-    ?.addEventListener('click', () => ClinicNotifications.close());
+    const registration =
+      await navigator
+        .serviceWorker
+        .ready;
 
-  // Keep the orange unread counter reasonably fresh.
-  setInterval(() => ClinicNotifications.refresh(), 60000);
-});
+
+    return registration
+      .pushManager
+      .getSubscription();
+  }
+
+
+  async function refreshButton() {
+
+    const button =
+      document.getElementById(
+        'enablePushNotifications'
+      );
+
+
+    if (!button) {
+      return;
+    }
+
+
+    if (
+      !('Notification' in window)
+      ||
+      !('serviceWorker' in navigator)
+      ||
+      !('PushManager' in window)
+    ) {
+
+      button.textContent =
+        text(
+          'الإشعارات غير مدعومة',
+          'Push unsupported'
+        );
+
+      button.disabled =
+        true;
+
+      return;
+    }
+
+
+    if (
+      Notification.permission ===
+      'denied'
+    ) {
+
+      button.textContent =
+        text(
+          '🔕 الإشعارات محظورة',
+          '🔕 Push blocked'
+        );
+
+      button.disabled =
+        true;
+
+      return;
+    }
+
+
+    try {
+
+      const subscription =
+        await getCurrentSubscription();
+
+
+      if (
+        Notification.permission ===
+          'granted'
+        &&
+        subscription
+      ) {
+
+        button.textContent =
+          text(
+            '✓ الإشعارات مفعلة',
+            '✓ Push enabled'
+          );
+
+        button.classList.add(
+          'push-enabled'
+        );
+
+        return;
+      }
+
+    }
+    catch(error) {
+
+      console.warn(
+        'Push state check failed',
+        error
+      );
+    }
+
+
+    button.textContent =
+      text(
+        '🔔 تفعيل الإشعارات',
+        '🔔 Enable push'
+      );
+
+    button.classList.remove(
+      'push-enabled'
+    );
+
+    button.disabled =
+      false;
+  }
+
+
+  async function enablePush() {
+
+    if (
+      VAPID_PUBLIC_KEY ===
+        'PASTE_YOUR_VAPID_PUBLIC_KEY_HERE'
+      ||
+      VAPID_PUBLIC_KEY.length < 30
+    ) {
+
+      toast(
+        text(
+          'ضع VAPID_PUBLIC_KEY في ملف push-notifications.js أولاً.',
+          'Paste your VAPID_PUBLIC_KEY into push-notifications.js first.'
+        ),
+        'error'
+      );
+
+      return;
+    }
+
+
+    if (
+      !('Notification' in window)
+      ||
+      !('serviceWorker' in navigator)
+      ||
+      !('PushManager' in window)
+    ) {
+
+      toast(
+        text(
+          'هذا المتصفح لا يدعم إشعارات الويب.',
+          'This browser does not support web push.'
+        ),
+        'error'
+      );
+
+      return;
+    }
+
+
+    const permission =
+      await Notification
+        .requestPermission();
+
+
+    if (
+      permission !== 'granted'
+    ) {
+
+      toast(
+        text(
+          'لم يتم السماح بالإشعارات.',
+          'Notification permission was not granted.'
+        ),
+        'error'
+      );
+
+      await refreshButton();
+
+      return;
+    }
+
+
+    const registration =
+      await navigator
+        .serviceWorker
+        .ready;
+
+
+    let subscription =
+      await registration
+        .pushManager
+        .getSubscription();
+
+
+    if (!subscription) {
+
+      subscription =
+        await registration
+          .pushManager
+          .subscribe({
+
+            userVisibleOnly:
+              true,
+
+            applicationServerKey:
+              urlBase64ToUint8Array(
+                VAPID_PUBLIC_KEY
+              )
+          });
+    }
+
+
+    await saveSubscription(
+      subscription
+    );
+
+
+    toast(
+      text(
+        'تم تفعيل إشعارات العيادة على هذا الجهاز.',
+        'Clinic push notifications enabled on this device.'
+      )
+    );
+
+
+    await refreshButton();
+  }
+
+
+  function createButton() {
+
+    if (
+      document.getElementById(
+        'enablePushNotifications'
+      )
+    ) {
+      return;
+    }
+
+
+    const bell =
+      document.getElementById(
+        'notificationButton'
+      );
+
+
+    if (!bell) {
+      return;
+    }
+
+
+    const button =
+      document.createElement(
+        'button'
+      );
+
+
+    button.id =
+      'enablePushNotifications';
+
+
+    button.type =
+      'button';
+
+
+    button.className =
+      'notification-button push-enable-button';
+
+
+    button.title =
+      text(
+        'تفعيل إشعارات العيادة',
+        'Enable clinic push notifications'
+      );
+
+
+    button.addEventListener(
+      'click',
+      async()=>{
+
+        button.disabled =
+          true;
+
+        try {
+
+          await enablePush();
+
+        }
+        catch(error) {
+
+          console.error(
+            'Push enable failed',
+            error
+          );
+
+
+          toast(
+            error?.message
+            ||
+            text(
+              'تعذر تفعيل الإشعارات.',
+              'Could not enable push notifications.'
+            ),
+            'error'
+          );
+
+        }
+        finally {
+
+          await refreshButton();
+        }
+      }
+    );
+
+
+    bell.insertAdjacentElement(
+      'afterend',
+      button
+    );
+
+
+    refreshButton();
+  }
+
+
+  async function silentlyResaveExistingSubscription() {
+
+    if (
+      Notification.permission !==
+        'granted'
+    ) {
+      return;
+    }
+
+
+    const subscription =
+      await getCurrentSubscription();
+
+
+    if (subscription) {
+
+      await saveSubscription(
+        subscription
+      );
+    }
+  }
+
+
+  async function start() {
+
+    const loggedIn =
+      await waitForClinicUser();
+
+
+    if (!loggedIn) {
+      return;
+    }
+
+
+    createButton();
+
+
+    try {
+
+      await silentlyResaveExistingSubscription();
+
+    }
+    catch(error) {
+
+      console.warn(
+        'Existing push subscription refresh failed',
+        error
+      );
+    }
+  }
+
+
+  window.ClinicPush = {
+    enable:
+      enablePush,
+
+    refresh:
+      refreshButton
+  };
+
+
+  if (
+    document.readyState ===
+      'loading'
+  ) {
+
+    document.addEventListener(
+      'DOMContentLoaded',
+      start
+    );
+
+  }
+  else {
+
+    start();
+  }
+
+})();
