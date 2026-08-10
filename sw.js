@@ -1,4 +1,4 @@
-const CACHE = 'operation-clinic-v28-one-push-per-appointment-2026-08-10';
+const CACHE = 'operation-clinic-v29-clean-2026-08-10';
 
 const STATIC = [
   './',
@@ -205,27 +205,24 @@ self.addEventListener(
 
 
 /* =========================================================
-   PUSH — EXACTLY ONE LISTENER + HARD DE-DUPLICATION
+   PUSH — V29: ONE VISIBLE BOOKING ALERT PER DEVICE
 ========================================================= */
 
-/*
- * Synchronous guard is important:
- * two push events can arrive almost simultaneously before an async cache
- * write finishes. This Set blocks the second one immediately.
- */
 const PUSH_IN_FLIGHT =
   new Set();
 
 
 const PUSH_DEDUPE_CACHE =
-  'clinic-push-dedupe-v3';
-
-const PUSH_DEDUPE_WINDOW_MS =
-  2 * 60 * 1000;
+  'clinic-push-dedupe-v29';
 
 
-async function wasPushRecentlyShown(
-  tag
+const UUID_RE =
+  /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i;
+
+
+async function dedupeHit(
+  key,
+  windowMs
 ){
 
   const cache =
@@ -234,10 +231,10 @@ async function wasPushRecentlyShown(
     );
 
 
-  const key =
+  const request =
     new Request(
       new URL(
-        `__push_dedupe__/${encodeURIComponent(tag)}`,
+        `__push_v29__/${encodeURIComponent(key)}`,
         self.registration.scope
       ).href
     );
@@ -245,7 +242,7 @@ async function wasPushRecentlyShown(
 
   const previous =
     await cache.match(
-      key
+      request
     );
 
 
@@ -255,7 +252,7 @@ async function wasPushRecentlyShown(
 
   if(previous){
 
-    const previousTime =
+    const old =
       Number(
         await previous.text()
       );
@@ -263,11 +260,10 @@ async function wasPushRecentlyShown(
 
     if(
       Number.isFinite(
-        previousTime
+        old
       )
       &&
-      now - previousTime
-        < PUSH_DEDUPE_WINDOW_MS
+      now-old < windowMs
     ){
 
       return true;
@@ -276,15 +272,9 @@ async function wasPushRecentlyShown(
 
 
   await cache.put(
-    key,
+    request,
     new Response(
-      String(now),
-      {
-        headers:{
-          'Content-Type':
-            'text/plain'
-        }
-      }
+      String(now)
     )
   );
 
@@ -293,16 +283,67 @@ async function wasPushRecentlyShown(
 }
 
 
+function appointmentIdFromPayload(
+  data
+){
+
+  const direct =
+    data?.appointmentId
+    ||
+    data?.appointment_id
+    ||
+    data?.appointment
+    ||
+    data?.data?.appointmentId
+    ||
+    data?.data?.appointment_id
+    ||
+    data?.data?.appointment
+    ||
+    null;
+
+
+  if(direct){
+    return String(direct);
+  }
+
+
+  /*
+   * Last fallback: if the backend placed the appointment UUID in the URL
+   * or another payload field, find it anywhere in the JSON payload.
+   */
+  try{
+
+    const match =
+      JSON
+        .stringify(
+          data
+        )
+        .match(
+          UUID_RE
+        );
+
+
+    return match?.[0] || null;
+
+  }
+  catch{
+
+    return null;
+  }
+}
+
+
 self.addEventListener(
   'push',
   event=>{
 
-    let data={};
+    let data = {};
 
 
     try{
 
-      data=
+      data =
         event.data
           ? event.data.json()
           : {};
@@ -310,7 +351,7 @@ self.addEventListener(
     }
     catch{
 
-      data={
+      data = {
         title:
           'Clinic notification',
 
@@ -322,38 +363,15 @@ self.addEventListener(
     }
 
 
-    const icon=
-      new URL(
-        'assets/alaa-clinic-logo.png',
-        self.registration.scope
-      ).href;
-
-
-    /*
-     * Normalize every appointment ID shape we have used while building
-     * the push backend. This is deliberate: one appointment must generate
-     * ONE visible banner on a device even if the server sends slightly
-     * different payload text.
-     */
-    const appointmentKey =
-      data.appointmentId
-      ||
-      data.appointment_id
-      ||
-      data.appointment
-      ||
-      data.data?.appointmentId
-      ||
-      data.data?.appointment_id
-      ||
-      data.data?.appointment
-      ||
-      null;
+    const appointmentId =
+      appointmentIdFromPayload(
+        data
+      );
 
 
     const tag =
-      appointmentKey
-        ? `booking-${appointmentKey}`
+      appointmentId
+        ? `booking-${appointmentId}`
         : (
             data.tag
             ||
@@ -361,22 +379,10 @@ self.addEventListener(
           );
 
 
-    /*
-     * CRITICAL V28 CHANGE:
-     * Previously the fingerprint included title/body.
-     * Two pushes for the SAME appointment with slightly different text
-     * were therefore considered different notifications.
-     *
-     * Now appointment UUID alone is the de-duplication key.
-     */
     const fingerprint =
-      appointmentKey
-        ? `appointment:${appointmentKey}`
-        : (
-            data.tag
-            ? `tag:${data.tag}`
-            : `${data.title || ''}|${data.body || ''}|${data.url || ''}`
-          );
+      appointmentId
+        ? `appointment:${appointmentId}`
+        : `payload:${data.tag || ''}|${data.title || ''}|${data.body || ''}`;
 
 
     if(
@@ -386,7 +392,7 @@ self.addEventListener(
     ){
 
       console.info(
-        'Concurrent duplicate appointment push suppressed:',
+        'V29 concurrent duplicate suppressed',
         fingerprint
       );
 
@@ -404,14 +410,21 @@ self.addEventListener(
 
         try{
 
+          /*
+           * Appointment ID known:
+           * suppress same appointment for 5 minutes.
+           */
           if(
-            await wasPushRecentlyShown(
-              fingerprint
+            appointmentId
+            &&
+            await dedupeHit(
+              fingerprint,
+              5*60*1000
             )
           ){
 
             console.info(
-              'Recent duplicate push suppressed:',
+              'V29 appointment duplicate suppressed',
               fingerprint
             );
 
@@ -419,57 +432,94 @@ self.addEventListener(
           }
 
 
-        /*
-         * Defensive cleanup in case an older notification with the
-         * same tag is still visible.
-         */
-        const existing=
-          await self.registration
-            .getNotifications({
-              tag
-            });
+          /*
+           * If old backend payloads contain no appointment ID,
+           * suppress a second booking-looking push arriving within 2.5 s.
+           * This is specifically a safety net for the iPhone duplicate issue.
+           */
+          const bookingLike =
+            String(
+              data.type
+              ||
+              data.category
+              ||
+              data.title
+              ||
+              ''
+            )
+            .toLowerCase()
+            .includes(
+              'booking'
+            );
 
 
-        existing.forEach(
-          notification=>
-            notification.close()
-        );
+          if(
+            !appointmentId
+            &&
+            bookingLike
+            &&
+            await dedupeHit(
+              'booking-fallback-cooldown',
+              2500
+            )
+          ){
+
+            console.info(
+              'V29 fallback booking duplicate suppressed'
+            );
+
+            return;
+          }
 
 
-        await self.registration
-          .showNotification(
-            data.title
-            ||
-            'Clinic notification',
-            {
-              body:
-                data.body
-                ||
-                '',
+          const icon =
+            new URL(
+              'assets/alaa-clinic-logo.png',
+              self.registration.scope
+            ).href;
 
-              icon,
 
-              badge:
-                icon,
+          const existing =
+            await self.registration
+              .getNotifications({
+                tag
+              });
 
-              tag,
 
-              renotify:
-                false,
-
-              data:{
-                url:
-                  data.url
-                  ||
-                  'app.html',
-
-                appointmentId:
-                  data.appointmentId
-                  ||
-                  null
-              }
-            }
+          existing.forEach(
+            item=>
+              item.close()
           );
+
+
+          await self.registration
+            .showNotification(
+              data.title
+              ||
+              'Clinic notification',
+              {
+                body:
+                  data.body
+                  ||
+                  '',
+
+                icon,
+                badge:
+                  icon,
+
+                tag,
+                renotify:false,
+
+                data:{
+                  url:
+                    data.url
+                    ||
+                    'app.html',
+
+                  appointmentId
+                }
+              }
+            );
 
         }
         finally{
@@ -478,7 +528,6 @@ self.addEventListener(
             fingerprint
           );
         }
-
       })()
     );
   }

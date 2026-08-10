@@ -1,123 +1,58 @@
-# Appointment Confirm + Edit + Live Refresh + Push V28
+# V29 CLEAN FIX
 
-This pack fixes the exact three problems visible in the current live repository.
+This replaces the last patch.
 
-## Why Edit is missing
+## What it fixes
 
-The repository already contains:
-`js/booking-workflow-hotfix.js`
-
-That file adds **Edit booking** before check-in.
-
-But the current live `app.html` does NOT load it.
-
-The replacement `app.html` in this pack loads it immediately after
-`appointments.js`.
-
-## New: Confirm information
-
-Before check-in the appointment popup now has:
-
-- **Confirm information**
-- **Edit booking**
+### Appointment popup
+Outside the confirmation modal:
+- ONE `Confirm information`
 - Check in
 - Reschedule
 - No-show
 - Cancel
 
-Confirm information opens the registered patient + appointment information for
-staff review.
+There is NO separate Edit booking button outside.
 
-After confirmation the appointment shows:
-`✓ Information confirmed`
+Inside `Confirm information`:
+- review patient + appointment information
+- `Information is correct`
+- `Edit booking`
 
-If Edit booking is opened afterward, the confirmation is cleared and the
-information should be reviewed again.
+The editor opens directly from inside the confirmation modal.
 
-Run:
-`sql/appointment-information-confirmation.sql`
+The duplicate Confirm button was caused by a MutationObserver race:
+multiple async calls started before the old script marked the card as ready.
+V29 locks the card BEFORE the database await.
 
-## Why laptop does not update automatically
+### Laptop auto-update
+V29 uses:
+- Supabase Realtime INSERT listener
+- 3-second appointment polling fallback
 
-The repository already contains:
-`js/clinic-final-live-fixes.js`
+When a NEW appointment is detected, the browser performs a real
+`window.location.reload()` automatically (deferred only if a modal is open).
 
-It subscribes to Supabase Realtime AND has an 8-second polling fallback.
+### iPhone double push
+V29:
+- recognizes appointmentId / appointment_id / appointment
+- searches the whole payload for a UUID as a final fallback
+- de-duplicates the same appointment for 5 minutes
+- has an extra 2.5-second booking cooldown when old payloads contain no ID
+- registers a fresh service worker URL: `sw.js?v=29-clean`
 
-But the current live `app.html` does NOT load that script.
+## Install
 
-Therefore it cannot run.
+Replace:
+- `app.html`
+- `sw.js`
+- `js/pwa.js`
+- `js/booking-workflow-hotfix.js`
+- `js/appointment-information-confirm.js`
+- `js/clinic-final-live-fixes.js`
 
-The replacement `app.html` loads it.
+If you already ran the appointment confirmation SQL, do NOT run it again.
+If not, run:
+`appointment-information-confirmation.sql`
 
-Your Supabase `appointments` and `patients` tables must also be enabled in the
-`supabase_realtime` publication (this was part of the previous SQL patch).
-
-## Why the iPhone can still show two pushes
-
-The current client already has:
-- one active iPhone subscription
-- one `push` listener
-- client-side deduplication
-
-But V27 identifies duplicates using:
-`appointment ID + title + body`
-
-and only recognizes the payload field `appointmentId`.
-
-So if the backend sends the same booking twice with:
-- slightly different title/body, OR
-- the appointment UUID under `appointment` or `appointment_id`
-
-the two payloads can evade the current duplicate guard.
-
-V28 changes the rule to:
-
-**ONE appointment UUID = ONE visible notification per device**
-
-It recognizes:
-- `appointmentId`
-- `appointment_id`
-- `appointment`
-- the same keys nested under `data`
-
-and de-duplicates using ONLY that appointment UUID.
-
-## INSTALL ORDER
-
-1. Supabase → SQL Editor:
-   run `sql/appointment-information-confirmation.sql`
-
-2. GitHub REPLACE:
-   - `app.html`
-   - `sw.js`
-   - `js/pwa.js`
-
-3. GitHub ADD/REPLACE:
-   - `js/appointment-information-confirm.js`
-   - `js/booking-workflow-hotfix.js`
-   - `js/clinic-final-live-fixes.js`
-
-4. Commit everything together.
-
-5. Desktop:
-   - close clinic tabs
-   - reopen app.html
-   - Ctrl+Shift+R once
-
-6. iPhone:
-   - fully close clinic PWA
-   - reopen for 15 seconds
-   - fully close again
-   - reopen
-   - make ONE new test booking
-
-## EXPECTED APPOINTMENT POPUP
-
-Before check-in:
-
-`Confirm information | Edit booking | Check in | Reschedule | No-show | Cancel`
-
-After information confirmation:
-
-`✓ Information confirmed | Edit booking | Check in | Reschedule | No-show | Cancel`
+Commit these files together.

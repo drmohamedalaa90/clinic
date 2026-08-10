@@ -1,37 +1,25 @@
 (() => {
 
-  const LIVE_PAGES =
-    new Set([
-      'dashboard',
-      'appointments',
-      'doctor-appointments',
-      'today-clinic',
-      'queue',
-      'reception',
-      'patients',
-      'patient-detail',
-      'finance'
-    ]);
-
-
   let channel = null;
-  let refreshTimer = null;
-  let pendingRefresh = false;
   let pollTimer = null;
-  let lastAppointmentSignature = null;
+  let reloadTimer = null;
+  let lastAppointmentId = null;
+  let pendingReload = false;
   let started = false;
 
 
-  function clinic(){
+  function C(){
     return window.Clinic || null;
   }
 
 
-  function modalIsOpen(){
+  function modalOpen(){
+
     const root =
       document.getElementById(
         'modalRoot'
       );
+
 
     return Boolean(
       root
@@ -62,35 +50,22 @@
 
     N.items.sort(
       (a,b)=>
-        (
-          new Date(
-            b.time || 0
-          ).getTime()
-          -
-          new Date(
-            a.time || 0
-          ).getTime()
-        )
-        ||
-        (
-          Number(
-            b.priority || 0
-          )
-          -
-          Number(
-            a.priority || 0
-          )
-        )
+        new Date(
+          b.time || 0
+        ).getTime()
+        -
+        new Date(
+          a.time || 0
+        ).getTime()
     );
 
 
     N.render?.();
-
     N.renderDashboard?.();
   }
 
 
-  function patchNotifications(){
+  function patchNotificationRefresh(){
 
     const N =
       window.ClinicNotifications;
@@ -99,27 +74,27 @@
     if(
       !N
       ||
-      N.__newestFirstPatched
+      N.__v29NewestFirst
     ){
       return;
     }
 
 
-    N.__newestFirstPatched =
+    N.__v29NewestFirst =
       true;
 
 
-    const originalRefresh =
+    const original =
       N.refresh.bind(
         N
       );
 
 
     N.refresh =
-      async function(...args){
+      async (...args)=>{
 
         const result =
-          await originalRefresh(
+          await original(
             ...args
           );
 
@@ -131,136 +106,173 @@
       };
 
 
-    /*
-     * If the drawer had already loaded before this patch,
-     * re-sort immediately.
-     */
     sortNotificationsNewestFirst();
   }
 
 
-  async function refreshCurrentPage(){
+  function hardReloadSoon(){
 
-    const C =
-      clinic();
+    clearTimeout(
+      reloadTimer
+    );
+
+
+    reloadTimer =
+      setTimeout(
+        ()=>{
+
+          if(
+            document.hidden
+            ||
+            modalOpen()
+          ){
+
+            pendingReload =
+              true;
+
+            return;
+          }
+
+
+          /*
+           * User specifically requested that a new appointment updates
+           * the laptop page automatically. A real browser reload is more
+           * reliable than trying to guess the current SPA route.
+           */
+          window.location.reload();
+
+        },
+        500
+      );
+  }
+
+
+  async function latestAppointment(){
+
+    const clinic =
+      C();
 
 
     if(
-      !C?.user?.id
+      !clinic?.sb
       ||
-      !C.currentPage
-      ||
-      !LIVE_PAGES.has(
-        C.currentPage
-      )
+      !clinic?.user?.id
     ){
+      return null;
+    }
+
+
+    const {
+      data,
+      error
+    } =
+      await clinic.sb
+        .from(
+          'appointments'
+        )
+        .select(
+          'id,created_at'
+        )
+        .order(
+          'created_at',
+          {
+            ascending:false
+          }
+        )
+        .limit(
+          1
+        );
+
+
+    if(error){
+
+      console.warn(
+        'V29 appointment poll failed',
+        error
+      );
+
+      return null;
+    }
+
+
+    return data?.[0] || null;
+  }
+
+
+  async function poll(){
+
+    const latest =
+      await latestAppointment();
+
+
+    if(!latest){
       return;
     }
 
 
     if(
-      document.hidden
-      ||
-      modalIsOpen()
+      lastAppointmentId===null
     ){
 
-      pendingRefresh =
-        true;
+      lastAppointmentId =
+        latest.id;
 
       return;
     }
 
 
-    pendingRefresh =
-      false;
+    if(
+      latest.id
+      !==
+      lastAppointmentId
+    ){
+
+      lastAppointmentId =
+        latest.id;
 
 
-    const saved =
-      C.loadRouteState?.();
+      console.info(
+        'V29 detected new appointment:',
+        latest.id
+      );
 
 
-    const page =
-      saved?.page
-      ||
-      C.currentPage;
-
-
-    const params =
-      saved?.params
-      ||
-      {};
+      hardReloadSoon();
+    }
 
 
     try{
 
-      await C.route(
-        page,
-        params
-      );
+      await window
+        .ClinicNotifications
+        ?.refresh?.();
+
+      sortNotificationsNewestFirst();
 
     }
     catch(error){
 
-      console.error(
-        'Clinic live refresh failed',
+      console.warn(
+        'V29 notification refresh failed',
         error
       );
     }
   }
 
 
-  function scheduleRefresh(){
-
-    clearTimeout(
-      refreshTimer
-    );
-
-
-    refreshTimer =
-      setTimeout(
-        async()=>{
-
-          try{
-
-            await window
-              .ClinicNotifications
-              ?.refresh?.();
-
-          }
-          catch(error){
-
-            console.warn(
-              'Notification live refresh failed',
-              error
-            );
-          }
-
-
-          sortNotificationsNewestFirst();
-
-
-          await refreshCurrentPage();
-
-        },
-        350
-      );
-  }
-
-
   async function waitForClinic(){
 
     for(
-      let attempt=0;
-      attempt<80;
-      attempt++
+      let i=0;
+      i<120;
+      i++
     ){
 
       if(
-        clinic()?.user?.id
+        C()?.user?.id
         &&
-        clinic()?.sb
+        C()?.sb
       ){
-
         return true;
       }
 
@@ -279,273 +291,65 @@
   }
 
 
-  async function latestAppointmentSignature(){
+  function subscribe(){
 
-    const C =
-      clinic();
-
-
-    if(!C?.sb){
-      return null;
-    }
+    const clinic =
+      C();
 
 
-    /*
-     * RLS naturally limits this to appointments that the logged-in
-     * staff member is allowed to see.
-     */
-    const {
-      data,
-      error
-    } =
-      await C.sb
-        .from(
-          'appointments'
-        )
-        .select(
-          'id,status,updated_at,created_at'
-        )
-        .order(
-          'updated_at',
-          {
-            ascending:false,
-            nullsFirst:false
-          }
-        )
-        .limit(
-          1
-        );
-
-
-    if(error){
-
-      /*
-       * Old DB builds may not expose updated_at consistently.
-       * Fall back to created_at.
-       */
-      const fallback =
-        await C.sb
-          .from(
-            'appointments'
-          )
-          .select(
-            'id,status,created_at'
-          )
-          .order(
-            'created_at',
-            {
-              ascending:false
-            }
-          )
-          .limit(
-            1
-          );
-
-
-      if(fallback.error){
-        return null;
-      }
-
-
-      const row =
-        fallback.data?.[0];
-
-
-      return row
-        ? `${row.id}|${row.status}|${row.created_at}`
-        : 'empty';
-    }
-
-
-    const row =
-      data?.[0];
-
-
-    return row
-      ? `${row.id}|${row.status}|${row.updated_at || row.created_at}`
-      : 'empty';
-  }
-
-
-  async function runPollingFallback(){
-
-    try{
-
-      const signature =
-        await latestAppointmentSignature();
-
-
-      if(
-        signature
-        &&
-        lastAppointmentSignature===null
-      ){
-
-        lastAppointmentSignature =
-          signature;
-
-      }
-      else if(
-        signature
-        &&
-        signature!==lastAppointmentSignature
-      ){
-
-        lastAppointmentSignature =
-          signature;
-
-        console.info(
-          'Clinic polling detected an appointment change'
-        );
-
-
-        scheduleRefresh();
-      }
-
-
-      /*
-       * Also keep the bell/drawer fresh even if a DB realtime event
-       * was missed.
-       */
-      await window
-        .ClinicNotifications
-        ?.refresh?.();
-
-
-      sortNotificationsNewestFirst();
-
-    }
-    catch(error){
-
-      console.warn(
-        'Clinic polling fallback failed',
-        error
-      );
-    }
-  }
-
-
-  function startPolling(){
-
-    clearInterval(
-      pollTimer
-    );
-
-
-    /*
-     * Realtime should normally be instant.
-     * This 8-second poll is only a safety net.
-     */
-    pollTimer =
-      setInterval(
-        runPollingFallback,
-        8000
-      );
-
-
-    runPollingFallback();
-  }
-
-
-  function subscribeRealtime(){
-
-    const C =
-      clinic();
-
-
-    if(!C?.sb){
+    if(!clinic?.sb){
       return;
     }
 
 
     if(channel){
 
-      C.sb.removeChannel(
+      clinic.sb.removeChannel(
         channel
       );
-
-      channel =
-        null;
     }
 
 
     channel =
-      C.sb
+      clinic.sb
         .channel(
-          `clinic-final-live-${C.user.id}-${Date.now()}`
+          `clinic-v29-live-${clinic.user.id}`
         )
-
         .on(
           'postgres_changes',
           {
-            event:'*',
+            event:'INSERT',
             schema:'public',
             table:'appointments'
           },
           payload=>{
 
-            console.info(
-              'LIVE appointment event',
-              payload.eventType,
-              payload.new?.id
-              ||
-              payload.old?.id
-              ||
-              ''
-            );
+            const id =
+              payload.new?.id;
 
 
-            scheduleRefresh();
-          }
-        )
+            if(id){
 
-        .on(
-          'postgres_changes',
-          {
-            event:'*',
-            schema:'public',
-            table:'patients'
-          },
-          payload=>{
-
-            console.info(
-              'LIVE patient event',
-              payload.eventType,
-              payload.new?.id
-              ||
-              payload.old?.id
-              ||
-              ''
-            );
-
-
-            scheduleRefresh();
-          }
-        )
-
-        .subscribe(
-          status=>{
-
-            console.info(
-              'Clinic realtime:',
-              status
-            );
-
-
-            if(
-              status==='CHANNEL_ERROR'
-              ||
-              status==='TIMED_OUT'
-              ||
-              status==='CLOSED'
-            ){
-
-              setTimeout(
-                subscribeRealtime,
-                2500
-              );
+              lastAppointmentId =
+                id;
             }
+
+
+            console.info(
+              'V29 realtime new appointment:',
+              id || ''
+            );
+
+
+            hardReloadSoon();
           }
+        )
+        .subscribe(
+          status=>
+            console.info(
+              'V29 realtime status:',
+              status
+            )
         );
   }
 
@@ -570,18 +374,25 @@
       true;
 
 
-    patchNotifications();
-
-    await window
-      .ClinicNotifications
-      ?.refresh?.();
-
-    sortNotificationsNewestFirst();
+    patchNotificationRefresh();
 
 
-    subscribeRealtime();
+    const latest =
+      await latestAppointment();
 
-    startPolling();
+
+    lastAppointmentId =
+      latest?.id || null;
+
+
+    subscribe();
+
+
+    pollTimer =
+      setInterval(
+        poll,
+        3000
+      );
   }
 
 
@@ -589,29 +400,37 @@
     'visibilitychange',
     ()=>{
 
-      if(!document.hidden){
+      if(
+        !document.hidden
+        &&
+        pendingReload
+        &&
+        !modalOpen()
+      ){
 
-        if(pendingRefresh){
-          scheduleRefresh();
-        }
+        pendingReload =
+          false;
 
-        runPollingFallback();
+        window.location.reload();
       }
     }
   );
 
 
-  const modalObserver =
+  const observer =
     new MutationObserver(
       ()=>{
 
         if(
-          pendingRefresh
+          pendingReload
           &&
-          !modalIsOpen()
+          !modalOpen()
         ){
 
-          scheduleRefresh();
+          pendingReload =
+            false;
+
+          window.location.reload();
         }
       }
     );
@@ -625,21 +444,19 @@
       );
 
 
-    if(!root){
-      return;
+    if(root){
+
+      observer.observe(
+        root,
+        {
+          attributes:true,
+          attributeFilter:[
+            'class'
+          ],
+          childList:true
+        }
+      );
     }
-
-
-    modalObserver.observe(
-      root,
-      {
-        attributes:true,
-        attributeFilter:[
-          'class'
-        ],
-        childList:true
-      }
-    );
   }
 
 
@@ -655,10 +472,10 @@
       if(
         channel
         &&
-        clinic()?.sb
+        C()?.sb
       ){
 
-        clinic().sb.removeChannel(
+        C().sb.removeChannel(
           channel
         );
       }
@@ -675,7 +492,6 @@
       ()=>{
 
         observeModal();
-
         start();
       }
     );
@@ -684,16 +500,7 @@
   else{
 
     observeModal();
-
     start();
   }
-
-
-  window.ClinicFinalLiveFixes = {
-    start,
-    refresh:
-      scheduleRefresh,
-    sortNotificationsNewestFirst
-  };
 
 })();

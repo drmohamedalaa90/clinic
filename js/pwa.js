@@ -14,22 +14,20 @@ window.addEventListener(
     try{
 
       const registration =
-        await navigator
-          .serviceWorker
-          .register(
-            './sw.js?v=28-one-push-per-appointment',
-            {
-              scope:'./',
-              updateViaCache:'none'
-            }
-          );
+        await navigator.serviceWorker.register(
+          './sw.js?v=29-clean',
+          {
+            scope:'./',
+            updateViaCache:'none'
+          }
+        );
 
 
       await registration.update();
 
 
       console.info(
-        'Clinic service worker:',
+        'V29 service worker:',
         registration.active?.scriptURL
         ||
         registration.waiting?.scriptURL
@@ -43,7 +41,7 @@ window.addEventListener(
     catch(error){
 
       console.warn(
-        'Service worker registration failed',
+        'V29 service worker update failed',
         error
       );
     }

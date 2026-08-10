@@ -1243,112 +1243,12 @@
     card
   ){
 
-    if(
-      !canEditBooking()
-      ||
-      card.dataset.editBookingReady
-      ||
-      !lastAppointmentId
-    ){
-      return;
-    }
-
-
-    card.dataset.editBookingReady=
-      '1';
-
-
-    const {data:appointment,error}=
-      await C.sb
-        .from(
-          'appointments'
-        )
-        .select(
-          'id,status'
-        )
-        .eq(
-          'id',
-          lastAppointmentId
-        )
-        .maybeSingle();
-
-
-    if(
-      error
-      ||
-      !appointment
-      ||
-      ![
-        'booked',
-        'confirmed'
-      ].includes(
-        appointment.status
-      )
-    ){
-      return;
-    }
-
-
-    let actions=
-      card.querySelector(
-        '.appointment-detail-actions'
-      );
-
-
-    if(!actions){
-
-      actions=
-        document.createElement(
-          'div'
-        );
-
-      actions.className=
-        'appointment-detail-actions';
-
-      card.appendChild(
-        actions
-      );
-    }
-
-
-    const button=
-      document.createElement(
-        'button'
-      );
-
-
-    button.type=
-      'button';
-
-
-    button.className=
-      'secondary-button compact appointment-edit-button';
-
-
-    button.textContent=
-      C.lang==='ar'
-        ?'تعديل بيانات الحجز'
-        :'Edit booking';
-
-
-    button.onclick=()=>{
-
-      const id=
-        lastAppointmentId;
-
-
-      C.closeModal();
-
-
-      showEditBookingModal(
-        id
-      );
-    };
-
-
-    actions.prepend(
-      button
-    );
+    /*
+     * V29:
+     * Do NOT place a separate Edit booking button in Appointment Details.
+     * Editing is opened ONLY from inside Confirm information.
+     */
+    return;
   }
 
 
@@ -1401,6 +1301,11 @@
 
 
   injectStyles();
+
+
+  window.ClinicBookingWorkflow = {
+    showEditBookingModal
+  };
 
 
   observer.observe(

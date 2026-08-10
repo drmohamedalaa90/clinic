@@ -738,16 +738,28 @@
               C.closeModal();
 
 
-              /*
-               * Re-open the appointment details.
-               * booking-workflow-hotfix.js will add the Edit booking button.
-               * This avoids duplicating the full edit form in two modules.
-               */
-              C.toast(
-                C.lang==='ar'
-                  ? 'افتح «تعديل الحجز» لتصحيح البيانات.'
-                  : 'Use “Edit booking” to revise the data.'
-              );
+              const editor =
+                window
+                  .ClinicBookingWorkflow
+                  ?.showEditBookingModal;
+
+
+              if(editor){
+
+                editor(
+                  appointmentId
+                );
+
+              }
+              else{
+
+                C.toast(
+                  C.lang==='ar'
+                    ? 'تعذر فتح محرر الحجز.'
+                    : 'Could not open the booking editor.',
+                  'error'
+                );
+              }
             }
           );
       }
@@ -762,12 +774,23 @@
     if(
       card.dataset.confirmInfoReady
       ||
+      card.dataset.confirmInfoPending
+      ||
       !lastAppointmentId
       ||
       !canConfirmInformation()
     ){
       return;
     }
+
+
+    /*
+     * V29 race lock:
+     * MutationObserver can fire several times while the Supabase query
+     * is still pending. Lock immediately, before awaiting anything.
+     */
+    card.dataset.confirmInfoPending =
+      '1';
 
 
     const appointmentId =
@@ -815,6 +838,8 @@
         error
       );
 
+      delete card.dataset.confirmInfoPending;
+
       return;
     }
 
@@ -829,12 +854,30 @@
         appointment.status
       )
     ){
+      delete card.dataset.confirmInfoPending;
+
       return;
     }
 
 
+    /*
+     * Remove any duplicate controls created by an older cached script
+     * before adding the single V29 control.
+     */
+    card
+      .querySelectorAll(
+        '.appointment-info-confirm-button'
+      )
+      .forEach(
+        button=>
+          button.remove()
+      );
+
+
     card.dataset.confirmInfoReady =
       '1';
+
+    delete card.dataset.confirmInfoPending;
 
 
     let actions =
@@ -926,46 +969,6 @@
     }
 
 
-    /*
-     * Any edit after a prior confirmation means the information
-     * must be reviewed again.
-     */
-    const editButton =
-      card.querySelector(
-        '.appointment-edit-button'
-      );
-
-
-    if(
-      editButton
-      &&
-      !editButton.dataset.confirmClearBound
-    ){
-
-      editButton.dataset.confirmClearBound =
-        '1';
-
-
-      editButton.addEventListener(
-        'click',
-        ()=>{
-
-          clearConfirmation(
-            appointmentId
-          )
-          .catch(
-            error=>
-              console.warn(
-                'Could not clear previous confirmation',
-                error
-              )
-          );
-        },
-        {
-          capture:true
-        }
-      );
-    }
   }
 
 
