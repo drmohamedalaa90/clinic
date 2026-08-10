@@ -1255,8 +1255,18 @@
 
       if(
         m.includes('phone_already_registered')
+        ||
+        m.includes('phone already registered')
       ) {
-        return 'هذا الرقم مسجل بالفعل. اختر "زرت العيادة من قبل" واستخدم نفس رقم واتساب.';
+        return 'هذا الرقم مسجل بالفعل في العيادة. اختر "زرت العيادة من قبل" واستخدم نفس رقم واتساب المسجل.';
+      }
+
+      if(
+        m.includes('could not find the function')
+        ||
+        m.includes('schema cache')
+      ) {
+        return 'حدث خطأ تقني أثناء الحجز. حدّث الصفحة وحاول مرة أخرى.';
       }
 
       if(
@@ -1270,7 +1280,7 @@
         ||
         m.includes('phone number')
       ) {
-        return 'من فضلك أدخل رقم واتساب صحيح.';
+        return 'من فضلك تأكد أنك أدخلت رقم واتساب الصحيح.';
       }
 
       if(
