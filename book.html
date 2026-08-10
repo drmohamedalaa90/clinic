@@ -869,8 +869,8 @@
 
 
             <div class="privacy-note">
-              لحماية خصوصيتك لن نعرض بيانات ملفك الطبية على صفحة الحجز العامة.
-              بعد التأكد من الرقم ستختار اليوم والساعة فقط.
+              بعد مطابقة رقم واتساب المسجل سنعرض الاسم والعمر للتأكد من الملف الصحيح فقط.
+              لن نعرض أي بيانات طبية أو تشخيصات على صفحة الحجز العامة.
             </div>
 
           </div>
@@ -1596,13 +1596,56 @@
 
       returningPatientResult.innerHTML=`
         <div class="returning-status ok">
-          ✓ تم العثور على ملفك
-          ${
-            data.masked_name
-              ? `(${data.masked_name})`
-              : ''
-          }.
-          اختر اليوم والساعة فقط.
+
+          <div style="
+            display:grid;
+            gap:5px;
+          ">
+
+            <strong style="
+              font-size:14px;
+              color:#0f766e;
+            ">
+              ✓ تم العثور على ملفك المسجل
+            </strong>
+
+            <div>
+              <strong>الاسم:</strong>
+              ${escapeHtml(
+                data.registered_name
+                ||
+                ''
+              )}
+            </div>
+
+            ${
+              data.registered_age!==null
+              &&
+              data.registered_age!==undefined
+
+                ? `
+                  <div>
+                    <strong>العمر:</strong>
+                    ${escapeHtml(
+                      String(
+                        data.registered_age
+                      )
+                    )}
+                    سنة
+                  </div>
+                `
+                : ''
+            }
+
+            <div style="
+              margin-top:3px;
+              color:#0f766e;
+            ">
+              اختر اليوم والساعة فقط.
+            </div>
+
+          </div>
+
         </div>
       `;
 
