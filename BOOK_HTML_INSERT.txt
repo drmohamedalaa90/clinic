@@ -1,0 +1,10 @@
+BOOK.HTML
+
+Add this line near the bottom of book.html, AFTER the existing booking JavaScript
+and BEFORE </body>:
+
+<script src="js/public-booking-time-guard.js"></script>
+
+This removes today's slots once their start time has passed.
+The SQL migration also blocks a past slot at database level, so stale browser
+screens cannot create an expired appointment.

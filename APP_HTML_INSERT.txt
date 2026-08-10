@@ -1,13 +1,9 @@
-In app.html find:
+APP.HTML
 
-<script src="js/clinical.js"></script>
+The supplied app.html already contains the V31 line.
 
-Immediately AFTER it add:
+If you prefer to edit your current app.html manually, add this line AFTER:
+<script src="js/clinic-final-live-fixes.js"></script>
 
-<script src="js/doctor-clinical-workflow.js"></script>
-
-So that section becomes:
-
-<script src="js/clinical.js"></script>
-<script src="js/doctor-clinical-workflow.js"></script>
-<script src="js/referrals.js"></script>
+ADD:
+<script src="js/clinic-workflow-v31.js"></script>

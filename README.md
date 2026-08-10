@@ -1,68 +1,84 @@
-# Dr Ahmed — checked-in patients + searchable diagnosis/notes
+# ALAA CLINIC V31 — Workflow / Chat / Fees / Doctor Finance
 
-This patch uses your existing clinical visit system rather than creating a second
-medical-record system.
+This patch is designed around the current live GitHub code as reviewed on
+10 Aug 2026.
 
-## What changes
+## Fixes
 
-### Today's Clinic
-When Dr Ahmed clicks HIS patient:
+1. Dr Ahmed clinical workflow
+   - Confirmation is required before check-in.
+   - Check-in automatically places the patient in the assigned doctor's queue.
+   - No separate "Send to doctor" step is needed for new check-ins.
+   - Clicking a checked-in patient from Today's Clinic opens/starts the clinical visit.
+   - Diagnosis summary and clinical notes are editable while the visit is a draft.
+   - New one-click `Save & close consultation` saves, finalizes and completes the visit.
+   - Diagnosis/notes become searchable later from Patients.
 
-- Booked / confirmed -> opens patient profile only.
-- Checked in / waiting -> starts the consultation and opens the editable clinical visit.
-- Already with doctor -> reopens the same editable visit.
-- Completed -> opens the visit read-only.
+2. Internal chat
+   - Doctors can chat with doctors and the secretary.
+   - Secretary can chat with doctors.
+   - Owner has a read-only audit view of every conversation.
 
-Inside the existing clinical visit he already has:
-- Diagnosis summary
-- Clinical notes
-- Chief complaint/history
-- Examination
-- Work-up
-- Treatment plan
-- Follow-up
-- Structured diagnoses
-- Investigations
-- Prescription
+3. Past slots
+   - Database rejects bookings/reschedules whose slot start already passed.
+   - Internal appointment UI disables/removes passed slots.
+   - Public booking helper removes passed slots from self-booking.
 
-### Patients search
-For doctors, the Patients search box becomes:
+4. Check-in fees
+   - كشف / Examination = 350 EGP
+   - استشارة / Follow-up consultation = 150 EGP
+   - Fee field is pre-filled automatically.
+   - If changed, a reason becomes mandatory.
+   - Database also rejects a non-standard initial fee without a reason.
+   - Existing Finance fee-edit workflow already requires an edit reason.
 
-`Name / MRN / Mobile / Diagnosis / Notes`
+5. Doctor finance
+   - Doctors get a Finance menu.
+   - Doctor view is READ ONLY and shows only that doctor's own cases/income.
+   - Day / month / all-time filters.
 
-Typing 2+ characters also searches the doctor's OWN clinical records and shows
-a Clinical Search result area.
-
-Searches include:
-- diagnosis_summary
-- chief_complaint
-- clinical_notes
-- history_present_illness
-- examination
-- treatment_plan
-- follow_up_plan
-- structured visit_diagnoses
-
-Click:
-- Open patient -> patient profile
-- Open visit -> complete saved clinical note, read-only
-
-### Privacy
-Dr Ahmed's clinical search only searches visits where:
-`clinical_visits.doctor_id = auth.uid()`
-
-It does not give a doctor general access to another doctor's private clinical
-notes.
+6. Appointment workflow shown in Appointment Details
+   - Booked
+   - Confirm information
+   - Check-in
+   - Consultation
+   - Close
 
 ## Install
 
-1. Supabase SQL Editor:
-   Run `sql/doctor-clinical-access.sql`
+### 1. Supabase
+Run:
+`sql/clinic-v31-workflow.sql`
 
-2. GitHub:
-   Upload `js/doctor-clinical-workflow.js`
+Run it once as one block.
 
-3. app.html:
-   Add it immediately after `js/clinical.js` using `APP_HTML_INSERT.txt`
+### 2. GitHub
+Upload:
+- `js/clinic-workflow-v31.js`
+- `js/public-booking-time-guard.js`
 
-4. Commit and refresh the clinic once.
+### 3. app.html
+Either replace with the supplied `app.html`, or follow `APP_HTML_INSERT.txt`.
+
+### 4. book.html
+Follow `BOOK_HTML_INSERT.txt` to load the public time guard.
+
+### 5. Commit
+Commit all changed files together.
+
+### 6. Refresh
+Desktop: Ctrl + Shift + R once.
+Phones/tablets: fully close and reopen the clinic PWA/site once.
+
+## Important workflow after V31
+
+Appointment created
+→ patient arrives
+→ Confirm information
+→ Check in + fee
+→ automatically enters assigned doctor's queue
+→ doctor opens patient
+→ writes diagnosis / notes
+→ Save & close consultation
+→ status Completed
+→ visit remains searchable in Patients
