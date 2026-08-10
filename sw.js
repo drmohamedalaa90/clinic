@@ -1,4 +1,4 @@
-const CACHE = 'operation-clinic-v22-push-2026-08-10';
+const CACHE = 'operation-clinic-v23-push-2026-08-10';
 const STATIC = [
   './', './index.html', './app.html', './css/style.css', './manifest.webmanifest',
   './js/supabase-client.js', './js/auth.js', './js/core.js', './js/dashboard.js', './js/schedules.js',
@@ -45,9 +45,44 @@ self.addEventListener(
         self.registration.scope
       ).href;
 
-    event.waitUntil(
-      self.registration.showNotification(
-        data.title || 'Clinic notification',
+   event.waitUntil(
+  (async () => {
+
+    const tag =
+      data.tag ||
+      `booking-${data.appointmentId || 'clinic'}`;
+
+    const existing =
+      await self.registration.getNotifications({
+        tag
+      });
+
+    existing.forEach(
+      notification =>
+        notification.close()
+    );
+
+    await self.registration.showNotification(
+      data.title || 'Clinic notification',
+      {
+        body: data.body || '',
+        icon,
+        badge: icon,
+        tag,
+        renotify: false,
+
+        data: {
+          url:
+            data.url || 'app.html',
+
+          appointmentId:
+            data.appointmentId || null
+        }
+      }
+    );
+
+  })()
+);
         {
           body: data.body || '',
           icon,
