@@ -1,13 +1,11 @@
-In app.html, find:
+In app.html add ONE script tag:
 
-<script src="js/appointments.js"></script>
+<script src="js/realtime-sync.js"></script>
 
-Immediately AFTER it add:
+Recommended location:
 
-<script src="js/booking-workflow-hotfix.js"></script>
-
-Keep the existing:
 <script src="js/notifications.js"></script>
 <script src="js/push-notifications.js"></script>
+<script src="js/realtime-sync.js"></script>
 
-Do not paste booking-workflow-hotfix.js into appointments.js.
+Then keep your other hotfix/PWA scripts below it.

@@ -552,6 +552,24 @@
       display: block;
     }
 
+    .conditional-booking-step,
+    .conditional-submit {
+      display: none;
+    }
+
+    .conditional-booking-step.show {
+      display: block;
+    }
+
+    .conditional-submit.show {
+      display: block;
+    }
+
+    .patient-complaint {
+      min-height: 86px;
+      resize: vertical;
+    }
+
     .returning-lookup-row {
       display: grid;
       grid-template-columns: minmax(0,1fr) auto;
@@ -689,7 +707,7 @@
 
               <button
                 id="newPatientMode"
-                class="patient-mode-option active"
+                class="patient-mode-option"
                 type="button"
                 data-public-mode="new"
               >
@@ -712,7 +730,7 @@
 
           <div
             id="newPatientPanel"
-            class="public-patient-panel active"
+            class="public-patient-panel"
           >
 
             <label>
@@ -808,6 +826,18 @@
               >
             </label>
 
+
+            <label>
+              شكوى المريض (اختياري)
+
+              <textarea
+                id="patientComplaint"
+                class="control patient-complaint"
+                maxlength="1000"
+                placeholder="اكتب الشكوى باختصار إن وجدت"
+              ></textarea>
+            </label>
+
           </div>
 
 
@@ -884,7 +914,7 @@
         </div>
 
 
-        <div class="step">
+        <div id="appointmentStep" class="step conditional-booking-step">
           <div class="step-title">
             <span class="step-number">2</span>
             اختر الموعد
@@ -932,7 +962,7 @@
 
         <button
           id="submitButton"
-          class="submit"
+          class="submit conditional-submit"
           type="submit"
         >
           تأكيد الحجز
@@ -1141,8 +1171,20 @@
       );
 
 
+    const appointmentStep =
+      document.getElementById(
+        'appointmentStep'
+      );
+
+
+    const patientComplaint =
+      document.getElementById(
+        'patientComplaint'
+      );
+
+
     let publicPatientMode =
-      'new';
+      null;
 
     let returningBookingToken =
       null;
@@ -1363,7 +1405,8 @@
         'arabicName',
         'birthYear',
         'residencyArea',
-        'whatsapp'
+        'whatsapp',
+        'patientComplaint'
       ].forEach(
         id=>{
 
@@ -1401,6 +1444,37 @@
       if(!enabled){
         slotSelect.disabled=
           true;
+      }
+    }
+
+
+    function showAppointmentSection(show) {
+
+      appointmentStep.classList.toggle(
+        'show',
+        Boolean(show)
+      );
+
+
+      submitButton.classList.toggle(
+        'show',
+        Boolean(show)
+      );
+
+
+      if(!show){
+
+        dateSelect.value='';
+
+        slotSelect.innerHTML=`
+          <option value="">
+            اختر اليوم أولاً
+          </option>
+        `;
+
+        setAppointmentControlsEnabled(
+          false
+        );
       }
     }
 
@@ -1462,24 +1536,53 @@
       returningPatientResult.innerHTML='';
 
 
-      if(mode==='returning'){
+      /*
+       * Nothing below the first/previous-visit choice should appear
+       * until the patient has made that choice.
+       */
+      if(!mode){
 
-        setAppointmentControlsEnabled(
+        showAppointmentSection(
           false
         );
 
-        availabilityMessage.textContent=
-          'تحقق من رقم واتساب المسجل أولاً.';
-
+        return;
       }
-      else{
+
+
+      /*
+       * NEW patient:
+       * demographics + optional complaint + appointment selection.
+       */
+      if(mode==='new'){
+
+        showAppointmentSection(
+          true
+        );
+
 
         if(selectedDoctorId){
 
           loadDays();
-
         }
+
+
+        return;
       }
+
+
+      /*
+       * RETURNING patient:
+       * first verify the registered phone. Appointment selection stays
+       * hidden until the existing patient record has been confirmed.
+       */
+      showAppointmentSection(
+        false
+      );
+
+
+      availabilityMessage.textContent=
+        'تحقق من رقم واتساب المسجل أولاً.';
     }
 
 
@@ -1591,6 +1694,11 @@
 
       returningBirthYearWrap.classList.remove(
         'show'
+      );
+
+
+      showAppointmentSection(
+        true
       );
 
 
@@ -1747,17 +1855,31 @@
 
       if(publicPatientMode==='new'){
 
+        showAppointmentSection(
+          true
+        );
+
+        await loadDays();
+
+      }
+      else if(
+        publicPatientMode==='returning'
+        &&
+        returningBookingToken
+      ){
+
+        showAppointmentSection(
+          true
+        );
+
         await loadDays();
 
       }
       else{
 
-        setAppointmentControlsEnabled(
+        showAppointmentSection(
           false
         );
-
-        availabilityMessage.textContent=
-          'تحقق من رقم واتساب المسجل أولاً.';
       }
     }
 
@@ -1979,6 +2101,9 @@
         let whatsapp =
           '';
 
+        let complaint =
+          '';
+
 
         if(publicPatientMode==='new'){
 
@@ -2019,6 +2144,12 @@
               .getElementById(
                 'whatsapp'
               )
+              .value
+              .trim();
+
+
+          complaint =
+            patientComplaint
               .value
               .trim();
 
@@ -2081,7 +2212,7 @@
               )
 
             : await sb.rpc(
-                'submit_public_new_patient_booking',
+                'submit_public_new_patient_booking_v2',
                 {
                   p_doctor:
                     selectedDoctorId,
@@ -2105,7 +2236,12 @@
                     residencyArea,
 
                   p_whatsapp:
-                    whatsapp
+                    whatsapp,
+
+                  p_complaint:
+                    complaint
+                    ||
+                    null
                 }
               );
 
@@ -2301,7 +2437,7 @@
 
 
     applyPublicPatientMode(
-      'new'
+      null
     );
 
 
