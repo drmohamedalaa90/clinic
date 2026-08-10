@@ -1,58 +1,68 @@
-# V29 CLEAN FIX
+# Dr Ahmed — checked-in patients + searchable diagnosis/notes
 
-This replaces the last patch.
+This patch uses your existing clinical visit system rather than creating a second
+medical-record system.
 
-## What it fixes
+## What changes
 
-### Appointment popup
-Outside the confirmation modal:
-- ONE `Confirm information`
-- Check in
-- Reschedule
-- No-show
-- Cancel
+### Today's Clinic
+When Dr Ahmed clicks HIS patient:
 
-There is NO separate Edit booking button outside.
+- Booked / confirmed -> opens patient profile only.
+- Checked in / waiting -> starts the consultation and opens the editable clinical visit.
+- Already with doctor -> reopens the same editable visit.
+- Completed -> opens the visit read-only.
 
-Inside `Confirm information`:
-- review patient + appointment information
-- `Information is correct`
-- `Edit booking`
+Inside the existing clinical visit he already has:
+- Diagnosis summary
+- Clinical notes
+- Chief complaint/history
+- Examination
+- Work-up
+- Treatment plan
+- Follow-up
+- Structured diagnoses
+- Investigations
+- Prescription
 
-The editor opens directly from inside the confirmation modal.
+### Patients search
+For doctors, the Patients search box becomes:
 
-The duplicate Confirm button was caused by a MutationObserver race:
-multiple async calls started before the old script marked the card as ready.
-V29 locks the card BEFORE the database await.
+`Name / MRN / Mobile / Diagnosis / Notes`
 
-### Laptop auto-update
-V29 uses:
-- Supabase Realtime INSERT listener
-- 3-second appointment polling fallback
+Typing 2+ characters also searches the doctor's OWN clinical records and shows
+a Clinical Search result area.
 
-When a NEW appointment is detected, the browser performs a real
-`window.location.reload()` automatically (deferred only if a modal is open).
+Searches include:
+- diagnosis_summary
+- chief_complaint
+- clinical_notes
+- history_present_illness
+- examination
+- treatment_plan
+- follow_up_plan
+- structured visit_diagnoses
 
-### iPhone double push
-V29:
-- recognizes appointmentId / appointment_id / appointment
-- searches the whole payload for a UUID as a final fallback
-- de-duplicates the same appointment for 5 minutes
-- has an extra 2.5-second booking cooldown when old payloads contain no ID
-- registers a fresh service worker URL: `sw.js?v=29-clean`
+Click:
+- Open patient -> patient profile
+- Open visit -> complete saved clinical note, read-only
+
+### Privacy
+Dr Ahmed's clinical search only searches visits where:
+`clinical_visits.doctor_id = auth.uid()`
+
+It does not give a doctor general access to another doctor's private clinical
+notes.
 
 ## Install
 
-Replace:
-- `app.html`
-- `sw.js`
-- `js/pwa.js`
-- `js/booking-workflow-hotfix.js`
-- `js/appointment-information-confirm.js`
-- `js/clinic-final-live-fixes.js`
+1. Supabase SQL Editor:
+   Run `sql/doctor-clinical-access.sql`
 
-If you already ran the appointment confirmation SQL, do NOT run it again.
-If not, run:
-`appointment-information-confirmation.sql`
+2. GitHub:
+   Upload `js/doctor-clinical-workflow.js`
 
-Commit these files together.
+3. app.html:
+   Add it immediately after `js/clinical.js` using `APP_HTML_INSERT.txt`
+
+4. Commit and refresh the clinic once.

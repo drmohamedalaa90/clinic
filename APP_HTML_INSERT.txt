@@ -1,11 +1,13 @@
-In app.html add ONE script tag:
+In app.html find:
 
-<script src="js/realtime-sync.js"></script>
+<script src="js/clinical.js"></script>
 
-Recommended location:
+Immediately AFTER it add:
 
-<script src="js/notifications.js"></script>
-<script src="js/push-notifications.js"></script>
-<script src="js/realtime-sync.js"></script>
+<script src="js/doctor-clinical-workflow.js"></script>
 
-Then keep your other hotfix/PWA scripts below it.
+So that section becomes:
+
+<script src="js/clinical.js"></script>
+<script src="js/doctor-clinical-workflow.js"></script>
+<script src="js/referrals.js"></script>
