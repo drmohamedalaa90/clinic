@@ -508,6 +508,113 @@
       line-height: 1.7;
     }
 
+    .patient-mode-question {
+      display: grid;
+      gap: 9px;
+      margin-bottom: 15px;
+    }
+
+    .patient-mode-question > strong {
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .patient-mode-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    .patient-mode-option {
+      min-height: 55px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: white;
+      color: var(--text);
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 850;
+    }
+
+    .patient-mode-option.active {
+      border-color: var(--green);
+      background: var(--green-soft);
+      color: var(--green);
+      box-shadow:
+        inset 0 0 0 1px rgba(15,139,120,.08);
+    }
+
+    .public-patient-panel {
+      display: none;
+    }
+
+    .public-patient-panel.active {
+      display: block;
+    }
+
+    .returning-lookup-row {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) auto;
+      gap: 8px;
+    }
+
+    .returning-lookup-button {
+      min-height: 48px;
+      padding: 0 16px;
+      border: 1px solid var(--navy);
+      border-radius: 12px;
+      background: var(--navy);
+      color: white;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 850;
+    }
+
+    .returning-patient-result {
+      margin-top: 9px;
+    }
+
+    .returning-status {
+      padding: 11px 12px;
+      border-radius: 11px;
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .returning-status.ok {
+      border: 1px solid #b9e7dc;
+      background: #effbf8;
+      color: #0f766e;
+    }
+
+    .returning-status.info {
+      border: 1px solid #dbe7f4;
+      background: #f7faff;
+      color: #475569;
+    }
+
+    .returning-status.error {
+      border: 1px solid #fecaca;
+      background: #fff5f5;
+      color: #b91c1c;
+    }
+
+    .returning-birth-year-wrap {
+      display: none;
+      margin-top: 9px;
+    }
+
+    .returning-birth-year-wrap.show {
+      display: block;
+    }
+
+    .privacy-note {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.6;
+    }
+
     .honeypot {
       position: absolute !important;
       width: 1px !important;
@@ -557,7 +664,7 @@
         <h1>احجز موعدك بسهولة</h1>
 
         <p>
-          اكتب بياناتك، اختر اليوم والساعة المناسبة، ثم اضغط تأكيد الحجز.
+          إذا زرت العيادة من قبل استخدم نفس رقم واتساب المسجل. بعد ذلك اختر اليوم والساعة المناسبة.
         </p>
       </div>
 
@@ -565,112 +672,215 @@
       <form id="bookingForm" autocomplete="on">
 
         <div class="step">
+
           <div class="step-title">
             <span class="step-number">1</span>
-            بياناتك
+            بيانات المريض
           </div>
 
-          <label>
-            الاسم بالعربي
 
-            <input
-              id="arabicName"
-              class="control"
-              type="text"
-              maxlength="120"
-              autocomplete="name"
-              placeholder="مثال: أحمد محمد علي"
-              required
-            >
-          </label>
+          <div class="patient-mode-question">
 
+            <strong>
+              هل هذه أول زيارة للعيادة؟
+            </strong>
 
-          <div class="two-col">
+            <div class="patient-mode-options">
 
-            <label>
-              سنة الميلاد
-
-              <input
-                id="birthYear"
-                class="control"
-                type="number"
-                inputmode="numeric"
-                min="1900"
-                max="2100"
-                placeholder="مثال: 1985"
-                required
+              <button
+                id="newPatientMode"
+                class="patient-mode-option active"
+                type="button"
+                data-public-mode="new"
               >
-            </label>
+                مريض جديد
+              </button>
 
+              <button
+                id="returningPatientMode"
+                class="patient-mode-option"
+                type="button"
+                data-public-mode="returning"
+              >
+                زرت العيادة من قبل
+              </button>
 
-            <div>
-              <div style="margin-bottom:7px;font-size:12px;font-weight:700;">
-                النوع
-              </div>
-
-              <div class="gender-grid">
-
-                <label class="gender-option">
-                  <input
-                    type="radio"
-                    name="gender"
-                    value="male"
-                    required
-                  >
-                  <span>ذكر</span>
-                </label>
-
-                <label class="gender-option">
-                  <input
-                    type="radio"
-                    name="gender"
-                    value="female"
-                    required
-                  >
-                  <span>أنثى</span>
-                </label>
-
-              </div>
             </div>
 
           </div>
 
 
-          <label>
-            منطقة السكن
+          <div
+            id="newPatientPanel"
+            class="public-patient-panel active"
+          >
 
-            <input
-              id="residencyArea"
-              class="control"
-              type="text"
-              maxlength="150"
-              autocomplete="address-level2"
-              placeholder="مثال: سموحة"
-              required
+            <label>
+              الاسم بالعربي
+
+              <input
+                id="arabicName"
+                class="control"
+                type="text"
+                maxlength="120"
+                autocomplete="name"
+                required
+              >
+            </label>
+
+
+            <div class="two-col">
+
+              <label>
+                سنة الميلاد
+
+                <input
+                  id="birthYear"
+                  class="control"
+                  type="number"
+                  inputmode="numeric"
+                  min="1900"
+                  max="2100"
+                  required
+                >
+              </label>
+
+
+              <div>
+                <div style="margin-bottom:7px;font-size:12px;font-weight:700;">
+                  النوع
+                </div>
+
+                <div class="gender-grid">
+
+                  <label class="gender-option">
+                    <input
+                      type="radio"
+                      name="gender"
+                      value="male"
+                      required
+                    >
+                    <span>ذكر</span>
+                  </label>
+
+                  <label class="gender-option">
+                    <input
+                      type="radio"
+                      name="gender"
+                      value="female"
+                      required
+                    >
+                    <span>أنثى</span>
+                  </label>
+
+                </div>
+              </div>
+
+            </div>
+
+
+            <label>
+              منطقة السكن
+
+              <input
+                id="residencyArea"
+                class="control"
+                type="text"
+                maxlength="150"
+                autocomplete="address-level2"
+                required
+              >
+            </label>
+
+
+            <label>
+              رقم واتساب
+
+              <input
+                id="whatsapp"
+                class="control whatsapp-control"
+                type="tel"
+                inputmode="tel"
+                maxlength="25"
+                autocomplete="tel"
+                dir="ltr"
+                required
+              >
+            </label>
+
+          </div>
+
+
+          <div
+            id="returningPatientPanel"
+            class="public-patient-panel"
+          >
+
+            <label>
+              أدخل نفس رقم واتساب المسجل في العيادة
+
+              <div class="returning-lookup-row">
+
+                <input
+                  id="returningWhatsapp"
+                  class="control whatsapp-control"
+                  type="tel"
+                  inputmode="tel"
+                  maxlength="25"
+                  autocomplete="tel"
+                  dir="ltr"
+                >
+
+                <button
+                  id="findReturningPatient"
+                  class="returning-lookup-button"
+                  type="button"
+                >
+                  البحث عن ملفي
+                </button>
+
+              </div>
+            </label>
+
+
+            <div
+              id="returningBirthYearWrap"
+              class="returning-birth-year-wrap"
             >
-          </label>
+              <label>
+                يوجد أكثر من ملف بنفس الرقم — أدخل سنة الميلاد
+
+                <input
+                  id="returningBirthYear"
+                  class="control"
+                  type="number"
+                  inputmode="numeric"
+                  min="1900"
+                  max="2100"
+                >
+              </label>
+            </div>
 
 
-          <label>
-            رقم واتساب
+            <div
+              id="returningPatientResult"
+              class="returning-patient-result"
+            ></div>
 
-            <input
-              id="whatsapp"
-              class="control whatsapp-control"
-              type="tel"
-              inputmode="tel"
-              maxlength="25"
-              autocomplete="tel"
-              placeholder="مثال: 01012345678"
-              dir="ltr"
-              required
-            >
-          </label>
+
+            <div class="privacy-note">
+              لحماية خصوصيتك لن نعرض بيانات ملفك الطبية على صفحة الحجز العامة.
+              بعد التأكد من الرقم ستختار اليوم والساعة فقط.
+            </div>
+
+          </div>
+
 
           <label class="honeypot" aria-hidden="true">
             Website
             <input id="website" tabindex="-1" autocomplete="off">
           </label>
+
         </div>
 
 
@@ -900,6 +1110,44 @@
       );
 
 
+    const newPatientPanel =
+      document.getElementById(
+        'newPatientPanel'
+      );
+
+    const returningPatientPanel =
+      document.getElementById(
+        'returningPatientPanel'
+      );
+
+    const returningWhatsapp =
+      document.getElementById(
+        'returningWhatsapp'
+      );
+
+    const returningBirthYearWrap =
+      document.getElementById(
+        'returningBirthYearWrap'
+      );
+
+    const returningBirthYear =
+      document.getElementById(
+        'returningBirthYear'
+      );
+
+    const returningPatientResult =
+      document.getElementById(
+        'returningPatientResult'
+      );
+
+
+    let publicPatientMode =
+      'new';
+
+    let returningBookingToken =
+      null;
+
+
     const FIXED_DOCTOR_USERNAME = 'ahmed.alaa';
 
     let selectedDoctorId = null;
@@ -964,7 +1212,21 @@
       }
 
       if(
+        m.includes('phone_already_registered')
+      ) {
+        return 'هذا الرقم مسجل بالفعل. اختر "زرت العيادة من قبل" واستخدم نفس رقم واتساب.';
+      }
+
+      if(
+        m.includes('verification expired')
+      ) {
+        return 'انتهت صلاحية التحقق. ابحث عن ملفك مرة أخرى.';
+      }
+
+      if(
         m.includes('whatsapp')
+        ||
+        m.includes('phone number')
       ) {
         return 'من فضلك أدخل رقم واتساب صحيح.';
       }
@@ -1095,6 +1357,302 @@
     }
 
 
+    function setNewFieldsEnabled(enabled) {
+
+      [
+        'arabicName',
+        'birthYear',
+        'residencyArea',
+        'whatsapp'
+      ].forEach(
+        id=>{
+
+          const field=
+            document.getElementById(
+              id
+            );
+
+          if(field){
+            field.disabled=
+              !enabled;
+          }
+        }
+      );
+
+
+      document
+        .querySelectorAll(
+          'input[name="gender"]'
+        )
+        .forEach(
+          field=>{
+            field.disabled=
+              !enabled;
+          }
+        );
+    }
+
+
+    function setAppointmentControlsEnabled(enabled) {
+
+      dateSelect.disabled=
+        !enabled;
+
+      if(!enabled){
+        slotSelect.disabled=
+          true;
+      }
+    }
+
+
+    function applyPublicPatientMode(mode) {
+
+      publicPatientMode=
+        mode;
+
+      returningBookingToken=
+        null;
+
+
+      document
+        .querySelectorAll(
+          '[data-public-mode]'
+        )
+        .forEach(
+          button=>{
+            button.classList.toggle(
+              'active',
+              button.dataset.publicMode===
+                mode
+            );
+          }
+        );
+
+
+      newPatientPanel.classList.toggle(
+        'active',
+        mode==='new'
+      );
+
+
+      returningPatientPanel.classList.toggle(
+        'active',
+        mode==='returning'
+      );
+
+
+      setNewFieldsEnabled(
+        mode==='new'
+      );
+
+
+      returningWhatsapp.disabled=
+        mode!=='returning';
+
+
+      returningBirthYear.disabled=
+        mode!=='returning';
+
+
+      returningBirthYearWrap.classList.remove(
+        'show'
+      );
+
+
+      returningPatientResult.innerHTML='';
+
+
+      if(mode==='returning'){
+
+        setAppointmentControlsEnabled(
+          false
+        );
+
+        availabilityMessage.textContent=
+          'تحقق من رقم واتساب المسجل أولاً.';
+
+      }
+      else{
+
+        if(selectedDoctorId){
+
+          loadDays();
+
+        }
+      }
+    }
+
+
+    async function findReturningPatient() {
+
+      clearError();
+
+      returningBookingToken=
+        null;
+
+
+      const phone=
+        returningWhatsapp
+          .value
+          .trim();
+
+
+      if(phone.replace(/\D/g,'').length<8){
+
+        returningPatientResult.innerHTML=`
+          <div class="returning-status error">
+            أدخل رقم واتساب صحيح.
+          </div>
+        `;
+
+        return;
+      }
+
+
+      const birthYearText=
+        returningBirthYear
+          .value
+          .trim();
+
+
+      returningPatientResult.innerHTML=`
+        <div class="returning-status info">
+          جاري البحث عن ملفك...
+        </div>
+      `;
+
+
+      const {data,error}=
+        await sb.rpc(
+          'public_find_returning_patient_by_phone',
+          {
+            p_phone:
+              phone,
+
+            p_birth_year:
+              birthYearText
+                ? Number(
+                    birthYearText
+                  )
+                : null
+          }
+        );
+
+
+      if(error){
+
+        returningPatientResult.innerHTML=`
+          <div class="returning-status error">
+            ${friendlyError(
+              error.message
+            )}
+          </div>
+        `;
+
+        return;
+      }
+
+
+      if(data?.needs_birth_year){
+
+        returningBirthYearWrap.classList.add(
+          'show'
+        );
+
+
+        returningPatientResult.innerHTML=`
+          <div class="returning-status info">
+            يوجد أكثر من ملف بنفس رقم واتساب.
+            أدخل سنة الميلاد ثم اضغط "البحث عن ملفي" مرة أخرى.
+          </div>
+        `;
+
+        return;
+      }
+
+
+      if(!data?.found){
+
+        returningPatientResult.innerHTML=`
+          <div class="returning-status error">
+            لم نجد ملفاً مطابقاً بهذا الرقم.
+            تأكد من استخدام نفس الرقم المسجل في العيادة،
+            أو اختر "مريض جديد".
+          </div>
+        `;
+
+        return;
+      }
+
+
+      returningBookingToken=
+        data.booking_token;
+
+
+      returningBirthYearWrap.classList.remove(
+        'show'
+      );
+
+
+      returningPatientResult.innerHTML=`
+        <div class="returning-status ok">
+          ✓ تم العثور على ملفك
+          ${
+            data.masked_name
+              ? `(${data.masked_name})`
+              : ''
+          }.
+          اختر اليوم والساعة فقط.
+        </div>
+      `;
+
+
+      await loadDays();
+    }
+
+
+    document
+      .querySelectorAll(
+        '[data-public-mode]'
+      )
+      .forEach(
+        button=>{
+
+          button.addEventListener(
+            'click',
+            ()=>applyPublicPatientMode(
+              button.dataset.publicMode
+            )
+          );
+        }
+      );
+
+
+    document
+      .getElementById(
+        'findReturningPatient'
+      )
+      .addEventListener(
+        'click',
+        findReturningPatient
+      );
+
+
+    returningBirthYear
+      .addEventListener(
+        'keydown',
+        event=>{
+
+          if(event.key==='Enter'){
+
+            event.preventDefault();
+
+            findReturningPatient();
+          }
+        }
+      );
+
+
     async function loadDoctor() {
       clearError();
 
@@ -1144,7 +1702,20 @@
         'Dr Ahmed Alaa';
 
 
-      await loadDays();
+      if(publicPatientMode==='new'){
+
+        await loadDays();
+
+      }
+      else{
+
+        setAppointmentControlsEnabled(
+          false
+        );
+
+        availabilityMessage.textContent=
+          'تحقق من رقم واتساب المسجل أولاً.';
+      }
     }
 
 
@@ -1350,99 +1921,157 @@
           slotValue.split('|');
 
 
-        const arabicName =
-          document
-            .getElementById(
-              'arabicName'
-            )
-            .value
-            .trim();
+        let arabicName =
+          '';
+
+        let birthYear =
+          null;
+
+        let gender =
+          null;
+
+        let residencyArea =
+          '';
+
+        let whatsapp =
+          '';
 
 
-        const birthYear =
-          Number(
+        if(publicPatientMode==='new'){
+
+          arabicName =
             document
               .getElementById(
-                'birthYear'
+                'arabicName'
               )
               .value
-          );
+              .trim();
 
 
-        const gender =
-          selectedGender();
+          birthYear =
+            Number(
+              document
+                .getElementById(
+                  'birthYear'
+                )
+                .value
+            );
 
 
-        const residencyArea =
-          document
-            .getElementById(
-              'residencyArea'
-            )
-            .value
-            .trim();
+          gender =
+            selectedGender();
 
 
-        const whatsapp =
-          document
-            .getElementById(
-              'whatsapp'
-            )
-            .value
-            .trim();
+          residencyArea =
+            document
+              .getElementById(
+                'residencyArea'
+              )
+              .value
+              .trim();
 
 
-        if(
-          !arabicName
-          ||
-          !birthYear
-          ||
-          !gender
-          ||
-          !residencyArea
-          ||
-          !whatsapp
-        ) {
-          showError(
-            'من فضلك أكمل كل البيانات.'
-          );
-          return;
+          whatsapp =
+            document
+              .getElementById(
+                'whatsapp'
+              )
+              .value
+              .trim();
+
+
+          if(
+            !arabicName
+            ||
+            !birthYear
+            ||
+            !gender
+            ||
+            !residencyArea
+            ||
+            !whatsapp
+          ) {
+            showError(
+              'من فضلك أكمل كل بيانات المريض الجديد.'
+            );
+            return;
+          }
+
+        }
+        else{
+
+          if(!returningBookingToken){
+
+            showError(
+              'ابحث عن ملفك باستخدام رقم واتساب المسجل أولاً.'
+            );
+
+            return;
+          }
         }
 
 
         submitButton.disabled = true;
+
         submitButton.textContent =
           'جاري الحجز...';
 
 
-        const { data, error } =
-          await sb.rpc(
-            'submit_public_booking',
-            {
-              p_doctor:
-                selectedDoctorId,
+        const rpcResult =
+          publicPatientMode==='returning'
 
-              p_start:
-                slotStart,
+            ? await sb.rpc(
+                'submit_public_returning_booking',
+                {
+                  p_booking_token:
+                    returningBookingToken,
 
-              p_end:
-                slotEnd,
+                  p_doctor:
+                    selectedDoctorId,
 
-              p_arabic_name:
-                arabicName,
+                  p_start:
+                    slotStart,
 
-              p_birth_year:
-                birthYear,
+                  p_end:
+                    slotEnd
+                }
+              )
 
-              p_gender:
-                gender,
+            : await sb.rpc(
+                'submit_public_new_patient_booking',
+                {
+                  p_doctor:
+                    selectedDoctorId,
 
-              p_residency_area:
-                residencyArea,
+                  p_start:
+                    slotStart,
 
-              p_whatsapp:
-                whatsapp
-            }
-          );
+                  p_end:
+                    slotEnd,
+
+                  p_arabic_name:
+                    arabicName,
+
+                  p_birth_year:
+                    birthYear,
+
+                  p_gender:
+                    gender,
+
+                  p_residency_area:
+                    residencyArea,
+
+                  p_whatsapp:
+                    whatsapp
+                }
+              );
+
+
+        const {
+          data,
+          error
+        } =
+          rpcResult;
 
 
         submitButton.disabled = false;
@@ -1626,6 +2255,11 @@
       )
       .max =
         new Date().getFullYear();
+
+
+    applyPublicPatientMode(
+      'new'
+    );
 
 
     loadDoctor();

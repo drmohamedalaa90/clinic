@@ -1,9 +1,13 @@
 In app.html, find:
 
-<script src="js/notifications.js"></script>
+<script src="js/appointments.js"></script>
 
 Immediately AFTER it add:
 
+<script src="js/booking-workflow-hotfix.js"></script>
+
+Keep the existing:
+<script src="js/notifications.js"></script>
 <script src="js/push-notifications.js"></script>
 
-Do not remove any of your existing scripts.
+Do not paste booking-workflow-hotfix.js into appointments.js.

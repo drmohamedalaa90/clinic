@@ -1,99 +1,154 @@
-# STEP 6 — Register staff browsers for clinic push notifications
+# Alaa Clinic — Booking & Patient Workflow V2
 
-You have already completed the database webhook.
+This package handles all four requests together.
 
-Now the browser/device must register itself before it can receive push.
+## 1. Duplicate push notifications — FIXED AT THE SOURCE
 
-## A. Edit ONE value first
+The currently deployed `sw.js` contains TWO separate `push` event listeners
+(and TWO `notificationclick` listeners).
 
-Open:
+That is why one server push can create two visible notifications on the same
+mobile device.
 
-`js/push-notifications.js`
+Replace the whole current `sw.js` with the `sw.js` in this package.
 
-Find:
+The replacement has:
+- exactly ONE `push` listener
+- exactly ONE `notificationclick` listener
+- one booking tag per appointment
+- `renotify: false`
 
-`PASTE_YOUR_VAPID_PUBLIC_KEY_HERE`
+Do NOT append the new code to the old sw.js. Replace the old file completely.
 
-Replace it with the PUBLIC VAPID key you generated earlier.
+---
 
-Example only:
+## 2. Public `book.html`
 
-`const VAPID_PUBLIC_KEY = 'B....';`
+The patient is first asked:
 
-It is safe for the PUBLIC VAPID key to be in GitHub.
+**هل هذه أول زيارة للعيادة؟**
 
-DO NOT put:
-- VAPID_PRIVATE_KEY
-- BOOKING_WEBHOOK_SECRET
+Choices:
+- **مريض جديد**
+- **زرت العيادة من قبل**
 
-in GitHub.
+### New patient
+Completes the normal demographic form and chooses date/time.
 
-## B. Upload the JS
+If the phone is already registered, the database blocks creation of a duplicate
+patient and tells them to use the returning-patient path.
+
+### Returning patient
+Enters the SAME registered WhatsApp/mobile number.
+
+For privacy, the public page does NOT reveal the complete patient record.
+It confirms a masked match and then the patient chooses ONLY:
+- date
+- time
+
+If more than one patient record shares the same phone number, year of birth is
+requested to disambiguate.
+
+A 15-minute opaque booking token links the public booking to the correct secured
+patient record without exposing the patient UUID or full demographics.
+
+---
+
+## 3. Internal clinic booking — PHONE FIRST
 
 Upload:
 
-`js/push-notifications.js`
+`js/booking-workflow-hotfix.js`
 
-to your GitHub repo.
+Then add it to `app.html` immediately after `js/appointments.js`.
 
-## C. Modify app.html
+Whenever the internal booking window opens:
+- phone/mobile is the first lookup
+- if the phone exists, the existing patient is selected automatically
+- the MRN is shown internally
+- **Open file** opens that patient's existing record
+- if there are multiple patients with the same phone, staff choose the correct
+  record
+- if the phone is new, the New Patient form is selected and the phone is
+  prefilled
 
-After:
+---
 
-`<script src="js/notifications.js"></script>`
+## 4. Edit any booking BEFORE check-in
 
-add:
+For Owner / Manager / Deputy Manager / Secretary:
 
-`<script src="js/push-notifications.js"></script>`
+Appointment Details now receives:
 
-## D. Modify sw.js
+**Edit booking / تعديل بيانات الحجز**
 
-Do not replace your existing service-worker/PWA code.
+It can revise:
+- mobile / WhatsApp
+- Arabic name
+- optional English name
+- birth year
+- gender
+- residency area
+- address
+- visit type
+- booking notes
 
-Copy the entire contents of:
+Date/time continues to use the existing **Reschedule** action so appointment
+history remains clear.
 
-`sw-push-append.js`
+Every pre-check-in edit is copied to `booking_precheckin_edits`.
 
-and paste it at the VERY BOTTOM of your existing `sw.js`.
+Once checked in, booking data cannot be edited through this workflow.
 
-Then change your existing service-worker CACHE version/name once, so browsers
-download the new service worker.
+---
 
-## E. Deploy and hard refresh
+## 5. Check-in automatically sends the patient file to the doctor
+
+The updated `frontend_check_in_with_fee()` now does this in one transaction:
+
+1. patient is checked in
+2. fee/income is recorded
+3. appointment is automatically sent to the assigned doctor's queue
+4. status becomes `waiting`
+5. patient ID + MRN remain attached to the appointment
+
+The doctor already sees the patient's MRN on Today's Clinic / queue and can open
+the patient file by clicking the patient.
+
+Therefore the separate **Send to doctor** click after check-in is no longer
+needed.
+
+---
+
+# INSTALL ORDER
+
+## Supabase
+
+Run:
+
+`sql/booking-patient-workflow-v2.sql`
+
+## GitHub
+
+Replace:
+- `book.html`
+- `sw.js`
+
+Upload:
+- `js/booking-workflow-hotfix.js`
+
+Then modify `app.html` using:
+- `APP_HTML_INSERT.txt`
+
+## IMPORTANT after replacing sw.js
 
 Wait for GitHub Pages deployment.
 
-Then on each staff laptop/browser:
+On each device:
+1. close the clinic tab/app
+2. reopen it
+3. hard refresh once on desktop
+4. on iPhone/PWA, fully close and reopen the installed web app
 
-1. Open the clinic.
-2. Log in.
-3. Ctrl + Shift + R once.
-4. A new button beside the bell will say:
-   `🔔 Enable push`
-   or
-   `🔔 تفعيل الإشعارات`
-5. Click it.
-6. When Chrome/Edge asks for Notifications permission, click Allow.
-7. The button should become:
-   `✓ Push enabled`
-
-Do this separately for:
-- Owner
-- Sara
-- Manager
-- Deputy Manager
-- Dr Ahmed
-
-If one person uses both a laptop and phone, enable push separately on each
-device/browser.
-
-## F. Before testing a booking
-
-Open Supabase Table Editor → `push_subscriptions`.
-
-You should see one row per registered browser/device.
-
-If you see zero rows, do NOT test the booking yet—the devices are not registered.
-
-When you have at least your Owner browser registered, create ONE new booking and
-we'll check the Edge Function logs together.
+The clean service worker must replace the previous version that had two push
+listeners.
