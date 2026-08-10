@@ -100,3 +100,110 @@ self.addEventListener(
     );
   }
 );
+/* =========================================================
+   OPERATION CLINIC PUSH NOTIFICATIONS
+========================================================= */
+
+self.addEventListener(
+  'push',
+  event => {
+
+    let data = {};
+
+    try {
+      data = event.data
+        ? event.data.json()
+        : {};
+    }
+    catch {
+      data = {
+        title: 'Clinic notification',
+        body: event.data?.text() || ''
+      };
+    }
+
+
+    const icon =
+      new URL(
+        'assets/alaa-clinic-logo.png',
+        self.registration.scope
+      ).href;
+
+
+    event.waitUntil(
+      self.registration.showNotification(
+        data.title || 'Clinic notification',
+        {
+          body:
+            data.body || '',
+
+          icon,
+
+          badge:
+            icon,
+
+          tag:
+            data.tag || undefined,
+
+          renotify:
+            true,
+
+          data: {
+            url:
+              data.url || 'app.html',
+
+            appointmentId:
+              data.appointmentId || null
+          }
+        }
+      )
+    );
+  }
+);
+
+
+
+self.addEventListener(
+  'notificationclick',
+  event => {
+
+    event.notification.close();
+
+
+    const targetUrl =
+      new URL(
+        event.notification.data?.url
+          || 'app.html',
+
+        self.registration.scope
+      ).href;
+
+
+    event.waitUntil(
+      clients
+        .matchAll({
+          type: 'window',
+          includeUncontrolled: true
+        })
+        .then(async windows => {
+
+          for (const client of windows) {
+
+            if ('navigate' in client) {
+
+              await client.navigate(
+                targetUrl
+              );
+
+              return client.focus();
+            }
+          }
+
+
+          return clients.openWindow(
+            targetUrl
+          );
+        })
+    );
+  }
+);
