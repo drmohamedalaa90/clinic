@@ -1,4 +1,4 @@
-const CACHE = 'operation-clinic-v25-single-push-2026-08-10';
+const CACHE = 'operation-clinic-v26-push-hard-dedupe-2026-08-10';
 
 const STATIC = [
   './',
@@ -153,8 +153,84 @@ self.addEventListener(
 
 
 /* =========================================================
-   PUSH — EXACTLY ONE LISTENER
+   PUSH — EXACTLY ONE LISTENER + HARD DE-DUPLICATION
 ========================================================= */
+
+const PUSH_DEDUPE_CACHE =
+  'clinic-push-dedupe-v1';
+
+const PUSH_DEDUPE_WINDOW_MS =
+  2 * 60 * 1000;
+
+
+async function wasPushRecentlyShown(
+  tag
+){
+
+  const cache =
+    await caches.open(
+      PUSH_DEDUPE_CACHE
+    );
+
+
+  const key =
+    new Request(
+      new URL(
+        `__push_dedupe__/${encodeURIComponent(tag)}`,
+        self.registration.scope
+      ).href
+    );
+
+
+  const previous =
+    await cache.match(
+      key
+    );
+
+
+  const now =
+    Date.now();
+
+
+  if(previous){
+
+    const previousTime =
+      Number(
+        await previous.text()
+      );
+
+
+    if(
+      Number.isFinite(
+        previousTime
+      )
+      &&
+      now - previousTime
+        < PUSH_DEDUPE_WINDOW_MS
+    ){
+
+      return true;
+    }
+  }
+
+
+  await cache.put(
+    key,
+    new Response(
+      String(now),
+      {
+        headers:{
+          'Content-Type':
+            'text/plain'
+        }
+      }
+    )
+  );
+
+
+  return false;
+}
+
 
 self.addEventListener(
   'push',
@@ -206,9 +282,29 @@ self.addEventListener(
       (async()=>{
 
         /*
-         * Close an existing notification with the same booking tag.
-         * The backend already sends one push per registered device;
-         * this prevents an identical visible copy from remaining.
+         * HARD de-duplication:
+         * if iOS/WebKit delivers the same push event twice within
+         * two minutes, the second event is ignored completely.
+         * This prevents a second banner/sound.
+         */
+        if(
+          await wasPushRecentlyShown(
+            tag
+          )
+        ){
+
+          console.info(
+            'Duplicate push suppressed:',
+            tag
+          );
+
+          return;
+        }
+
+
+        /*
+         * Defensive cleanup in case an older notification with the
+         * same tag is still visible.
          */
         const existing=
           await self.registration
