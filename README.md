@@ -1,79 +1,18 @@
-# Operation Clinic — Schedule Delete + Finance Period Filters
+# Public booking page — logo + clinic location
 
-## 1. Owner: delete one or multiple days from Sara's schedule
+Upload/replace:
 
-Attendance → Sara → Today → Weekly schedule
+- `book.html`
+- `assets/alaa-clinic-logo.png`
 
-Owner now sees a checkbox beside every schedule day.
+The public booking confirmation page now shows:
 
-You can select:
-- one day
-- several days
-- all displayed schedule rows if needed
+- the supplied Alaa Clinic logo
+- address: 125 شارع بورسعيد، الإبراهيمية
+- landmark: فوق مراتب يانسن
+- short "how to reach" directions
+- a button opening the supplied Google Maps location
 
-Then press:
+The same logo is also used in the booking page header.
 
-**Delete selected days / حذف الأيام المحددة**
-
-A reason is mandatory.
-
-Before deletion, each removed schedule row is copied to:
-`staff_schedule_test_deletions`
-
-Managers, Deputy Manager and Sara do not receive this delete control.
-
----
-
-## 2. Finance: Day / Month / All time
-
-At the top of Finance there is now one global period control:
-
-- **Day / يوم**
-- **Month / شهر**
-- **All time / الإجمالي**
-
-When Day is selected, choose a date.
-
-When Month is selected, choose a month.
-
-When All time is selected, the whole available finance history is shown.
-
-The selected period applies to:
-
-- Checked-in cases
-- Booking income
-- Clinic/logistics expense ledger
-- Invoices
-- Income summary
-- Cash summary
-- InstaPay summary
-- Expense total
-- Net total
-
-Approved logistics orders that are still waiting for a purchase price remain
-visible regardless of the period because they are an active operational task.
-
-Services and Cash Closing stay as their existing configuration/workflow tabs.
-
----
-
-## Install
-
-### Supabase
-
-Run:
-
-`sql/owner-delete-staff-schedule-days.sql`
-
-### GitHub
-
-Replace:
-
-- `js/attendance.js`
-- `js/finance.js`
-- `css/style.css`
-- `sw.js`
-
-Then wait for GitHub Pages deployment and press:
-
-`Ctrl + Shift + R`
+No Supabase SQL changes are required for this update.

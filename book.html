@@ -46,11 +46,10 @@
     }
 
     button,
-input,
-select,
-textarea {
-  font: inherit;
-}
+    input,
+    select {
+      font: inherit;
+    }
 
     .page {
       width: min(100%, 620px);
@@ -66,16 +65,24 @@ textarea {
     }
 
     .brand-logo {
-      width: 54px;
-      height: 54px;
-      display: grid;
-      place-items: center;
-      border-radius: 16px;
-      background: var(--navy);
-      color: white;
-      font-weight: 900;
-      letter-spacing: .04em;
-      box-shadow: 0 8px 24px rgba(16,38,63,.14);
+      width: 112px;
+      height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      padding: 5px 7px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: white;
+      box-shadow: 0 8px 24px rgba(16,38,63,.08);
+    }
+
+    .brand-logo img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
 
     .brand-copy {
@@ -387,6 +394,101 @@ textarea {
       color: var(--muted);
     }
 
+    .success-logo {
+      width: min(240px, 78%);
+      margin: 0 auto 16px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: white;
+    }
+
+    .success-logo img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 92px;
+      object-fit: contain;
+    }
+
+    .clinic-location-card {
+      display: grid;
+      gap: 12px;
+      margin: 0 auto 18px;
+      max-width: 430px;
+      text-align: right;
+    }
+
+    .clinic-location-box {
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: #fafcfd;
+    }
+
+    .clinic-location-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 9px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .clinic-location-address {
+      margin: 0 0 8px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.8;
+    }
+
+    .clinic-location-landmark {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    .clinic-directions {
+      margin-top: 11px;
+      padding-top: 11px;
+      border-top: 1px solid var(--border);
+    }
+
+    .clinic-directions strong {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 12px;
+    }
+
+    .clinic-directions p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.9;
+    }
+
+    .google-maps-button {
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 13px;
+      background: var(--navy);
+      color: white;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 900;
+      box-shadow: 0 8px 20px rgba(16,38,63,.12);
+    }
+
+    .google-maps-button:hover {
+      background: var(--navy-2);
+    }
+
     .book-another {
       min-height: 48px;
       border: 1px solid var(--border);
@@ -433,7 +535,12 @@ textarea {
   <main class="page">
 
     <header class="brand">
-      <div class="brand-logo">OC</div>
+      <div class="brand-logo">
+        <img
+          src="assets/alaa-clinic-logo.png"
+          alt="Alaa Clinic for Cardiology & Endocrinology"
+        >
+      </div>
 
       <div class="brand-copy">
         <strong>عيادة د. أحمد علاء</strong>
@@ -544,7 +651,7 @@ textarea {
           </label>
 
 
-                  <label>
+          <label>
             رقم واتساب
 
             <input
@@ -559,33 +666,6 @@ textarea {
               required
             >
           </label>
-
-
-          <label>
-            شكوى المريض
-            <span style="
-              color:#8b96a6;
-              font-size:10px;
-              font-weight:400;
-            ">
-              (اختياري)
-            </span>
-
-            <textarea
-              id="patientComplaint"
-              class="control"
-              maxlength="500"
-              rows="3"
-              placeholder="اكتب باختصار سبب الزيارة..."
-              style="
-                min-height:85px;
-                padding:12px 13px;
-                resize:vertical;
-                line-height:1.7;
-              "
-            ></textarea>
-          </label>
-
 
           <label class="honeypot" aria-hidden="true">
             Website
@@ -675,6 +755,13 @@ textarea {
         id="successPanel"
         class="success"
       >
+        <div class="success-logo">
+          <img
+            src="assets/alaa-clinic-logo.png"
+            alt="Alaa Clinic for Cardiology & Endocrinology"
+          >
+        </div>
+
         <div class="success-icon">✓</div>
 
         <h2>تم الحجز بنجاح</h2>
@@ -687,6 +774,42 @@ textarea {
           id="bookingSummary"
           class="booking-summary"
         ></div>
+
+        <div class="clinic-location-card">
+          <div class="clinic-location-box">
+            <div class="clinic-location-title">
+              <span>📍</span>
+              <span>مكان العيادة</span>
+            </div>
+
+            <p class="clinic-location-address">
+              125 شارع بورسعيد، الإبراهيمية
+            </p>
+
+            <p class="clinic-location-landmark">
+              العلامة المميزة: فوق مراتب يانسن
+            </p>
+
+            <div class="clinic-directions">
+              <strong>كيفية الوصول إلى العيادة</strong>
+              <p>
+                اتجه إلى 125 شارع بورسعيد بالإبراهيمية.
+                العيادة فوق مراتب يانسن.
+                يمكنك فتح الموقع على خرائط Google للحصول على الاتجاهات من مكانك.
+              </p>
+            </div>
+          </div>
+
+          <a
+            class="google-maps-button"
+            href="https://share.google/qh08XxS5DCz34DIfu"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span>📍</span>
+            فتح الموقع على خرائط Google
+          </a>
+        </div>
 
         <button
           id="bookAnother"
@@ -1412,9 +1535,15 @@ textarea {
           <div>
             <span>الطبيب</span>
             <strong>${escapeHtml(
-              data?.doctor_name ||
-              selectedDoctorName ||
-              ''
+              (
+                data?.doctor_name ||
+                selectedDoctorName ||
+                ''
+              )
+              .replace(
+                /^Dr\.?\s*Ahmed\s+Alaa$/i,
+                'د أحمد علاء'
+              )
             )}</strong>
           </div>
 
