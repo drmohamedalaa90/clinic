@@ -13,15 +13,11 @@ window.addEventListener(
 
     try{
 
-      /*
-       * Changing this URL forces Safari/Chrome to evaluate a genuinely
-       * new worker instead of continuing to use an older cached sw.js.
-       */
       const registration =
         await navigator
           .serviceWorker
           .register(
-            './sw.js?v=27-final',
+            './sw.js?v=28-one-push-per-appointment',
             {
               scope:'./',
               updateViaCache:'none'

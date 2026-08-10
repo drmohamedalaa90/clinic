@@ -1,116 +1,123 @@
-# CLINIC FINAL RECOVERY PACK
+# Appointment Confirm + Edit + Live Refresh + Push V28
 
-This package addresses the five problems together rather than patching them
-one-by-one.
+This pack fixes the exact three problems visible in the current live repository.
 
-## A. Notifications: newest first
+## Why Edit is missing
 
-`js/clinic-final-live-fixes.js` patches the notification list so the primary
-sort is:
+The repository already contains:
+`js/booking-workflow-hotfix.js`
 
-1. newest event_time first
-2. priority only when times are equal
+That file adds **Edit booking** before check-in.
 
-This fixes old high-priority items appearing above a new booking.
+But the current live `app.html` does NOT load it.
 
-## B. Main app updates automatically after a booking
+The replacement `app.html` in this pack loads it immediately after
+`appointments.js`.
 
-The live GitHub `app.html` currently does NOT load `realtime-sync.js`, which is
-why the previously-created realtime code cannot run.
+## New: Confirm information
 
-This pack instead uses `js/clinic-final-live-fixes.js` and adds:
-- Supabase Realtime for appointments and patients
-- automatic refresh of Appointments/Dashboard/Today/Queue/Reception/Patients/
-  Patient Detail/Finance
-- an 8-second polling fallback if a Realtime event is missed
-- notification drawer refresh
-- protection against refreshing while a modal/form is open
+Before check-in the appointment popup now has:
+
+- **Confirm information**
+- **Edit booking**
+- Check in
+- Reschedule
+- No-show
+- Cancel
+
+Confirm information opens the registered patient + appointment information for
+staff review.
+
+After confirmation the appointment shows:
+`✓ Information confirmed`
+
+If Edit booking is opened afterward, the confirmation is cleared and the
+information should be reviewed again.
 
 Run:
-`sql/enable-live-sync.sql`
+`sql/appointment-information-confirmation.sql`
 
-Then add the new JS in app.html using:
-`APP_HTML_BOTTOM_REPLACEMENT.txt`
+## Why laptop does not update automatically
 
-## C. iPhone double push
+The repository already contains:
+`js/clinic-final-live-fixes.js`
 
-The new `sw.js` has:
-- exactly one push listener
-- synchronous in-memory duplicate blocking (prevents simultaneous race)
-- persistent 2-minute duplicate blocking
-- fingerprint based on appointment/content, not only server tag
-- new cache version v27
+It subscribes to Supabase Realtime AND has an 8-second polling fallback.
 
-The new `js/pwa.js` registers:
-`sw.js?v=27-final`
-with `updateViaCache: 'none'`.
+But the current live `app.html` does NOT load that script.
 
-This is important because the live repository already contains the new
-book.html features while the phone was still showing the older success screen,
-which indicates stale deployed client code/service-worker state.
+Therefore it cannot run.
 
-## D. Save booking summary as photo
+The replacement `app.html` loads it.
 
-`book.html` contains the actual PNG generator.
+Your Supabase `appointments` and `patients` tables must also be enabled in the
+`supabase_realtime` publication (this was part of the previous SQL patch).
 
-The button is moved IMMEDIATELY BELOW the booking summary so it cannot be
-missed:
+## Why the iPhone can still show two pushes
 
-`🖼️ حفظ ملخص الحجز كصورة`
+The current client already has:
+- one active iPhone subscription
+- one `push` listener
+- client-side deduplication
 
-On iPhone it uses the native share sheet when supported.
-On desktop it downloads a PNG.
+But V27 identifies duplicates using:
+`appointment ID + title + body`
 
-## E. "How to reach the clinic" is now a separate, obvious rectangle
+and only recognizes the payload field `appointmentId`.
 
-On laptop:
-- Location is one rectangle.
-- The animated `NEW! جديد` directions feature is a separate rectangle BESIDE it.
+So if the backend sends the same booking twice with:
+- slightly different title/body, OR
+- the appointment UUID under `appointment` or `appointment_id`
 
-On mobile they stack vertically.
+the two payloads can evade the current duplicate guard.
 
-The directions card has:
-- animated NEW badge
-- floating compass
-- moving route marker
-- shimmer
-- animated arrow
+V28 changes the rule to:
 
-It opens `directions.html`.
+**ONE appointment UUID = ONE visible notification per device**
 
----
+It recognizes:
+- `appointmentId`
+- `appointment_id`
+- `appointment`
+- the same keys nested under `data`
 
-# EXACT INSTALL ORDER
+and de-duplicates using ONLY that appointment UUID.
 
-1. Supabase SQL Editor:
-   Run `sql/enable-live-sync.sql`
+## INSTALL ORDER
+
+1. Supabase → SQL Editor:
+   run `sql/appointment-information-confirmation.sql`
 
 2. GitHub REPLACE:
-   - `book.html`
-   - `directions.html`
+   - `app.html`
    - `sw.js`
    - `js/pwa.js`
 
-3. GitHub ADD:
+3. GitHub ADD/REPLACE:
+   - `js/appointment-information-confirm.js`
+   - `js/booking-workflow-hotfix.js`
    - `js/clinic-final-live-fixes.js`
 
-4. Edit the bottom scripts in `app.html` exactly as shown in:
-   `APP_HTML_BOTTOM_REPLACEMENT.txt`
+4. Commit everything together.
 
-5. Commit everything in ONE commit.
-
-6. Wait for GitHub Pages deployment to finish.
-
-7. Desktop:
-   - close all clinic tabs
+5. Desktop:
+   - close clinic tabs
    - reopen app.html
    - Ctrl+Shift+R once
 
-8. iPhone:
-   - fully close the installed clinic app/Safari clinic tab
-   - reopen clinic and leave it open 15 seconds
-   - fully close it again
-   - reopen it once more
-   - THEN make one test booking
+6. iPhone:
+   - fully close clinic PWA
+   - reopen for 15 seconds
+   - fully close again
+   - reopen
+   - make ONE new test booking
 
-Do not mix old and new versions of sw.js/pwa.js.
+## EXPECTED APPOINTMENT POPUP
+
+Before check-in:
+
+`Confirm information | Edit booking | Check in | Reschedule | No-show | Cancel`
+
+After information confirmation:
+
+`✓ Information confirmed | Edit booking | Check in | Reschedule | No-show | Cancel`

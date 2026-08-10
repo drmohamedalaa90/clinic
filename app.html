@@ -23,10 +23,13 @@
           <div class="sidebar-subtitle" data-i18n="clinicManagement">Clinic Management</div>
         </div>
       </div>
+
       <nav id="navigation" class="navigation"></nav>
+
       <div class="sidebar-footer">
         <button id="logoutButton" class="logout-button">
-          <span>↪</span><span data-i18n="logout">Logout</span>
+          <span>↪</span>
+          <span data-i18n="logout">Logout</span>
         </button>
       </div>
     </aside>
@@ -35,6 +38,7 @@
       <header class="topbar">
         <div class="topbar-start">
           <button id="menuButton" class="menu-button">☰</button>
+
           <div>
             <h1 id="pageTitle" class="page-title">Dashboard</h1>
             <div id="todayDate" class="today-date"></div>
@@ -46,12 +50,19 @@
             <button class="app-lang-btn" data-lang="en">EN</button>
             <button class="app-lang-btn" data-lang="ar">عربي</button>
           </div>
-          <button id="notificationButton" class="notification-button" aria-label="Notifications">
+
+          <button
+            id="notificationButton"
+            class="notification-button"
+            aria-label="Notifications"
+          >
             🔔
             <span id="notificationBadge" class="notification-badge hidden">0</span>
           </button>
+
           <div class="profile-menu">
             <div id="profileAvatar" class="profile-avatar">U</div>
+
             <div class="profile-info">
               <strong id="profileName">User</strong>
               <span id="profileRole"></span>
@@ -72,22 +83,33 @@
         <span class="eyebrow">LIVE</span>
         <h3 id="notificationTitle">Notifications</h3>
       </div>
+
       <button id="closeNotifications" class="icon-button">✕</button>
     </div>
+
     <div id="notificationList" class="drawer-body"></div>
   </aside>
+
   <div id="drawerOverlay" class="drawer-overlay"></div>
 
   <div id="modalRoot" class="modal-root hidden"></div>
   <div id="toastRoot" class="toast-root"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <script src="js/supabase-client.js"></script>
   <script src="js/core.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/schedules.js"></script>
   <script src="js/patients.js"></script>
   <script src="js/appointments.js"></script>
+
+  <!-- PHONE-FIRST + EDIT BOOKING BEFORE CHECK-IN -->
+  <script src="js/booking-workflow-hotfix.js"></script>
+
+  <!-- CONFIRM PATIENT / APPOINTMENT INFORMATION BEFORE CHECK-IN -->
+  <script src="js/appointment-information-confirm.js"></script>
+
   <script src="js/clinical.js"></script>
   <script src="js/referrals.js"></script>
   <script src="js/finance.js"></script>
@@ -98,9 +120,13 @@
   <script src="js/notifications.js"></script>
   <script src="js/push-notifications.js"></script>
 
-  <!-- Targeted UI/performance fixes loaded last so they do not overwrite core modules. -->
+  <!-- NEWEST NOTIFICATION FIRST + REALTIME + POLLING FALLBACK -->
+  <script src="js/clinic-final-live-fixes.js"></script>
+
+  <!-- Existing visual/UI fixes -->
   <script src="js/clinic-hotfix.js"></script>
 
+  <!-- Service worker updater -->
   <script src="js/pwa.js"></script>
 </body>
 </html>

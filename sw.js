@@ -1,4 +1,4 @@
-const CACHE = 'operation-clinic-v27-final-recovery-2026-08-10';
+const CACHE = 'operation-clinic-v28-one-push-per-appointment-2026-08-10';
 
 const STATIC = [
   './',
@@ -218,7 +218,7 @@ const PUSH_IN_FLIGHT =
 
 
 const PUSH_DEDUPE_CACHE =
-  'clinic-push-dedupe-v2';
+  'clinic-push-dedupe-v3';
 
 const PUSH_DEDUPE_WINDOW_MS =
   2 * 60 * 1000;
@@ -329,25 +329,54 @@ self.addEventListener(
       ).href;
 
 
-    const tag=
-      data.tag
+    /*
+     * Normalize every appointment ID shape we have used while building
+     * the push backend. This is deliberate: one appointment must generate
+     * ONE visible banner on a device even if the server sends slightly
+     * different payload text.
+     */
+    const appointmentKey =
+      data.appointmentId
       ||
-      (
-        data.appointmentId
-          ? `booking-${data.appointmentId}`
-          : 'clinic-notification'
-      );
+      data.appointment_id
+      ||
+      data.appointment
+      ||
+      data.data?.appointmentId
+      ||
+      data.data?.appointment_id
+      ||
+      data.data?.appointment
+      ||
+      null;
+
+
+    const tag =
+      appointmentKey
+        ? `booking-${appointmentKey}`
+        : (
+            data.tag
+            ||
+            'clinic-notification'
+          );
 
 
     /*
-     * Fingerprint is independent of the server-provided tag.
-     * If two payloads for the same booking have different tags, they still
-     * collapse to one visible notification.
+     * CRITICAL V28 CHANGE:
+     * Previously the fingerprint included title/body.
+     * Two pushes for the SAME appointment with slightly different text
+     * were therefore considered different notifications.
+     *
+     * Now appointment UUID alone is the de-duplication key.
      */
     const fingerprint =
-      data.appointmentId
-        ? `appointment:${data.appointmentId}:${data.title || ''}:${data.body || ''}`
-        : `${data.title || ''}|${data.body || ''}|${data.url || ''}`;
+      appointmentKey
+        ? `appointment:${appointmentKey}`
+        : (
+            data.tag
+            ? `tag:${data.tag}`
+            : `${data.title || ''}|${data.body || ''}|${data.url || ''}`
+          );
 
 
     if(
@@ -357,7 +386,7 @@ self.addEventListener(
     ){
 
       console.info(
-        'Concurrent duplicate push suppressed:',
+        'Concurrent duplicate appointment push suppressed:',
         fingerprint
       );
 
