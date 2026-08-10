@@ -3953,3 +3953,59 @@ html[dir="rtl"] .mini-calendar-days {
   }
 
 }
+/* ===== Push notification button ===== */
+
+.push-enable-button {
+  width: 46px !important;
+  height: 46px !important;
+  min-width: 46px !important;
+  padding: 0 !important;
+
+  display: grid !important;
+  place-items: center !important;
+
+  border-radius: 50% !important;
+
+  font-size: 0 !important;
+  line-height: 1 !important;
+
+  position: relative;
+  overflow: visible;
+}
+
+.push-enable-button::before {
+  content: "🔔";
+  font-size: 19px;
+}
+
+.push-enable-button.push-enabled {
+  background: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+}
+
+.push-enable-button.push-enabled::before {
+  content: "🔔";
+}
+
+.push-enable-button.push-enabled::after {
+  content: "✓";
+
+  position: absolute;
+  top: -3px;
+  right: -3px;
+
+  width: 18px;
+  height: 18px;
+
+  display: grid;
+  place-items: center;
+
+  border: 2px solid white;
+  border-radius: 50%;
+
+  background: #10b981;
+  color: white;
+
+  font-size: 10px;
+  font-weight: 900;
+}
