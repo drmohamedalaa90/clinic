@@ -653,6 +653,19 @@
       line-height: 1.6;
     }
 
+    .phone-guide {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.7;
+    }
+
+    .whatsapp-control.phone-invalid {
+      border-color: #ef4444 !important;
+      background: #fff7f7 !important;
+    }
+
     .honeypot {
       position: absolute !important;
       width: 1px !important;
@@ -838,12 +851,20 @@
                 id="whatsapp"
                 class="control whatsapp-control"
                 type="tel"
-                inputmode="tel"
-                maxlength="25"
+                inputmode="numeric"
+                maxlength="11"
+                minlength="11"
                 autocomplete="tel"
                 dir="ltr"
+                placeholder="01XXXXXXXXX"
+                pattern="01[0-9]{9}"
                 required
               >
+
+              <small class="phone-guide">
+                اكتب رقم واتساب المصري من 11 رقم ويبدأ بـ 01
+                — مثال: 01012345678
+              </small>
             </label>
 
 
@@ -875,10 +896,13 @@
                   id="returningWhatsapp"
                   class="control whatsapp-control"
                   type="tel"
-                  inputmode="tel"
-                  maxlength="25"
+                  inputmode="numeric"
+                  maxlength="11"
+                  minlength="11"
                   autocomplete="tel"
                   dir="ltr"
+                  placeholder="01XXXXXXXXX"
+                  pattern="01[0-9]{9}"
                 >
 
                 <button
@@ -890,6 +914,12 @@
                 </button>
 
               </div>
+
+              <small class="phone-guide">
+                استخدم نفس الرقم المسجل في العيادة:
+                11 رقم ويبدأ بـ 01
+                — مثال: 01012345678
+              </small>
             </label>
 
 
@@ -1437,6 +1467,136 @@
     }
 
 
+    function normalizeEgyptMobile(value='') {
+
+      const arabicDigits =
+        '٠١٢٣٤٥٦٧٨٩';
+
+      const persianDigits =
+        '۰۱۲۳۴۵۶۷۸۹';
+
+
+      let normalized =
+        String(value)
+          .trim()
+          .replace(
+            /[٠-٩]/g,
+            digit=>
+              String(
+                arabicDigits.indexOf(
+                  digit
+                )
+              )
+          )
+          .replace(
+            /[۰-۹]/g,
+            digit=>
+              String(
+                persianDigits.indexOf(
+                  digit
+                )
+              )
+          )
+          .replace(
+            /\D/g,
+            ''
+          );
+
+
+      /*
+       * Accepting +20 / 0020 while typing is convenient,
+       * but before validation we convert it to local 01XXXXXXXXX.
+       */
+      if(
+        normalized.startsWith(
+          '0020'
+        )
+      ){
+        normalized=
+          '0'
+          +
+          normalized.slice(
+            4
+          );
+      }
+      else if(
+        normalized.startsWith(
+          '20'
+        )
+        &&
+        normalized.length===12
+      ){
+        normalized=
+          '0'
+          +
+          normalized.slice(
+            2
+          );
+      }
+
+
+      return normalized;
+    }
+
+
+    function isValidEgyptMobile(value='') {
+
+      return /^01[0-9]{9}$/.test(
+        normalizeEgyptMobile(
+          value
+        )
+      );
+    }
+
+
+    function validateWhatsappField(
+      field,
+      showErrorMessage=true
+    ) {
+
+      const normalized =
+        normalizeEgyptMobile(
+          field.value
+        );
+
+
+      field.value =
+        normalized.slice(
+          0,
+          11
+        );
+
+
+      const valid =
+        isValidEgyptMobile(
+          field.value
+        );
+
+
+      field.classList.toggle(
+        'phone-invalid',
+        !valid
+        &&
+        field.value.length>0
+      );
+
+
+      if(
+        !valid
+        &&
+        showErrorMessage
+      ){
+
+        showError(
+          'من فضلك أدخل رقم واتساب صحيح: 11 رقم ويبدأ بـ 01 — مثال: 01012345678'
+        );
+      }
+
+
+      return valid;
+    }
+
+
     function setNewFieldsEnabled(enabled) {
 
       [
@@ -1632,22 +1792,29 @@
         null;
 
 
-      const phone=
-        returningWhatsapp
-          .value
-          .trim();
-
-
-      if(phone.replace(/\D/g,'').length<8){
+      if(
+        !validateWhatsappField(
+          returningWhatsapp,
+          false
+        )
+      ){
 
         returningPatientResult.innerHTML=`
           <div class="returning-status error">
-            أدخل رقم واتساب صحيح.
+            من فضلك أدخل رقم واتساب صحيح:
+            11 رقم ويبدأ بـ 01
+            — مثال: 01012345678
           </div>
         `;
 
         return;
       }
+
+
+      const phone=
+        returningWhatsapp
+          .value
+          .trim();
 
 
       const birthYearText=
@@ -2177,11 +2344,23 @@
               .trim();
 
 
+          const whatsappField =
+            document.getElementById(
+              'whatsapp'
+            );
+
+
+          if(
+            !validateWhatsappField(
+              whatsappField
+            )
+          ){
+            return;
+          }
+
+
           whatsapp =
-            document
-              .getElementById(
-                'whatsapp'
-              )
+            whatsappField
               .value
               .trim();
 
@@ -2485,6 +2664,65 @@
       )
       .max =
         new Date().getFullYear();
+
+
+    [
+      document.getElementById(
+        'whatsapp'
+      ),
+      returningWhatsapp
+    ]
+    .filter(Boolean)
+    .forEach(
+      field=>{
+
+        field.addEventListener(
+          'input',
+          ()=>{
+
+            clearError();
+
+
+            const normalized =
+              normalizeEgyptMobile(
+                field.value
+              );
+
+
+            field.value =
+              normalized.slice(
+                0,
+                11
+              );
+
+
+            field.classList.toggle(
+              'phone-invalid',
+              field.value.length>0
+              &&
+              !isValidEgyptMobile(
+                field.value
+              )
+            );
+          }
+        );
+
+
+        field.addEventListener(
+          'blur',
+          ()=>{
+
+            if(field.value.length){
+
+              validateWhatsappField(
+                field,
+                false
+              );
+            }
+          }
+        );
+      }
+    );
 
 
     applyPublicPatientMode(
