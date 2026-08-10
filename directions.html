@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10263f">
+  <title>ازاي تروح للعيادة؟ | عيادة د. أحمد علاء</title>
+
+  <style>
+    :root {
+      --navy:#10263f;
+      --navy2:#173858;
+      --green:#0e8a78;
+      --green-soft:#e9f7f3;
+      --bg:#f4f7fb;
+      --surface:#fff;
+      --text:#10233c;
+      --muted:#6e7c91;
+      --border:#dce4ed;
+    }
+
+    * { box-sizing:border-box; }
+
+    body {
+      margin:0;
+      min-height:100vh;
+      background:
+        radial-gradient(circle at top right, rgba(14,138,120,.08), transparent 30rem),
+        var(--bg);
+      color:var(--text);
+      font-family:Tahoma,Arial,system-ui,sans-serif;
+    }
+
+    button,a { font:inherit; }
+
+    .page {
+      width:min(100%,680px);
+      margin:0 auto;
+      padding:20px 14px 36px;
+    }
+
+    .brand {
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin-bottom:16px;
+    }
+
+    .brand-logo {
+      width:116px;
+      height:64px;
+      padding:5px 7px;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:white;
+    }
+
+    .brand-logo img {
+      width:100%;
+      height:100%;
+      object-fit:contain;
+    }
+
+    .brand-copy {
+      display:grid;
+      gap:3px;
+    }
+
+    .brand-copy strong {
+      font-size:18px;
+    }
+
+    .brand-copy span {
+      color:var(--muted);
+      font-size:11px;
+      line-height:1.7;
+    }
+
+    .card {
+      overflow:hidden;
+      border:1px solid var(--border);
+      border-radius:22px;
+      background:var(--surface);
+      box-shadow:0 14px 40px rgba(26,47,72,.07);
+    }
+
+    .hero {
+      padding:23px 20px 20px;
+      background:linear-gradient(135deg,#fff,#f7fbfa);
+      border-bottom:1px solid var(--border);
+    }
+
+    .hero small {
+      display:block;
+      margin-bottom:6px;
+      color:var(--green);
+      font-weight:900;
+    }
+
+    .hero h1 {
+      margin:0 0 8px;
+      font-size:clamp(27px,7vw,38px);
+      line-height:1.25;
+    }
+
+    .hero p {
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.9;
+    }
+
+    .content {
+      padding:20px;
+    }
+
+    .location {
+      display:grid;
+      gap:7px;
+      margin-bottom:20px;
+      padding:14px;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:#fafcfd;
+    }
+
+    .location strong {
+      color:var(--green);
+      font-size:14px;
+    }
+
+    .location p {
+      margin:0;
+      font-size:13px;
+      line-height:1.8;
+    }
+
+    .map-link {
+      min-height:48px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      margin-top:5px;
+      border-radius:12px;
+      background:var(--navy);
+      color:white;
+      text-decoration:none;
+      font-weight:900;
+    }
+
+    .question {
+      margin:0 0 12px;
+      font-size:17px;
+    }
+
+    .route-grid {
+      display:grid;
+      gap:10px;
+    }
+
+    .route-button {
+      width:100%;
+      min-height:58px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 14px;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:white;
+      color:var(--text);
+      cursor:pointer;
+      text-align:right;
+      font-weight:900;
+    }
+
+    .route-button:hover,
+    .route-button.active {
+      border-color:var(--green);
+      background:var(--green-soft);
+      color:#087161;
+    }
+
+    .route-button span:last-child {
+      color:var(--muted);
+      font-size:11px;
+      font-weight:700;
+    }
+
+    .route-result {
+      display:none;
+      margin-top:16px;
+      padding:18px;
+      border:1px solid #b8d8d2;
+      border-radius:15px;
+      background:#f0fbf8;
+    }
+
+    .route-result.show {
+      display:block;
+    }
+
+    .route-result h2 {
+      margin:0 0 8px;
+      color:#087161;
+      font-size:19px;
+    }
+
+    .route-result p {
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.9;
+    }
+
+    .coming-soon {
+      margin-top:12px;
+      padding:12px;
+      border-radius:11px;
+      background:white;
+      color:var(--navy);
+      font-weight:900;
+      text-align:center;
+    }
+
+    .back {
+      min-height:48px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      margin-top:18px;
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:white;
+      color:var(--navy);
+      text-decoration:none;
+      font-weight:900;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+
+    <header class="brand">
+      <div class="brand-logo">
+        <img
+          src="assets/alaa-clinic-logo.png"
+          alt="Alaa Clinic"
+        >
+      </div>
+
+      <div class="brand-copy">
+        <strong>عيادة د. أحمد علاء</strong>
+        <span>125 شارع بورسعيد، الإبراهيمية — فوق مراتب يانسن</span>
+      </div>
+    </header>
+
+
+    <section class="card">
+
+      <div class="hero">
+        <small>🧭 الوصول للعيادة</small>
+        <h1>ازاي تروح للعيادة؟</h1>
+        <p>
+          اختار انت جاي من أنهي اتجاه،
+          وبعدها هيظهر لك الطريق خطوة بخطوة والمعالم المهمة في الطريق.
+        </p>
+      </div>
+
+
+      <div class="content">
+
+        <div class="location">
+          <strong>📍 عنوان العيادة</strong>
+          <p>125 شارع بورسعيد، الإبراهيمية</p>
+          <p>العلامة المميزة: فوق مراتب يانسن</p>
+
+          <a
+            class="map-link"
+            href="https://share.google/qh08XxS5DCz34DIfu"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            فتح الموقع على خرائط Google
+          </a>
+        </div>
+
+
+        <h2 class="question">
+          هتيجي منين؟
+        </h2>
+
+
+        <div class="route-grid">
+
+          <button
+            class="route-button"
+            type="button"
+            data-route="البحر"
+          >
+            <span>🌊 هتيجي من البحر</span>
+            <span>اضغط لعرض الطريق</span>
+          </button>
+
+          <button
+            class="route-button"
+            type="button"
+            data-route="شارع أبو قير"
+          >
+            <span>🚗 شارع أبو قير</span>
+            <span>اضغط لعرض الطريق</span>
+          </button>
+
+          <button
+            class="route-button"
+            type="button"
+            data-route="شارع الترام"
+          >
+            <span>🚋 شارع الترام</span>
+            <span>اضغط لعرض الطريق</span>
+          </button>
+
+          <button
+            class="route-button"
+            type="button"
+            data-route="شارع بورسعيد"
+          >
+            <span>📍 شارع بورسعيد</span>
+            <span>اضغط لعرض الطريق</span>
+          </button>
+
+        </div>
+
+
+        <section
+          id="routeResult"
+          class="route-result"
+        >
+          <h2 id="routeTitle"></h2>
+
+          <p>
+            هنا هيظهر الطريق بالتفصيل خطوة بخطوة،
+            مع أهم الشوارع والتقاطعات والمعالم اللي هتقابلها لحد باب العيادة.
+          </p>
+
+          <div class="coming-soon">
+            🚧 قريباً — سيتم إضافة الطريق والمعالم بالتفصيل
+          </div>
+        </section>
+
+
+        <a
+          class="back"
+          href="book.html"
+        >
+          ← العودة إلى صفحة الحجز
+        </a>
+
+      </div>
+    </section>
+
+  </main>
+
+
+  <script>
+    const result =
+      document.getElementById(
+        'routeResult'
+      );
+
+    const title =
+      document.getElementById(
+        'routeTitle'
+      );
+
+
+    document
+      .querySelectorAll(
+        '[data-route]'
+      )
+      .forEach(
+        button=>{
+
+          button.addEventListener(
+            'click',
+            ()=>{
+
+              document
+                .querySelectorAll(
+                  '[data-route]'
+                )
+                .forEach(
+                  item=>
+                    item.classList.remove(
+                      'active'
+                    )
+                );
+
+
+              button.classList.add(
+                'active'
+              );
+
+
+              title.textContent =
+                `الطريق من ${button.dataset.route}`;
+
+
+              result.classList.add(
+                'show'
+              );
+
+
+              result.scrollIntoView({
+                behavior:'smooth',
+                block:'nearest'
+              });
+            }
+          );
+        }
+      );
+  </script>
+
+</body>
+</html>

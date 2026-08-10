@@ -401,6 +401,7 @@
       border: 1px solid var(--border);
       border-radius: 15px;
       background: white;
+      scroll-margin-top: 14px;
     }
 
     .success-logo img {
@@ -487,6 +488,25 @@
 
     .google-maps-button:hover {
       background: var(--navy-2);
+    }
+
+    .directions-page-button {
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid #b8d8d2;
+      border-radius: 13px;
+      background: #eefaf7;
+      color: #087161;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .directions-page-button:hover {
+      background: #e3f6f1;
     }
 
     .book-another {
@@ -995,7 +1015,7 @@
         id="successPanel"
         class="success"
       >
-        <div class="success-logo">
+        <div id="successStart" class="success-logo">
           <img
             src="assets/alaa-clinic-logo.png"
             alt="Alaa Clinic for Cardiology & Endocrinology"
@@ -1048,6 +1068,14 @@
           >
             <span>📍</span>
             فتح الموقع على خرائط Google
+          </a>
+
+          <a
+            class="directions-page-button"
+            href="directions.html"
+          >
+            <span>🧭</span>
+            ازاي تروح للعيادة خطوة بخطوة؟
           </a>
         </div>
 
@@ -2407,10 +2435,23 @@
         );
 
 
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth'
-        });
+        /*
+         * Start the final confirmation view from the middle clinic logo,
+         * not from the top of the booking page.
+         */
+        window.setTimeout(
+          ()=>{
+            document
+              .getElementById(
+                'successStart'
+              )
+              ?.scrollIntoView({
+                behavior:'smooth',
+                block:'start'
+              });
+          },
+          80
+        );
       }
     );
 

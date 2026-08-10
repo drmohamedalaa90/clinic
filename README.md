@@ -1,51 +1,80 @@
-# Live booking updates
+# Booking success + directions + duplicate push fix
 
-This patch makes the logged-in clinic site update automatically when an
-appointment is inserted, updated, cancelled, rescheduled, checked in, etc.
+## Replace in GitHub
 
-It works regardless of where the booking/change originated:
+- `book.html`
+- `sw.js`
 
-- public `book.html`
-- secretary
-- owner
-- manager / deputy
-- internal clinic booking window
+## Add
 
-The browser listens directly to Supabase Realtime `postgres_changes`.
+- `directions.html`
 
-## Pages refreshed automatically
+The package also includes the clinic logo in:
+- `assets/alaa-clinic-logo.png`
 
-- Dashboard
-- Appointments
-- Doctor appointments
-- Today's Clinic
-- Queue
-- Reception
-- Patients
-- Patient detail
-- Finance
+If that logo already exists in your repo, replacing it is optional.
 
-The notification drawer count is refreshed too.
+---
 
-## Important UX behavior
+## Booking success screen
 
-If a user is currently typing inside a modal, realtime will NOT destroy the
-form. The refresh is deferred until the modal closes.
+After a successful booking the page now automatically scrolls to the
+large/middle clinic logo inside the confirmation section instead of jumping
+to the top of the whole public booking page.
 
-If the browser tab is in the background, the refresh is deferred until the
-user returns to it.
+The location section now has:
+- Google Maps button
+- `ازاي تروح للعيادة خطوة بخطوة؟` button
 
-## Install
+The second button opens `directions.html`.
 
-1. Run:
-   `sql/enable-realtime-bookings.sql`
+---
 
-2. Upload:
-   `js/realtime-sync.js`
+## New directions page
 
-3. Add to `app.html`:
-   `<script src="js/realtime-sync.js"></script>`
+The page asks:
 
-4. Commit and refresh the clinic once.
+- هتيجي من البحر
+- شارع أبو قير
+- شارع الترام
+- شارع بورسعيد
 
-No service-worker change is required for this feature.
+Selecting an option opens a route panel.
+
+For now every route intentionally says:
+`قريباً — سيتم إضافة الطريق والمعالم بالتفصيل`
+
+This is ready for us to later fill with exact street-by-street directions and
+landmarks.
+
+---
+
+## Duplicate push notifications
+
+IMPORTANT: Replace the ENTIRE existing `sw.js`.
+
+Do NOT append this code to the current service worker.
+
+The clean file contains exactly:
+- ONE `push` event listener
+- ONE `notificationclick` listener
+
+It also uses a new cache version:
+`operation-clinic-v25-single-push-2026-08-10`
+
+After GitHub Pages deploys:
+
+### Desktop
+1. Close the clinic tab.
+2. Reopen it.
+3. Ctrl + Shift + R once.
+
+### iPhone / installed web app
+1. Fully close the clinic web app from the app switcher.
+2. Reopen it and leave it open for several seconds so the new service worker
+   can activate.
+3. Close and reopen it once more before testing a booking.
+
+If an old duplicate service worker remains active on the phone after this,
+remove the clinic web app from the Home Screen, open the clinic once in Safari,
+then add it to the Home Screen again and enable push once.

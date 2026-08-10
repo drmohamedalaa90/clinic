@@ -1,10 +1,10 @@
-const CACHE =
-  'operation-clinic-v24-single-push-booking-workflow-2026-08-10';
+const CACHE = 'operation-clinic-v25-single-push-2026-08-10';
 
 const STATIC = [
   './',
   './index.html',
   './app.html',
+  './directions.html',
   './css/style.css',
   './manifest.webmanifest',
 
@@ -25,6 +25,7 @@ const STATIC = [
   './js/attendance.js',
   './js/admin.js',
   './js/reports.js',
+  'js/realtime-sync.js',
   './js/pwa.js',
 
   './assets/icon-192.png',
