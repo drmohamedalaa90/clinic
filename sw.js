@@ -1,4 +1,4 @@
-const CACHE = 'operation-clinic-v26-push-hard-dedupe-2026-08-10';
+const CACHE = 'operation-clinic-v27-final-recovery-2026-08-10';
 
 const STATIC = [
   './',
@@ -86,14 +86,18 @@ self.addEventListener(
   'fetch',
   event=>{
 
-    const url=
+    const request =
+      event.request;
+
+
+    const url =
       new URL(
-        event.request.url
+        request.url
       );
 
 
     if(
-      event.request.method!=='GET'
+      request.method!=='GET'
       ||
       url.hostname.includes(
         'supabase.co'
@@ -107,15 +111,72 @@ self.addEventListener(
     }
 
 
-    event.respondWith(
+    /*
+     * HTML / JS / CSS must prefer the NETWORK and bypass the normal
+     * HTTP cache. This prevents phones from staying on yesterday's
+     * book.html/app code after a GitHub deployment.
+     */
+    const isLiveCode =
+      request.mode==='navigate'
+      ||
+      /\.(html|js|css)$/i.test(
+        url.pathname
+      );
 
+
+    if(isLiveCode){
+
+      event.respondWith(
+        fetch(
+          request,
+          {
+            cache:'no-store'
+          }
+        )
+        .then(
+          response=>{
+
+            const copy =
+              response.clone();
+
+
+            caches
+              .open(CACHE)
+              .then(
+                cache=>
+                  cache.put(
+                    request,
+                    copy
+                  )
+              );
+
+
+            return response;
+          }
+        )
+        .catch(
+          ()=>caches.match(
+            request
+          )
+        )
+      );
+
+
+      return;
+    }
+
+
+    /*
+     * Images/icons can still use normal network-first caching.
+     */
+    event.respondWith(
       fetch(
-        event.request
+        request
       )
       .then(
         response=>{
 
-          const copy=
+          const copy =
             response.clone();
 
 
@@ -124,7 +185,7 @@ self.addEventListener(
             .then(
               cache=>
                 cache.put(
-                  event.request,
+                  request,
                   copy
                 )
             );
@@ -134,18 +195,9 @@ self.addEventListener(
         }
       )
       .catch(
-        ()=>caches
-          .match(
-            event.request
-          )
-          .then(
-            response=>
-              response
-              ||
-              caches.match(
-                './index.html'
-              )
-          )
+        ()=>caches.match(
+          request
+        )
       )
     );
   }
@@ -156,8 +208,17 @@ self.addEventListener(
    PUSH — EXACTLY ONE LISTENER + HARD DE-DUPLICATION
 ========================================================= */
 
+/*
+ * Synchronous guard is important:
+ * two push events can arrive almost simultaneously before an async cache
+ * write finishes. This Set blocks the second one immediately.
+ */
+const PUSH_IN_FLIGHT =
+  new Set();
+
+
 const PUSH_DEDUPE_CACHE =
-  'clinic-push-dedupe-v1';
+  'clinic-push-dedupe-v2';
 
 const PUSH_DEDUPE_WINDOW_MS =
   2 * 60 * 1000;
@@ -278,28 +339,55 @@ self.addEventListener(
       );
 
 
+    /*
+     * Fingerprint is independent of the server-provided tag.
+     * If two payloads for the same booking have different tags, they still
+     * collapse to one visible notification.
+     */
+    const fingerprint =
+      data.appointmentId
+        ? `appointment:${data.appointmentId}:${data.title || ''}:${data.body || ''}`
+        : `${data.title || ''}|${data.body || ''}|${data.url || ''}`;
+
+
+    if(
+      PUSH_IN_FLIGHT.has(
+        fingerprint
+      )
+    ){
+
+      console.info(
+        'Concurrent duplicate push suppressed:',
+        fingerprint
+      );
+
+      return;
+    }
+
+
+    PUSH_IN_FLIGHT.add(
+      fingerprint
+    );
+
+
     event.waitUntil(
       (async()=>{
 
-        /*
-         * HARD de-duplication:
-         * if iOS/WebKit delivers the same push event twice within
-         * two minutes, the second event is ignored completely.
-         * This prevents a second banner/sound.
-         */
-        if(
-          await wasPushRecentlyShown(
-            tag
-          )
-        ){
+        try{
 
-          console.info(
-            'Duplicate push suppressed:',
-            tag
-          );
+          if(
+            await wasPushRecentlyShown(
+              fingerprint
+            )
+          ){
 
-          return;
-        }
+            console.info(
+              'Recent duplicate push suppressed:',
+              fingerprint
+            );
+
+            return;
+          }
 
 
         /*
@@ -353,6 +441,15 @@ self.addEventListener(
               }
             }
           );
+
+        }
+        finally{
+
+          PUSH_IN_FLIGHT.delete(
+            fingerprint
+          );
+        }
+
       })()
     );
   }

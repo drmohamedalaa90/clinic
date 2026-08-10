@@ -1,80 +1,116 @@
-# Booking success + directions + duplicate push fix
+# CLINIC FINAL RECOVERY PACK
 
-## Replace in GitHub
+This package addresses the five problems together rather than patching them
+one-by-one.
 
-- `book.html`
-- `sw.js`
+## A. Notifications: newest first
 
-## Add
+`js/clinic-final-live-fixes.js` patches the notification list so the primary
+sort is:
 
-- `directions.html`
+1. newest event_time first
+2. priority only when times are equal
 
-The package also includes the clinic logo in:
-- `assets/alaa-clinic-logo.png`
+This fixes old high-priority items appearing above a new booking.
 
-If that logo already exists in your repo, replacing it is optional.
+## B. Main app updates automatically after a booking
+
+The live GitHub `app.html` currently does NOT load `realtime-sync.js`, which is
+why the previously-created realtime code cannot run.
+
+This pack instead uses `js/clinic-final-live-fixes.js` and adds:
+- Supabase Realtime for appointments and patients
+- automatic refresh of Appointments/Dashboard/Today/Queue/Reception/Patients/
+  Patient Detail/Finance
+- an 8-second polling fallback if a Realtime event is missed
+- notification drawer refresh
+- protection against refreshing while a modal/form is open
+
+Run:
+`sql/enable-live-sync.sql`
+
+Then add the new JS in app.html using:
+`APP_HTML_BOTTOM_REPLACEMENT.txt`
+
+## C. iPhone double push
+
+The new `sw.js` has:
+- exactly one push listener
+- synchronous in-memory duplicate blocking (prevents simultaneous race)
+- persistent 2-minute duplicate blocking
+- fingerprint based on appointment/content, not only server tag
+- new cache version v27
+
+The new `js/pwa.js` registers:
+`sw.js?v=27-final`
+with `updateViaCache: 'none'`.
+
+This is important because the live repository already contains the new
+book.html features while the phone was still showing the older success screen,
+which indicates stale deployed client code/service-worker state.
+
+## D. Save booking summary as photo
+
+`book.html` contains the actual PNG generator.
+
+The button is moved IMMEDIATELY BELOW the booking summary so it cannot be
+missed:
+
+`🖼️ حفظ ملخص الحجز كصورة`
+
+On iPhone it uses the native share sheet when supported.
+On desktop it downloads a PNG.
+
+## E. "How to reach the clinic" is now a separate, obvious rectangle
+
+On laptop:
+- Location is one rectangle.
+- The animated `NEW! جديد` directions feature is a separate rectangle BESIDE it.
+
+On mobile they stack vertically.
+
+The directions card has:
+- animated NEW badge
+- floating compass
+- moving route marker
+- shimmer
+- animated arrow
+
+It opens `directions.html`.
 
 ---
 
-## Booking success screen
+# EXACT INSTALL ORDER
 
-After a successful booking the page now automatically scrolls to the
-large/middle clinic logo inside the confirmation section instead of jumping
-to the top of the whole public booking page.
+1. Supabase SQL Editor:
+   Run `sql/enable-live-sync.sql`
 
-The location section now has:
-- Google Maps button
-- `ازاي تروح للعيادة خطوة بخطوة؟` button
+2. GitHub REPLACE:
+   - `book.html`
+   - `directions.html`
+   - `sw.js`
+   - `js/pwa.js`
 
-The second button opens `directions.html`.
+3. GitHub ADD:
+   - `js/clinic-final-live-fixes.js`
 
----
+4. Edit the bottom scripts in `app.html` exactly as shown in:
+   `APP_HTML_BOTTOM_REPLACEMENT.txt`
 
-## New directions page
+5. Commit everything in ONE commit.
 
-The page asks:
+6. Wait for GitHub Pages deployment to finish.
 
-- هتيجي من البحر
-- شارع أبو قير
-- شارع الترام
-- شارع بورسعيد
+7. Desktop:
+   - close all clinic tabs
+   - reopen app.html
+   - Ctrl+Shift+R once
 
-Selecting an option opens a route panel.
+8. iPhone:
+   - fully close the installed clinic app/Safari clinic tab
+   - reopen clinic and leave it open 15 seconds
+   - fully close it again
+   - reopen it once more
+   - THEN make one test booking
 
-For now every route intentionally says:
-`قريباً — سيتم إضافة الطريق والمعالم بالتفصيل`
-
-This is ready for us to later fill with exact street-by-street directions and
-landmarks.
-
----
-
-## Duplicate push notifications
-
-IMPORTANT: Replace the ENTIRE existing `sw.js`.
-
-Do NOT append this code to the current service worker.
-
-The clean file contains exactly:
-- ONE `push` event listener
-- ONE `notificationclick` listener
-
-It also uses a new cache version:
-`operation-clinic-v25-single-push-2026-08-10`
-
-After GitHub Pages deploys:
-
-### Desktop
-1. Close the clinic tab.
-2. Reopen it.
-3. Ctrl + Shift + R once.
-
-### iPhone / installed web app
-1. Fully close the clinic web app from the app switcher.
-2. Reopen it and leave it open for several seconds so the new service worker
-   can activate.
-3. Close and reopen it once more before testing a booking.
-
-If an old duplicate service worker remains active on the phone after this,
-remove the clinic web app from the Home Screen, open the clinic once in Safari,
-then add it to the Home Screen again and enable push once.
+Do not mix old and new versions of sw.js/pwa.js.

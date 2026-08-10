@@ -1,0 +1,27 @@
+REPLACE the script section at the BOTTOM of app.html with this exact order:
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-client.js"></script>
+<script src="js/core.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/schedules.js"></script>
+<script src="js/patients.js"></script>
+<script src="js/appointments.js"></script>
+<script src="js/clinical.js"></script>
+<script src="js/referrals.js"></script>
+<script src="js/finance.js"></script>
+<script src="js/logistics.js"></script>
+<script src="js/attendance.js"></script>
+<script src="js/reports.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/push-notifications.js"></script>
+
+<!-- FINAL live fixes: newest notification first + realtime + polling fallback -->
+<script src="js/clinic-final-live-fixes.js"></script>
+
+<!-- keep your existing UI hotfix -->
+<script src="js/clinic-hotfix.js"></script>
+
+<!-- forced non-cached service worker update -->
+<script src="js/pwa.js"></script>

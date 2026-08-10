@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="theme-color" content="#10263f">
 
   <title>حجز موعد | عيادة د. أحمد علاء</title>
@@ -416,8 +419,21 @@
       display: grid;
       gap: 12px;
       margin: 0 auto 18px;
-      max-width: 430px;
+      max-width: 520px;
       text-align: right;
+    }
+
+    .clinic-location-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(210px, .86fr);
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 580px) {
+      .clinic-location-layout {
+        grid-template-columns: 1fr;
+      }
     }
 
     .clinic-location-box {
@@ -805,13 +821,30 @@
 
     .success-action-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 10px;
 
-      margin:
-        4px auto 0;
+      margin: 0 auto 18px;
 
       max-width: 430px;
+    }
+
+    .save-photo-feature {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .save-photo-feature::after {
+      content: "NEW";
+      position: absolute;
+      top: 5px;
+      left: 7px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #0e8a78;
+      font-size: 8px;
+      font-weight: 950;
     }
 
     .save-summary-photo {
@@ -1466,7 +1499,29 @@
           class="booking-summary"
         ></div>
 
+        <!-- SAVE IMAGE IS IMMEDIATELY VISIBLE AFTER THE SUMMARY -->
+        <div class="success-action-grid">
+          <button
+            id="saveBookingPhoto"
+            class="save-summary-photo save-photo-feature"
+            type="button"
+          >
+            <span>🖼️</span>
+            حفظ ملخص الحجز كصورة
+          </button>
+        </div>
+
+        <div
+          id="saveBookingPhotoStatus"
+          class="save-summary-photo-status"
+        ></div>
+
         <div class="clinic-location-card">
+
+          <!-- On laptop: two obvious side-by-side rectangles.
+               On phone: they stack vertically. -->
+          <div class="clinic-location-layout">
+
           <div class="clinic-location-box">
             <div class="clinic-location-title">
               <span>📍</span>
@@ -1490,16 +1545,6 @@
               </p>
             </div>
           </div>
-
-          <a
-            class="google-maps-button"
-            href="https://share.google/qh08XxS5DCz34DIfu"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <span>📍</span>
-            فتح الموقع على خرائط Google
-          </a>
 
           <a
             class="directions-feature-card"
@@ -1549,20 +1594,22 @@
             </span>
 
           </a>
+
+          </div>
+
+          <a
+            class="google-maps-button"
+            href="https://share.google/qh08XxS5DCz34DIfu"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span>📍</span>
+            فتح الموقع على خرائط Google
+          </a>
+
         </div>
 
         <div class="success-action-grid">
-
-          <button
-            id="saveBookingPhoto"
-            class="save-summary-photo"
-            type="button"
-          >
-            <span>🖼️</span>
-            حفظ ملخص الحجز كصورة
-          </button>
-
-
           <button
             id="bookAnother"
             class="book-another"
@@ -1570,14 +1617,8 @@
           >
             حجز موعد آخر
           </button>
-
         </div>
 
-
-        <div
-          id="saveBookingPhotoStatus"
-          class="save-summary-photo-status"
-        ></div>
       </section>
 
     </section>
