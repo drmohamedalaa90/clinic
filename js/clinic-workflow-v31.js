@@ -2181,24 +2181,23 @@
       .forEach(
         button=>{
 
-          const start =
-            new Date(
-              button.dataset
-                .start
-              ||
-              ''
-            )
-            .getTime();
+        const end =
+  new Date(
+    button.dataset
+      .end
+    ||
+    ''
+  )
+  .getTime();
 
 
-          if(
-            Number.isFinite(
-              start
-            )
-            &&
-            start <= now
-          ){
-
+if(
+  Number.isFinite(
+    end
+  )
+  &&
+  end <= now
+){
             button.disabled =
               true;
 
@@ -2275,17 +2274,17 @@
 
 
               const [
-                start
-              ] =
-                option.value.split(
-                  '|'
-                );
+  ,
+  end
+] =
+  option.value.split(
+    '|'
+  );
 
-
-              const stamp =
-                new Date(
-                  start
-                ).getTime();
+const stamp =
+  new Date(
+    end
+  ).getTime();
 
 
               if(
