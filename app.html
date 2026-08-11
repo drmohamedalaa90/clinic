@@ -149,10 +149,16 @@
 <!-- V41 -->
 <script src="js/clinic-v41-daily-closing-live-chat.js"></script>
 
-<!-- Keep general hotfix LAST so all current pages/modules already exist -->
+<!-- General UI fixes -->
 <script src="js/clinic-hotfix.js"></script>
 
-<!-- Service worker updater -->
+<!-- V42: hourly slots close only at END time -->
+<script src="js/clinic-v42-slot-close-at-end.js"></script>
+
+<!-- V43: retained Diagnosis + Important Notes FIRST -->
+<script src="js/clinic-v43-retained-summary-first.js"></script>
+
+<!-- Service worker updater - load ONCE only -->
 <script src="js/pwa.js"></script>
 
 </body>
