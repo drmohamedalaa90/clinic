@@ -4009,3 +4009,43 @@ html[dir="rtl"] .mini-calendar-days {
   font-size: 10px;
   font-weight: 900;
 }
+/* =====================================================
+   BOOKING MODAL — PATIENT SECTION FULL WIDTH
+===================================================== */
+
+@media (min-width: 900px) {
+
+  .booking-modal-card
+  .booking-form-v2
+  > .booking-form-section:has(#newPatientPanel),
+
+  .booking-modal-card
+  .booking-form-v2
+  > .booking-form-section:has(#existingPatientPanel) {
+
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+
+  /* Use the full width for the patient fields too */
+  .booking-modal-card
+  #newPatientPanel
+  .form-grid {
+
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr)) !important;
+
+    width: 100% !important;
+    gap: 14px !important;
+  }
+
+
+  .booking-modal-card
+  #existingPatientPanel {
+
+    width: 100% !important;
+  }
+
+}
