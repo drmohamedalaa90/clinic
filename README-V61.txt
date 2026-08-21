@@ -25,3 +25,5 @@ What V61 adds:
 Notes:
 - This package intentionally does NOT auto-write into Finance because the Finance table structure must be matched exactly to your current clinic build before creating expenses automatically.
 - V60 remains loaded first; V61 overrides only the Logistics page.
+
+FIX: Removed reference to profiles.full_name because that column is not present in the current clinic schema.
