@@ -1,4 +1,4 @@
-const CACHE = 'operation-clinic-v66-radical-stability';
+const CACHE = 'operation-clinic-v67-logistics';
 
 const STATIC = [
   './',
