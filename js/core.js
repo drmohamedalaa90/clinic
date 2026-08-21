@@ -507,6 +507,12 @@ const Clinic = window.Clinic = {
       }
     }
 
+    // V66: Logistics is a native menu item for EVERY authenticated clinic team member.
+    // This replaces the old V64 DOM observer/monkey-patch approach.
+    if (!menu.includes('data-page="logistics"')) {
+      menu += this.navItem('📦','logistics','logistics');
+    }
+
     if (this.hasRole('technical_admin')) {
       menu += this.navItem('⚙','technical','technical');
     }

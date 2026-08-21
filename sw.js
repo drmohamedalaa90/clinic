@@ -1,4 +1,4 @@
-const CACHE = 'operation-clinic-v30-safe-public-booking';
+const CACHE = 'operation-clinic-v66-radical-stability';
 
 const STATIC = [
   './',
