@@ -8,6 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#112238" />
 </head>
+
 <body class="app-body">
   <div id="appLoading" class="app-loading">
     <div class="loader"></div>
@@ -23,7 +24,9 @@
           <div class="sidebar-subtitle" data-i18n="clinicManagement">Clinic Management</div>
         </div>
       </div>
+
       <nav id="navigation" class="navigation"></nav>
+
       <div class="sidebar-footer">
         <button id="logoutButton" class="logout-button">
           <span>↪</span>
@@ -36,6 +39,7 @@
       <header class="topbar">
         <div class="topbar-start">
           <button id="menuButton" class="menu-button">☰</button>
+
           <div>
             <h1 id="pageTitle" class="page-title">Dashboard</h1>
             <div id="todayDate" class="today-date"></div>
@@ -55,6 +59,7 @@
 
           <div class="profile-menu">
             <div id="profileAvatar" class="profile-avatar">U</div>
+
             <div class="profile-info">
               <strong id="profileName">User</strong>
               <span id="profileRole"></span>
@@ -75,12 +80,15 @@
         <span class="eyebrow">LIVE</span>
         <h3 id="notificationTitle">Notifications</h3>
       </div>
+
       <button id="closeNotifications" class="icon-button">✕</button>
     </div>
+
     <div id="notificationList" class="drawer-body"></div>
   </aside>
 
   <div id="drawerOverlay" class="drawer-overlay"></div>
+
   <div id="modalRoot" class="modal-root hidden"></div>
   <div id="toastRoot" class="toast-root"></div>
 
@@ -93,14 +101,10 @@
   <script src="js/patients.js"></script>
   <script src="js/appointments.js"></script>
 
-  <!-- V51 base extra cases -->
-  <script src="js/clinic-v51-extra-cases.js?v=51"></script>
+  <!-- V51 SQL/RPC base remains installed. Its old JS is intentionally NOT loaded. -->
 
-  <!-- V62: one + beside every day + Existing/New patient -->
-  <script src="js/clinic-v62-booking-fix.js?v=62"></script>
-
-  <!-- V64: Friday advances ONCE to next Saturday. No loops, no repeated Next clicks. -->
-  <script src="js/clinic-v64-stable-friday.js?v=64"></script>
+  <!-- ONE consolidated patch for all 3 requested items -->
+  <script src="js/clinic-v70-radical-fix.js?v=70"></script>
 
   <script src="js/booking-workflow-hotfix.js"></script>
   <script src="js/appointment-information-confirm.js"></script>
@@ -115,7 +119,6 @@
   <script src="js/admin.js"></script>
 
   <script src="js/notifications.js"></script>
-  <script src="js/clinic-v61-mark-all-notifications-read.js?v=61"></script>
   <script src="js/push-notifications.js"></script>
 
   <script src="js/clinic-final-live-fixes.js"></script>
@@ -125,6 +128,7 @@
   <script src="js/clinic-v32-atomic-queue-open.js"></script>
 
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
   <script src="js/clinic-v35-booking-modal.js"></script>
   <script src="js/clinic-chat-v35.js"></script>
   <script src="js/clinic-clinical-pdf-v35.js"></script>
