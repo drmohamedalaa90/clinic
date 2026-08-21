@@ -1,31 +1,24 @@
-CLINIC V62 — BOOKING FIX
+CLINIC V63
 
-This package fixes all 3 requested items:
+Fixes the two remaining visible problems:
 
-1) ONE + icon BESIDE every day name
-   - English and Arabic
-   - including days with no normal clinic slots
+1) + icon appears much earlier
+   V63 is loaded immediately after appointments.js / extra-case logic instead of
+   after all the large PDF/chat/Excel scripts.
 
-2) Clicking + lets you choose:
-   - Existing patient
-   - + New patient
-   The new-patient form is inside the same Extra Case booking window.
+2) Friday really advances the calendar
+   V63 checks the actual FIRST visible week.
+   If Friday's old week is still first, it clicks NEXT and checks again until
+   the coming Saturday week is first.
 
-3) On Friday (Africa/Cairo):
-   - the appointments page automatically advances to the COMING Saturday week
-   - it does not intentionally hide the whole page, so there is no blank-page risk
+V62 remains responsible for the extra-case modal with:
+- Existing patient
+- + New patient
 
 INSTALL
 =======
-A. Run:
-   sql/clinic-v62-new-patient-extra-case.sql
-   once in Supabase (after V51 SQL).
-
-B. Upload:
-   js/clinic-v62-booking-fix.js
-
-C. Replace app.html with the included app.html.
-
-D. REMOVE any old V53/V54/V56/V57/V58/V59/V60 day/week scripts if you manually added them elsewhere.
-
-E. Ctrl+F5.
+1. Keep V51 and V62 SQL already installed.
+2. Upload js/clinic-v63-fast-plus-friday-next.js
+3. Replace app.html with the included app.html.
+4. Remove old V53/V54/V56/V57/V58/V59/V60 scripts if any remain.
+5. Ctrl+F5.
