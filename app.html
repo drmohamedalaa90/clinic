@@ -91,18 +91,16 @@
   <script src="js/dashboard.js"></script>
   <script src="js/schedules.js"></script>
   <script src="js/patients.js"></script>
-
-  <!-- Calendar core -->
   <script src="js/appointments.js"></script>
 
-  <!-- Extra-case base -->
+  <!-- V51 base extra cases -->
   <script src="js/clinic-v51-extra-cases.js?v=51"></script>
 
-  <!-- V62 provides NEW PATIENT / EXISTING PATIENT inside extra-case modal -->
+  <!-- V62: one + beside every day + Existing/New patient -->
   <script src="js/clinic-v62-booking-fix.js?v=62"></script>
 
-  <!-- V63 is deliberately loaded EARLY, immediately after appointments + extra-case logic -->
-  <script src="js/clinic-v63-fast-plus-friday-next.js?v=63"></script>
+  <!-- V64: Friday advances ONCE to next Saturday. No loops, no repeated Next clicks. -->
+  <script src="js/clinic-v64-stable-friday.js?v=64"></script>
 
   <script src="js/booking-workflow-hotfix.js"></script>
   <script src="js/appointment-information-confirm.js"></script>
