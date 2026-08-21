@@ -1,71 +1,27 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
-
-  <!-- =====================================================
-       CLINIC V59 — INLINE PRE-PAINT GUARD
-       Prevents the old/current week from flashing on Friday
-       in BOTH English and Arabic.
-       MUST remain before css/style.css
-       ===================================================== -->
-  <script>
-  (function(){
-    try{
-      var parts=new Intl.DateTimeFormat('en-US',{
-        timeZone:'Africa/Cairo',
-        weekday:'short'
-      }).formatToParts(new Date());
-
-      var weekday=(parts.find(function(x){
-        return x.type==='weekday';
-      })||{}).value;
-
-      if(weekday==='Fri'){
-        document.documentElement.classList.add('clinic-v59-friday-boot');
-      }
-    }catch(e){}
-  })();
-  </script>
-
-  <style>
-    html.clinic-v59-friday-boot #mainContent,
-    html.clinic-v59-friday-boot .main-content{
-      visibility:hidden !important;
-    }
-  </style>
-
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Operation Clinic</title>
-
   <link rel="stylesheet" href="css/style.css" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#112238" />
-
 </head>
 
 <body class="app-body">
-
   <div id="appLoading" class="app-loading">
     <div class="loader"></div>
     <span>Loading...</span>
   </div>
 
   <div id="appRoot" class="app-shell hidden">
-
     <aside id="sidebar" class="sidebar">
-
       <div class="sidebar-header">
         <div class="mini-logo">OC</div>
-
         <div>
-          <div class="sidebar-clinic-name" data-i18n="clinic">
-            Operation Clinic
-          </div>
-
-          <div class="sidebar-subtitle" data-i18n="clinicManagement">
-            Clinic Management
-          </div>
+          <div class="sidebar-clinic-name" data-i18n="clinic">Operation Clinic</div>
+          <div class="sidebar-subtitle" data-i18n="clinicManagement">Clinic Management</div>
         </div>
       </div>
 
@@ -77,112 +33,54 @@
           <span data-i18n="logout">Logout</span>
         </button>
       </div>
-
     </aside>
 
     <section class="main-area">
-
       <header class="topbar">
-
         <div class="topbar-start">
-
-          <button id="menuButton" class="menu-button">
-            ☰
-          </button>
-
+          <button id="menuButton" class="menu-button">☰</button>
           <div>
-            <h1 id="pageTitle" class="page-title">
-              Dashboard
-            </h1>
-
+            <h1 id="pageTitle" class="page-title">Dashboard</h1>
             <div id="todayDate" class="today-date"></div>
           </div>
-
         </div>
 
         <div class="topbar-actions">
-
           <div class="top-language">
-            <button class="app-lang-btn" data-lang="en">
-              EN
-            </button>
-
-            <button class="app-lang-btn" data-lang="ar">
-              عربي
-            </button>
+            <button class="app-lang-btn" data-lang="en">EN</button>
+            <button class="app-lang-btn" data-lang="ar">عربي</button>
           </div>
 
-          <button
-            id="notificationButton"
-            class="notification-button"
-            aria-label="Notifications"
-          >
+          <button id="notificationButton" class="notification-button" aria-label="Notifications">
             🔔
-            <span
-              id="notificationBadge"
-              class="notification-badge hidden"
-            >
-              0
-            </span>
+            <span id="notificationBadge" class="notification-badge hidden">0</span>
           </button>
 
           <div class="profile-menu">
-
-            <div id="profileAvatar" class="profile-avatar">
-              U
-            </div>
-
+            <div id="profileAvatar" class="profile-avatar">U</div>
             <div class="profile-info">
-              <strong id="profileName">
-                User
-              </strong>
-
+              <strong id="profileName">User</strong>
               <span id="profileRole"></span>
             </div>
-
           </div>
-
         </div>
-
       </header>
 
-      <main
-        id="mainContent"
-        class="main-content"
-      ></main>
-
+      <main id="mainContent" class="main-content"></main>
     </section>
-
   </div>
 
   <div id="sidebarOverlay" class="sidebar-overlay"></div>
 
   <aside id="notificationDrawer" class="drawer">
-
     <div class="drawer-header">
-
       <div>
         <span class="eyebrow">LIVE</span>
-
-        <h3 id="notificationTitle">
-          Notifications
-        </h3>
+        <h3 id="notificationTitle">Notifications</h3>
       </div>
-
-      <button
-        id="closeNotifications"
-        class="icon-button"
-      >
-        ✕
-      </button>
-
+      <button id="closeNotifications" class="icon-button">✕</button>
     </div>
-
-    <div
-      id="notificationList"
-      class="drawer-body"
-    ></div>
-
+    <div id="notificationList" class="drawer-body"></div>
   </aside>
 
   <div id="drawerOverlay" class="drawer-overlay"></div>
@@ -190,41 +88,18 @@
   <div id="modalRoot" class="modal-root hidden"></div>
   <div id="toastRoot" class="toast-root"></div>
 
-
-  <!-- =====================================================
-       SUPABASE
-       ===================================================== -->
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script src="js/supabase-client.js"></script>
-
-
-  <!-- =====================================================
-       CORE
-       ===================================================== -->
-
   <script src="js/core.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/schedules.js"></script>
   <script src="js/patients.js"></script>
   <script src="js/appointments.js"></script>
-
-
-  <!-- =====================================================
-       BOOKING / APPOINTMENT
-       ===================================================== -->
-
   <script src="js/booking-workflow-hotfix.js"></script>
   <script src="js/appointment-information-confirm.js"></script>
 
-  <!-- Move Edit Information into confirmation header -->
   <script src="js/clinic-v39-confirm-edit-in-header.js"></script>
-
-
-  <!-- =====================================================
-       CORE CLINIC MODULES
-       ===================================================== -->
 
   <script src="js/clinical.js"></script>
   <script src="js/referrals.js"></script>
@@ -234,38 +109,15 @@
   <script src="js/reports.js"></script>
   <script src="js/admin.js"></script>
 
-
-  <!-- =====================================================
-       NOTIFICATIONS
-       ===================================================== -->
-
   <script src="js/notifications.js"></script>
-
-  <!-- V55: Mark all notifications as read -->
   <script src="js/clinic-v55-mark-all-notifications-read.js?v=55"></script>
-
   <script src="js/push-notifications.js"></script>
 
-
-  <!-- =====================================================
-       GENERAL LIVE FIXES
-       ===================================================== -->
-
   <script src="js/clinic-final-live-fixes.js"></script>
-
-
-  <!-- =====================================================
-       WORKFLOW
-       ===================================================== -->
 
   <script src="js/clinic-workflow-v31.js"></script>
   <script src="js/clinic-v32-confirm-direct-checkin.js"></script>
   <script src="js/clinic-v32-atomic-queue-open.js"></script>
-
-
-  <!-- =====================================================
-       EDITABLE CLINICAL PDF
-       ===================================================== -->
 
   <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 
@@ -273,122 +125,32 @@
   <script src="js/clinic-chat-v35.js"></script>
   <script src="js/clinic-clinical-pdf-v35.js"></script>
 
-
-  <!-- =====================================================
-       PREVIOUS PATIENTS / EXCEL
-       ===================================================== -->
-
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
   <script src="js/previous-patients-import.js"></script>
-
-
-  <!-- =====================================================
-       V36
-       ===================================================== -->
 
   <script src="js/clinic-patient-summary-v36.js"></script>
   <script src="js/clinic-chat-v36.js"></script>
-
-
-  <!-- =====================================================
-       V37
-       ===================================================== -->
-
   <script src="js/clinic-chat-v37.js"></script>
 
-
-  <!-- =====================================================
-       V41 PDF LIBRARIES
-       ===================================================== -->
-
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
-
-  <!-- V41 -->
   <script src="js/clinic-v41-daily-closing-live-chat.js"></script>
-
-
-  <!-- =====================================================
-       GENERAL UI FIXES
-       ===================================================== -->
-
   <script src="js/clinic-hotfix.js"></script>
-
-
-  <!-- =====================================================
-       V43
-       Retained Diagnosis + Important Notes FIRST
-       ===================================================== -->
-
   <script src="js/clinic-v43-retained-summary-first.js"></script>
-
-
-  <!-- =====================================================
-       V44
-       Logistics / Inventory
-       ===================================================== -->
-
   <script src="js/clinic-v44-logistics-inventory.js"></script>
-
-
-  <!-- =====================================================
-       V47
-       Retained summary first + Edit booking in header
-       ===================================================== -->
-
   <script src="js/clinic-v47-retained-summary-and-header-edit.js"></script>
-
-
-  <!-- =====================================================
-       V48
-       Keep every empty slot bookable until whole clinic ends
-       + 2-hour grace period
-       ===================================================== -->
-
   <script src="js/clinic-v48-clinic-grace-booking.js"></script>
-
-
-  <!-- =====================================================
-       V49
-       Restore appointment page focus after auto reload
-       ===================================================== -->
-
   <script src="js/clinic-v49-reload-current-week-focus.js?v=49"></script>
-
-
-  <!-- =====================================================
-       V50
-       Preserve beginning / first name when truncated
-       ===================================================== -->
-
   <script src="js/clinic-v50-first-name-visible.js?v=50"></script>
 
-
-  <!-- =====================================================
-       EXTRA CASES
-       ===================================================== -->
-
+  <!-- Keep the last known working Extra Case feature -->
   <script src="js/clinic-v51-extra-cases.js?v=51"></script>
 
-
-  <!-- =====================================================
-       V59
-       SAME Friday shift + day "+" behavior in ENGLISH/ARABIC
-       Replaces V53 / V54 day-button patch / V56 / V57 / V58
-       ===================================================== -->
-
-  <script src="js/clinic-v59-bilingual-week-plus.js?v=59"></script>
-
-
-  <!-- =====================================================
-       SERVICE WORKER UPDATER
-       LOAD ONCE ONLY
-       ===================================================== -->
+  <!-- IMPORTANT: V58/V59 Friday pre-paint code intentionally removed.
+       It was able to leave the booking page invisible if the follow-up script
+       did not initialize correctly. Restore the page first. -->
 
   <script src="js/pwa.js"></script>
-
 </body>
 </html>
