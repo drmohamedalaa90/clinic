@@ -1,266 +1,166 @@
 (() => {
   const C = window.Clinic;
-  if (!C || C.__v55MarkAllNotificationsLoaded) return;
-  C.__v55MarkAllNotificationsLoaded = true;
+  if (!C || C.__v73MarkAllNotificationsLoaded) return;
+  C.__v73MarkAllNotificationsLoaded = true;
 
-  function addStyles(){
-    if(document.getElementById('v55-mark-all-read-styles')) return;
+  function addStyles() {
+    if (document.getElementById("v73-mark-all-read-styles")) return;
 
-    const s=document.createElement('style');
-    s.id='v55-mark-all-read-styles';
-    s.textContent=`
-      .v55-mark-all-read{
+    const style = document.createElement("style");
+    style.id = "v73-mark-all-read-styles";
+    style.textContent = `
+      .v73-mark-all-read{
         border:0;
-        background:transparent;
+        background:#eafaf6;
         color:#0f8b78;
-        font-weight:850;
+        font-weight:800;
         font-size:12px;
         cursor:pointer;
-        padding:7px 9px;
+        padding:7px 10px;
         border-radius:9px;
         white-space:nowrap;
       }
-      .v55-mark-all-read:hover{
-        background:#ecfdf8;
-      }
-      .v55-mark-all-read:disabled{
-        opacity:.55;
-        cursor:default;
-      }
-      .v55-notification-header-actions{
+      .v73-mark-all-read:hover{background:#dcf7ef}
+      .v73-mark-all-read:disabled{opacity:.55;cursor:default}
+      .v73-notification-header-actions{
         display:flex;
         align-items:center;
         gap:8px;
-        margin-left:auto;
-      }
-      [dir="rtl"] .v55-notification-header-actions{
-        margin-left:0;
-        margin-right:auto;
+        margin-inline-start:auto;
       }
     `;
-    document.head.appendChild(s);
+    document.head.appendChild(style);
   }
 
-  function userId(){
-    return C.user?.id || null;
-  }
-
-  async function tryKnownBackends(){
-    const uid=userId();
-    if(!uid) throw new Error('User session not found');
-
-    // Try likely schemas used by different clinic builds.
-    // We stop at the first successful update.
-    const attempts = [
-      async () => {
-        const { error } = await C.sb
-          .from('notification_recipients')
-          .update({
-            read_at:new Date().toISOString(),
-            is_read:true
-          })
-          .eq('user_id',uid)
-          .is('read_at',null);
-        if(error) throw error;
-      },
-
-      async () => {
-        const { error } = await C.sb
-          .from('notification_recipients')
-          .update({ read_at:new Date().toISOString() })
-          .eq('recipient_id',uid)
-          .is('read_at',null);
-        if(error) throw error;
-      },
-
-      async () => {
-        const { error } = await C.sb
-          .from('notifications')
-          .update({
-            read_at:new Date().toISOString(),
-            is_read:true
-          })
-          .eq('user_id',uid)
-          .is('read_at',null);
-        if(error) throw error;
-      },
-
-      async () => {
-        const { error } = await C.sb
-          .from('notifications')
-          .update({ read_at:new Date().toISOString() })
-          .eq('recipient_id',uid)
-          .is('read_at',null);
-        if(error) throw error;
-      },
-
-      async () => {
-        const { error } = await C.sb.rpc(
-          'frontend_mark_all_notifications_read'
-        );
-        if(error) throw error;
-      },
-
-      async () => {
-        const { error } = await C.sb.rpc(
-          'mark_all_notifications_read'
-        );
-        if(error) throw error;
-      }
-    ];
-
-    let lastError=null;
-
-    for(const attempt of attempts){
-      try{
-        await attempt();
-        return true;
-      }catch(error){
-        lastError=error;
-      }
+  async function markAll(button) {
+    if (!window.ClinicNotifications) {
+      C.toast(
+        C.lang === "ar"
+          ? "تعذر تحميل نظام الإشعارات."
+          : "Notification system is not available.",
+        "error"
+      );
+      return;
     }
 
-    throw lastError || new Error('Could not mark notifications as read');
-  }
+    const unreadBefore = ClinicNotifications.unreadCount?.() ?? 0;
 
-  function clearUnreadUI(){
-    // orange unread dots / unread emphasis
-    document
-      .querySelectorAll(
-        '.notification-item.unread,' +
-        '[data-notification].unread,' +
-        '[data-notification-id].unread,' +
-        '.notification-unread,' +
-        '[data-unread="true"]'
-      )
-      .forEach(el=>{
-        el.classList.remove('unread','notification-unread');
-        el.removeAttribute('data-unread');
-      });
-
-    document
-      .querySelectorAll(
-        '.notification-item .unread-dot,' +
-        '.notification-dot,' +
-        '.notification-unread-dot,' +
-        '.notification-item [aria-label="Unread"]'
-      )
-      .forEach(el=>el.remove());
-
-    const badge=document.getElementById('notificationBadge');
-    if(badge){
-      badge.textContent='0';
-      badge.classList.add('hidden');
+    if (!unreadBefore) {
+      C.toast(
+        C.lang === "ar"
+          ? "كل الإشعارات مقروءة بالفعل."
+          : "All notifications are already read."
+      );
+      return;
     }
 
-    // Some builds have a second top-bar badge.
-    document
-      .querySelectorAll('.notification-badge,.top-notification-badge')
-      .forEach(el=>{
-        el.textContent='0';
-        el.classList.add('hidden');
-      });
-  }
+    const original = button.textContent;
+    button.disabled = true;
+    button.textContent = C.lang === "ar" ? "جاري التعليم..." : "Marking...";
 
-  async function markAll(button){
-    button.disabled=true;
+    try {
+      /*
+       * IMPORTANT:
+       * Do NOT probe unrelated notification tables.
+       * The clinic notification feed is generated by
+       * get_dashboard_notifications() and persists read state in
+       * user_notification_reads via mark_dashboard_notifications_read().
+       *
+       * ClinicNotifications.markAll() already uses that exact backend.
+       */
+      await ClinicNotifications.markAll();
 
-    const oldText=button.textContent;
+      /*
+       * Verify against the server, not only the optimistic UI.
+       * This prevents the old behaviour where the counter disappeared
+       * for a moment and then came back as 80.
+       */
+      await new Promise(resolve => setTimeout(resolve, 250));
+      await ClinicNotifications.refresh();
 
-    button.textContent=
-      C.lang==='ar'
-        ? 'جاري...'
-        : 'Marking...';
+      const unreadAfter = ClinicNotifications.unreadCount?.() ?? 0;
 
-    try{
-      await tryKnownBackends();
-
-      clearUnreadUI();
-
-      if(typeof C.loadNotifications==='function'){
-        try{
-          await C.loadNotifications();
-        }catch(_){}
-      }
-
-      if(typeof C.refreshNotifications==='function'){
-        try{
-          await C.refreshNotifications();
-        }catch(_){}
+      if (unreadAfter > 0) {
+        throw new Error(
+          `${unreadAfter} notification${unreadAfter === 1 ? "" : "s"} remained unread after server verification`
+        );
       }
 
       C.toast(
-        C.lang==='ar'
-          ? 'تم تعليم كل الإشعارات كمقروءة.'
-          : 'All notifications marked as read.'
+        C.lang === "ar"
+          ? "تم تعليم كل الإشعارات كمقروءة نهائياً."
+          : "All notifications marked as read."
       );
-    }
-    catch(error){
-      console.error('V55 mark all notifications read failed',error);
+    } catch (error) {
+      console.error("V73 mark-all notification persistence failed:", error);
+
+      // Reload the true server state if anything failed.
+      try {
+        await ClinicNotifications.refresh();
+      } catch (_) {}
 
       C.toast(
-        C.lang==='ar'
-          ? 'تعذر تعليم كل الإشعارات كمقروءة.'
-          : 'Could not mark all notifications as read.',
-        'error'
+        C.lang === "ar"
+          ? `تعذر حفظ حالة القراءة: ${error.message || ""}`
+          : `Could not save read status: ${error.message || ""}`,
+        "error"
       );
-    }
-    finally{
-      button.disabled=false;
-      button.textContent=oldText;
+    } finally {
+      button.disabled = false;
+      button.textContent = original;
     }
   }
 
-  function injectButton(){
-    const drawer=document.getElementById('notificationDrawer');
-    if(!drawer) return;
+  function injectButton() {
+    const drawer = document.getElementById("notificationDrawer");
+    const header = drawer?.querySelector(".drawer-header");
+    if (!header) return;
 
-    const header=drawer.querySelector('.drawer-header');
-    if(!header) return;
+    // Remove older injected Mark All buttons so there is only one backend path.
+    header
+      .querySelectorAll("#v55MarkAllRead,#v61MarkAllRead,.v55-mark-all-read,.v61-mark-all-read")
+      .forEach(el => {
+        const parent = el.parentElement;
+        el.remove();
+        if (
+          parent &&
+          parent !== header &&
+          parent.children.length === 0
+        ) parent.remove();
+      });
 
-    if(header.querySelector('#v55MarkAllRead')) return;
+    if (header.querySelector("#v73MarkAllRead")) return;
 
-    const close=
-      header.querySelector(
-        '#closeNotifications,.icon-button'
-      );
+    const close = header.querySelector("#closeNotifications");
 
-    const actions=document.createElement('div');
-    actions.className='v55-notification-header-actions';
+    const actions = document.createElement("div");
+    actions.className = "v73-notification-header-actions";
 
-    const btn=document.createElement('button');
-    btn.id='v55MarkAllRead';
-    btn.type='button';
-    btn.className='v55-mark-all-read';
-    btn.textContent=
-      C.lang==='ar'
-        ? 'تعليم الكل كمقروء'
-        : 'Mark all as read';
+    const button = document.createElement("button");
+    button.id = "v73MarkAllRead";
+    button.type = "button";
+    button.className = "v73-mark-all-read";
+    button.textContent =
+      C.lang === "ar"
+        ? "تعليم الكل كمقروء"
+        : "Mark all as read";
 
-    btn.addEventListener(
-      'click',
-      ()=>markAll(btn)
-    );
+    button.addEventListener("click", () => markAll(button));
+    actions.appendChild(button);
 
-    actions.appendChild(btn);
-
-    if(close){
-      actions.appendChild(close);
-    }
-
+    if (close) actions.appendChild(close);
     header.appendChild(actions);
   }
 
   addStyles();
-
-  new MutationObserver(injectButton)
-    .observe(
-      document.body,
-      {
-        childList:true,
-        subtree:true
-      }
-    );
-
   injectButton();
+
+  // Header can be rebuilt on language/navigation changes.
+  const drawer = document.getElementById("notificationDrawer");
+  if (drawer) {
+    new MutationObserver(injectButton).observe(drawer, {
+      childList: true,
+      subtree: true
+    });
+  }
 })();
