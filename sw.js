@@ -1,4 +1,4 @@
-const CACHE = 'operation-clinic-v80-clean-recovery';
+const CACHE = 'operation-clinic-v95-appointments-clean';
 
 const STATIC = [
   './',
@@ -13,6 +13,8 @@ const STATIC = [
   './js/schedules.js',
   './js/patients.js',
   './js/appointments.js',
+  './js/clinic-v59-bilingual-week-plus.js',
+  './js/clinic-v82-extra-case-new-patient.js',
   './js/booking-workflow-hotfix.js',
   './js/clinical.js',
   './js/referrals.js',

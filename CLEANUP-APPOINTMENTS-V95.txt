@@ -1,0 +1,9 @@
+Appointment cleanup V95
+
+- Arabic/RTL patient labels now preserve the logical BEGINNING of the stored name.
+- Visible scheduler names are explicitly shortened from the end; CSS no longer decides which side survives.
+- Extra cases are rendered natively inside appointments.js at the bottom of their day column.
+- Extra cases are excluded from normal 4-patient/hour capacity calculations.
+- Removed the old V94 inline renderer and obsolete V50/V86/V88/V89/V90/V91/V92/V93 display files.
+- V82 remains the canonical extra-case booking modal (including New Patient).
+- V59 remains responsible for the day-header + button.
