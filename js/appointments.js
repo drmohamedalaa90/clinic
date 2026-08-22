@@ -1062,6 +1062,37 @@
   }
 
 
+  function appointmentPatientName(patient){
+    return String(
+      patient?.english_name ||
+      patient?.arabic_name ||
+      'Patient'
+    ).replace(/\s+/g,' ').trim();
+  }
+
+
+  function appointmentVisibleName(patient,maxChars=18){
+    const full=appointmentPatientName(patient);
+
+    // Do not let CSS/RTL text-overflow decide which side of an Arabic
+    // name survives.  We deliberately keep the LOGICAL BEGINNING of the
+    // stored name, so the first name is always present.
+    if(full.length<=maxChars){
+      return full;
+    }
+
+    const prefix=full.slice(0,maxChars).replace(/\s+$/,'');
+    return `${prefix}…`;
+  }
+
+
+  function appointmentNameDirection(patient){
+    return /[\u0600-\u06FF]/.test(appointmentPatientName(patient))
+      ? 'rtl'
+      : 'ltr';
+  }
+
+
   function renderDayCard({
     date,
     dayIndex,
@@ -1075,10 +1106,24 @@
       error:null
     };
 
-    const appts=(
+    const dayAppointments=(
       data.appointmentsByDate.get(date) || []
     ).filter(a=>
       !['cancelled','rescheduled'].includes(a.status)
+    );
+
+    // Extra cases are intentionally outside the normal 4-patient/hour
+    // capacity. Keep them out of hourly cards and render them once, at the
+    // bottom of the day column.
+    const extraCases=dayAppointments
+      .filter(a=>String(a.booking_source||'').toLowerCase()==='extra_case')
+      .sort((a,b)=>
+        new Date(a.scheduled_start)-new Date(b.scheduled_start) ||
+        new Date(a.created_at||0)-new Date(b.created_at||0)
+      );
+
+    const appts=dayAppointments.filter(a=>
+      String(a.booking_source||'').toLowerCase()!=='extra_case'
     );
 
     const exceptions=activeExceptionForDate(
@@ -1168,12 +1213,12 @@
                     </span>
 
                     <span class="seat-copy">
-                      <strong>
-                        ${C.escape(
-                          patient.english_name||
-                          patient.arabic_name||
-                          'Patient'
-                        )}
+                      <strong
+                        class="appointment-patient-name"
+                        dir="${appointmentNameDirection(patient)}"
+                        title="${C.escape(appointmentPatientName(patient))}"
+                      >
+                        ${C.escape(appointmentVisibleName(patient))}
                       </strong>
 
                       <small>
@@ -1307,6 +1352,42 @@
                  </div>`
           }
         </div>
+
+        ${extraCases.length ? `
+          <section class="native-extra-cases" data-extra-date="${date}">
+            <div class="native-extra-head">
+              <div>
+                <strong>＋ ${C.lang==='ar'?'الحالات الإضافية':'Extra cases'}</strong>
+                <small>${C.lang==='ar'?'خارج حد 4 مرضى / ساعة':'Outside the 4-patient/hour capacity'}</small>
+              </div>
+              <span>${extraCases.length}</span>
+            </div>
+
+            <div class="native-extra-list">
+              ${extraCases.map((appointment,index)=>{
+                const patient=data.patients.get(appointment.patient_id)||{};
+                return `
+                  <button
+                    type="button"
+                    class="native-extra-row status-${C.escape(appointment.status)}"
+                    data-appointment-id="${appointment.id}"
+                  >
+                    <span class="native-extra-number">${index+1}</span>
+                    <span class="native-extra-copy">
+                      <strong
+                        class="appointment-patient-name"
+                        dir="${appointmentNameDirection(patient)}"
+                        title="${C.escape(appointmentPatientName(patient))}"
+                      >${C.escape(appointmentVisibleName(patient,22))}</strong>
+                      <small>
+                        ${C.escape(C.formatTime(appointment.scheduled_start))}
+                        • ${C.escape(appointmentStatusLabel(appointment.status))}
+                      </small>
+                    </span>
+                  </button>`;
+              }).join('')}
+            </div>
+          </section>` : ''}
       </article>
     `;
   }

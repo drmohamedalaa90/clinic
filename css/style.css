@@ -4049,3 +4049,133 @@ html[dir="rtl"] .mini-calendar-days {
   }
 
 }
+
+
+/* ============================================================
+   Clean appointment renderer: first-name-safe labels + extras
+   ============================================================ */
+
+.appointment-patient-name{
+  display:block;
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:clip;
+  unicode-bidi:plaintext;
+}
+
+.appointment-patient-name[dir="rtl"]{
+  text-align:right;
+}
+
+.appointment-patient-name[dir="ltr"]{
+  text-align:left;
+}
+
+.native-extra-cases{
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  margin-top:10px;
+  overflow:hidden;
+  border:1px solid #fed7aa;
+  border-radius:12px;
+  background:#fffaf5;
+}
+
+.native-extra-head{
+  min-width:0;
+  padding:8px 9px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:7px;
+  border-bottom:1px solid #ffedd5;
+}
+
+.native-extra-head>div{
+  min-width:0;
+  display:grid;
+  gap:2px;
+}
+
+.native-extra-head strong{
+  min-width:0;
+  color:#9a3412;
+  font-size:10px;
+  font-weight:900;
+}
+
+.native-extra-head small{
+  color:#9a6a4a;
+  font-size:8px;
+}
+
+.native-extra-head>span{
+  flex:0 0 auto;
+  min-width:22px;
+  height:22px;
+  padding:0 6px;
+  display:grid;
+  place-items:center;
+  border-radius:999px;
+  background:#ffedd5;
+  color:#9a3412;
+  font-size:9px;
+  font-weight:900;
+}
+
+.native-extra-list{
+  display:grid;
+  gap:1px;
+  background:#ffedd5;
+}
+
+.native-extra-row{
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  padding:8px;
+  border:0;
+  background:#fffaf5;
+  display:grid;
+  grid-template-columns:23px minmax(0,1fr);
+  align-items:center;
+  gap:7px;
+  color:#9a3412;
+  text-align:start;
+  cursor:pointer;
+}
+
+.native-extra-row:hover{background:#fff7ed}
+
+.native-extra-number{
+  width:23px;
+  height:23px;
+  display:grid;
+  place-items:center;
+  border-radius:7px;
+  background:#ffedd5;
+  font-size:9px;
+  font-weight:900;
+}
+
+.native-extra-copy{
+  min-width:0;
+  display:grid;
+  gap:2px;
+}
+
+.native-extra-copy strong{
+  min-width:0;
+  color:#7c2d12;
+  font-size:10px;
+  font-weight:900;
+}
+
+.native-extra-copy small{
+  color:#9a6a4a;
+  font-size:8px;
+}
