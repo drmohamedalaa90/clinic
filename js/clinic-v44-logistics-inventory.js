@@ -244,8 +244,12 @@
     }
 
 
-    badge.textContent =
-      count;
+    // V80: show only a warning icon, never the total item/count number.
+    badge.textContent = '⚠';
+    badge.title =
+      C.lang === 'ar'
+        ? `${count} تنبيه لوجستي`
+        : `${count} logistics alert${count === 1 ? '' : 's'}`;
   }
 
 
@@ -2067,16 +2071,17 @@
     }
 
     .v44-logistics-alert {
-      min-width: 20px;
-      height: 20px;
+      width: 24px;
+      min-width: 24px;
+      height: 24px;
       display: inline-grid;
       place-items: center;
       margin-inline-start: auto;
-      padding: 0 5px;
+      padding: 0;
       border-radius: 999px;
       background: #f59e0b;
       color: #ffffff;
-      font-size: 9px;
+      font-size: 12px;
       font-weight: 900;
       box-shadow:
         0 0 0 3px

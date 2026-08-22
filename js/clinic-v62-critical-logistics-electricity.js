@@ -5,7 +5,7 @@
   const esc = v => C.escape(v ?? "");
   const txt = (en, ar) => C.lang === "ar" ? ar : en;
   const isAdmin = () => !!(C.hasRole?.("owner") || C.hasRole?.("manager") || C.hasRole?.("deputy_manager"));
-  const canPurchase = () => !!(isAdmin() || C.hasRole?.("secretary"));
+  const canPurchase = () => !!C.user?.id;
   const isSecretary = () => !!C.hasRole?.("secretary");
 
   let currentFilter = "all";
@@ -390,7 +390,7 @@
           </div>
           <div class="v62-actions">
             <button class="${critical?"danger-button":"secondary-button"} compact" data-v62-critical="${esc(item.id)}">
-              ${critical ? `✓ ${txt("Clear critical","إنهاء الحرج")}` : `🚨 ${txt("Mark critical","تحديد كحرج")}`}
+              ${critical ? `✓ ${txt("Clear","إنهاء")}` : `🚨 ${txt("Critical","حرج")}`}
             </button>
             ${canPurchase()?`<button class="primary-button compact" data-v62-buy="${esc(item.id)}">🛒 ${txt("Bought","تم الشراء")}</button>`:""}
             ${isAdmin()?`<button class="secondary-button compact" data-v62-edit="${esc(item.id)}">✎ ${txt("Edit","تعديل")}</button>${item.system_key!=="electricity"?`<button class="danger-button compact" data-v62-remove="${esc(item.id)}">🗑</button>`:""}`:""}

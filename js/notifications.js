@@ -185,6 +185,8 @@ window.ClinicNotifications = {
     if (!unread.length) return;
 
     const keys = unread.map(x => x.id);
+
+    // Optimistic UI.
     unread.forEach(x => { x.is_read = true; });
     this.render();
     this.renderDashboard();
@@ -200,6 +202,10 @@ window.ClinicNotifications = {
       this.renderDashboard();
       return C.toast(error.message, 'error');
     }
+
+    // V80: verify against the actual server feed.
+    // This prevents the old "0 for one second, then 80 again" behavior.
+    await this.refresh();
 
     C.toast(
       C.lang === 'ar'
@@ -453,6 +459,26 @@ window.addEventListener('DOMContentLoaded', () => {
   document
     .getElementById('drawerOverlay')
     ?.addEventListener('click', () => ClinicNotifications.close());
+
+  const markAllButton = document.getElementById('notificationMarkAllButton');
+  if (markAllButton) {
+    const syncMarkAllLabel = () => {
+      markAllButton.textContent =
+        window.Clinic?.lang === 'ar'
+          ? 'تعليم الكل كمقروء'
+          : 'Mark all as read';
+    };
+    syncMarkAllLabel();
+    markAllButton.addEventListener('click', async () => {
+      markAllButton.disabled = true;
+      try {
+        await ClinicNotifications.markAll();
+      } finally {
+        markAllButton.disabled = false;
+        syncMarkAllLabel();
+      }
+    });
+  }
 
   // Keep the orange unread counter reasonably fresh.
   setInterval(() => ClinicNotifications.refresh(), 60000);
